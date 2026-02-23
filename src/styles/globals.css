@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+  }
+
+  body {
+    @apply bg-white text-navy-900 antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Mobile app container - mimics phone screen */
+  .app-container {
+    @apply mx-auto max-w-[430px] min-h-screen bg-white relative;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Screen transitions */
+  .screen {
+    @apply min-h-screen flex flex-col;
+  }
+
+  /* Flight card styles */
+  .flight-card {
+    @apply bg-gradient-to-br from-navy-800 to-navy-900 rounded-2xl p-5 text-white;
+  }
+
+  .flight-card-light {
+    @apply bg-white border border-navy-200 rounded-2xl p-5;
+  }
+
+  /* Risk badge styles */
+  .risk-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
+  }
+
+  .risk-badge-low {
+    @apply bg-risk-low-bg text-green-800;
+  }
+
+  .risk-badge-medium {
+    @apply bg-risk-medium-bg text-amber-800;
+  }
+
+  .risk-badge-high {
+    @apply bg-risk-high-bg text-red-800;
+  }
+
+  /* Input styles */
+  .input-base {
+    @apply w-full px-4 py-3 border border-navy-200 rounded-xl text-navy-900
+           placeholder:text-navy-400 focus:outline-none focus:ring-2
+           focus:ring-primary-500 focus:border-transparent transition-all;
+  }
+
+  .input-error {
+    @apply border-red-500 focus:ring-red-500;
+  }
+
+  /* Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+  }
+
+  .btn-secondary {
+    @apply bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary-600 text-primary-600 hover:bg-primary-50;
+  }
+
+  .btn-ghost {
+    @apply text-primary-600 hover:bg-primary-50;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  .btn-lg {
+    @apply px-6 py-4 text-lg;
+  }
+
+  .btn-md {
+    @apply px-5 py-3 text-base;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+}
