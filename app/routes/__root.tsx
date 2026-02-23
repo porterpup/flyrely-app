@@ -1,7 +1,7 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Meta, Scripts } from '@tanstack/start';
-import '~/styles/globals.css';
+import globalsCss from '~/styles/globals.css?url';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,6 +24,7 @@ export const Route = createRootRoute({
         content: 'AI-powered flight delay predictions. Stay ahead of delays before they happen.',
       },
     ],
+    links: [{ rel: 'stylesheet', href: globalsCss }],
   }),
 });
 
