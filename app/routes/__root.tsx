@@ -5,7 +5,7 @@ import '~/styles/globals.css';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 60 * 5,
       retry: 2,
     },
   },
@@ -13,6 +13,14 @@ const queryClient = new QueryClient({
 
 export const Route = createRootRoute({
   component: RootComponent,
+  head: () => ({
+    meta: [
+      { charSet: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { title: 'FlyRely — Know before delays happen' },
+      { name: 'description', content: 'AI-powered flight delay predictions. Stay ahead of delays before they happen.' },
+    ],
+  }),
 });
 
 function RootComponent() {

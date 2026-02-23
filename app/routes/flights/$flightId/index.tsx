@@ -1,77 +1,108 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import {
   ChevronRight,
   AlertTriangle,
-  Clock,
   Plane,
-  Calendar,
-  MapPin,
-  Edit,
-  Trash2,
   RefreshCw,
   Info,
   CheckCircle,
-  ArrowRight,
 } from 'lucide-react';
 import { Header, Button, Modal } from '~/components/ui';
-import { RemoveFlightModal, NoPredictionBanner } from '~/components/flight';
+import { RemoveFlightModal } from '~/components/flight';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
+import { getFlightById, removeFlight, saveFlight } from '~/lib/flightStore';
+import { flyrelyApi, buildPredictPayload } from '~/lib/api';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/$flightId/')({
   component: FlightDetailsScreen,
 });
 
-// Mock flight data
-const mockFlight: Flight = {
-  id: '1',
-  flightNumber: 'UA1071',
-  airline: { code: 'UA', name: 'United Airlines' },
-  origin: {
-    code: 'SFO',
-    name: 'San Francisco International',
-    city: 'San Francisco',
-    timezone: 'America/Los_Angeles',
-  },
-  destination: {
-    code: 'JFK',
-    name: 'John F. Kennedy International',
-    city: 'New York',
-    timezone: 'America/New_York',
-  },
-  scheduledDeparture: '2024-12-03T18:15:00',
-  scheduledArrival: '2024-12-04T02:45:00',
-  predictedDeparture: '2024-12-03T18:45:00',
-  predictedArrival: '2024-12-04T03:15:00',
-  status: 'scheduled',
-  riskLevel: 'medium',
-  delayMinutes: 45,
-  delayReason: 'Historically late at this hour • Weather risk at JFK',
-  airlineStatus: 'On time',
-  gate: 'B42',
-  terminal: '3',
-};
-
 function FlightDetailsScreen() {
   const navigate = useNavigate();
   const { flightId } = Route.useParams();
+  const [flight, setFlight] = useState<Flight | null>(null);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
-  const flight = mockFlight;
-  const showAlternatives = flight.riskLevel === 'high' || flight.riskLevel === 'medium';
+  useEffect(() => {
+    const f = getFlightById(flightId);
+    if (f) {
+      setFlight(f);
+    } else {
+      setNotFound(true);
+    }
+  }, [flightId]);
 
   const handleRefresh = async () => {
+    if (!flight) return;
     setIsRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const payload = buildPredictPayload(
+        flight.origin.code,
+        flight.destination.code,
+        flight.scheduledDeparture
+      );
+      const prediction = await flyrelyApi.predict(payload);
+      const updated: Flight = {
+        ...flight,
+        riskLevel: prediction.risk_level,
+        delayMinutes: prediction.predicted_delay_minutes,
+        delayReason: prediction.factors.slice(0, 2).join(' • ') || flight.delayReason,
+        predictedDeparture:
+          prediction.predicted_delay_minutes > 0
+            ? new Date(
+                new Date(flight.scheduledDeparture).getTime() +
+                  prediction.predicted_delay_minutes * 60000
+              ).toISOString()
+            : undefined,
+      };
+      saveFlight(updated);
+      setFlight(updated);
+    } catch {
+      // keep existing on error
+    }
     setIsRefreshing(false);
   };
 
   const handleRemove = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    if (!flight) return;
+    removeFlight(flight.id);
     navigate({ to: '/' });
   };
+
+  if (notFound) {
+    return (
+      <div className="app-container">
+        <div className="screen">
+          <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
+            <div className="text-5xl mb-4">🔍</div>
+            <h2 className="text-xl font-bold text-navy-900 mb-2">Flight not found</h2>
+            <p className="text-navy-500 mb-6">This flight may have been removed.</p>
+            <Button onClick={() => navigate({ to: '/' })}>Go home</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!flight) {
+    return (
+      <div className="app-container">
+        <div className="screen">
+          <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
+          <div className="flex-1 flex items-center justify-center py-20">
+            <div className="text-navy-400">Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const showAlternatives = flight.riskLevel === 'high' || flight.riskLevel === 'medium';
 
   return (
     <div className="app-container">
@@ -94,7 +125,6 @@ function FlightDetailsScreen() {
         />
 
         <div className="flex-1 overflow-y-auto">
-          {/* Flight Header */}
           <div className="px-4 py-6 bg-gradient-to-br from-navy-800 to-navy-900">
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -107,7 +137,6 @@ function FlightDetailsScreen() {
               <p className="text-sm text-white/60">{formatDate(flight.scheduledDeparture)}</p>
             </div>
 
-            {/* Route */}
             <div className="flex items-center gap-4 mb-4">
               <div className="text-center">
                 <p className="text-2xl font-bold text-white">{flight.origin.code}</p>
@@ -124,7 +153,6 @@ function FlightDetailsScreen() {
               </div>
             </div>
 
-            {/* Risk Banner */}
             <div
               className={cn(
                 'rounded-xl p-4',
@@ -154,8 +182,9 @@ function FlightDetailsScreen() {
                     )}
                   >
                     {getRiskLabel(flight.riskLevel)}
-                    {flight.delayMinutes && flight.riskLevel !== 'low' &&
-                      ` · ${flight.delayMinutes}-${flight.delayMinutes + 30} min delay expected`}
+                    {(flight.delayMinutes ?? 0) > 0 &&
+                      flight.riskLevel !== 'low' &&
+                      ` · ${flight.delayMinutes}-${(flight.delayMinutes ?? 0) + 30} min delay expected`}
                   </p>
                   {flight.delayReason && flight.riskLevel !== 'low' && (
                     <p
@@ -172,33 +201,28 @@ function FlightDetailsScreen() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="px-4 py-6 space-y-6">
-            {/* Status Overview */}
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Status Overview
               </h3>
-
               <div className="bg-white border border-navy-200 rounded-xl divide-y divide-navy-100">
-                {/* Airline Status */}
                 <div className="p-4">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between">
                     <span className="text-sm text-navy-500">Airline status</span>
                     <span className="font-medium text-navy-900">
-                      {flight.airlineStatus} · Departs {formatTime(flight.scheduledDeparture)}
+                      {flight.airlineStatus ?? 'On time'} · Departs{' '}
+                      {formatTime(flight.scheduledDeparture)}
                     </span>
                   </div>
                 </div>
-
-                {/* FlyRely Prediction */}
                 <div className="p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-navy-500">FlyRely prediction</span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-navy-900">
                         {flight.riskLevel !== 'low'
-                          ? `${flight.delayMinutes}-${flight.delayMinutes! + 30} min delay`
+                          ? `${flight.delayMinutes}-${(flight.delayMinutes ?? 0) + 30} min delay`
                           : 'No delay expected'}
                       </span>
                       <span className={getRiskBadgeClass(flight.riskLevel)}>
@@ -217,26 +241,22 @@ function FlightDetailsScreen() {
                     </p>
                   )}
                 </div>
-
-                {/* Disclaimer */}
                 <div className="p-4 bg-navy-50">
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-navy-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-navy-500">
-                      The airline still lists this as on time, but our models see a chance of
-                      delay based on historical performance and current conditions.
+                      Predictions are based on historical performance and current conditions. Tap
+                      refresh to update.
                     </p>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* Schedule */}
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Schedule
               </h3>
-
               <div className="bg-white border border-navy-200 rounded-xl">
                 <div className="grid grid-cols-2 divide-x divide-navy-100">
                   <div className="p-4">
@@ -291,7 +311,6 @@ function FlightDetailsScreen() {
               </div>
             </section>
 
-            {/* Alternatives CTA */}
             {showAlternatives && (
               <Link
                 to="/flights/$flightId/alternatives"
@@ -303,9 +322,7 @@ function FlightDetailsScreen() {
                     <RefreshCw className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-primary-900">
-                      View alternative flights
-                    </p>
+                    <p className="font-medium text-primary-900">View alternative flights</p>
                     <p className="text-sm text-primary-700">
                       Find lower-risk options on the same route
                     </p>
@@ -315,49 +332,31 @@ function FlightDetailsScreen() {
               </Link>
             )}
 
-            {/* Actions */}
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Manage Flight
               </h3>
-
-              <div className="space-y-2">
-                <Link
-                  to="/flights/$flightId/edit"
-                  params={{ flightId }}
-                  className="flex items-center justify-between p-4 bg-white border border-navy-200 rounded-xl hover:border-navy-300 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Edit className="w-5 h-5 text-navy-500" />
-                    <span className="font-medium text-navy-900">Edit flight</span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-navy-400" />
-                </Link>
-
-                <button
-                  onClick={() => setShowRemoveModal(true)}
-                  className="w-full flex items-center justify-between p-4 bg-white border border-navy-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <Trash2 className="w-5 h-5 text-navy-500 group-hover:text-red-500" />
-                    <span className="font-medium text-navy-900 group-hover:text-red-700">
-                      Remove flight
-                    </span>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-navy-400 group-hover:text-red-400" />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowRemoveModal(true)}
+                className="w-full flex items-center justify-between p-4 bg-white border border-navy-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">🗑️</span>
+                  <span className="font-medium text-navy-900 group-hover:text-red-700">
+                    Remove flight
+                  </span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-navy-400 group-hover:text-red-400" />
+              </button>
             </section>
 
-            {/* Already tracking indicator */}
             <div className="flex items-center justify-center gap-2 py-4 text-green-600">
               <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">Already tracking this flight</span>
+              <span className="font-medium">Tracking this flight</span>
             </div>
           </div>
         </div>
 
-        {/* Remove Modal */}
         <RemoveFlightModal
           isOpen={showRemoveModal}
           onClose={() => setShowRemoveModal(false)}

@@ -1,51 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Plus, ChevronRight, Plane, History } from 'lucide-react';
+import { Plus, History } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button } from '~/components/ui';
-import { FlightCard, AlertCard } from '~/components/flight';
+import { FlightCard } from '~/components/flight';
+import { getUpcomingFlights } from '~/lib/flightStore';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/')({
   component: HomeScreen,
 });
 
-// Mock data - replace with actual API calls
-const mockFlights: Flight[] = [
-  {
-    id: '1',
-    flightNumber: 'UA1071',
-    airline: { code: 'UA', name: 'United Airlines' },
-    origin: { code: 'SFO', name: 'San Francisco International', city: 'San Francisco', timezone: 'America/Los_Angeles' },
-    destination: { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', timezone: 'America/New_York' },
-    scheduledDeparture: '2024-12-03T18:15:00',
-    scheduledArrival: '2024-12-04T02:45:00',
-    status: 'scheduled',
-    riskLevel: 'medium',
-    delayMinutes: 45,
-    delayReason: 'Historically late at this hour',
-  },
-];
-
-const mockAlerts = [
-  {
-    id: '1',
-    type: 'risk_increase' as const,
-    flightNumber: 'UA1071 · SFO → JFK · 6:15 PM',
-    message: 'Delay risk increased for UA1071',
-    timestamp: 'Just now',
-  },
-];
-
 function HomeScreen() {
   const navigate = useNavigate();
-  const [flights] = useState<Flight[]>(mockFlights);
+  const [flights, setFlights] = useState<Flight[]>([]);
+
+  useEffect(() => {
+    setFlights(getUpcomingFlights());
+  }, []);
+
   const hasFlights = flights.length > 0;
+  const nextFlight = flights[0];
 
   if (!hasFlights) {
     return (
       <AppShell>
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
           <div className="text-6xl mb-6">✈️</div>
           <h1 className="text-2xl font-bold text-navy-900 mb-2">
             No upcoming flights
@@ -68,7 +48,6 @@ function HomeScreen() {
   return (
     <AppShell>
       <div className="px-4 pt-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-navy-900">Home</h1>
           <button
@@ -79,7 +58,6 @@ function HomeScreen() {
           </button>
         </div>
 
-        {/* Next Flight Section */}
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-navy-900">Next flight</h2>
@@ -92,34 +70,34 @@ function HomeScreen() {
             </Link>
           </div>
 
-          <FlightCard
-            flight={flights[0]}
-            onClick={() =>
-              navigate({ to: '/flights/$flightId', params: { flightId: flights[0].id } })
-            }
-          />
+          {nextFlight && (
+            <FlightCard
+              flight={nextFlight}
+              onClick={() =>
+                navigate({ to: '/flights/$flightId', params: { flightId: nextFlight.id } })
+              }
+            />
+          )}
         </section>
 
-        {/* Recent Alerts Section */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-navy-900 mb-4">Recent alerts</h2>
-          <div className="space-y-3">
-            {mockAlerts.map((alert) => (
-              <AlertCard
-                key={alert.id}
-                type={alert.type}
-                flightNumber={alert.flightNumber}
-                message={alert.message}
-                timestamp={alert.timestamp}
-                onClick={() =>
-                  navigate({ to: '/flights/$flightId', params: { flightId: '1' } })
-                }
-              />
-            ))}
-          </div>
-        </section>
+        {flights.length > 1 && (
+          <section className="mb-8">
+            <h2 className="text-lg font-semibold text-navy-900 mb-4">Upcoming flights</h2>
+            <div className="space-y-3">
+              {flights.slice(1).map((flight) => (
+                <FlightCard
+                  key={flight.id}
+                  flight={flight}
+                  variant="compact"
+                  onClick={() =>
+                    navigate({ to: '/flights/$flightId', params: { flightId: flight.id } })
+                  }
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
-        {/* Quick Actions */}
         <section>
           <div className="grid grid-cols-2 gap-3">
             <Link

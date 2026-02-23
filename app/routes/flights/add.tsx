@@ -1,55 +1,17 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Search, Calendar, Plane, ChevronDown, Check, ArrowRight } from 'lucide-react';
+import { Search, Calendar, Plane, Check, ArrowRight } from 'lucide-react';
 import { Header, Button, Input, Modal } from '~/components/ui';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload } from '~/lib/api';
-import type { Flight, RiskLevel } from '~/types';
+import { saveFlight } from '~/lib/flightStore';
+import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/add')({
   component: AddFlightScreen,
 });
 
 type SearchMode = 'number' | 'route';
-
-// Mock search results
-const mockSearchResult: Flight = {
-  id: 'new-1',
-  flightNumber: 'UA1071',
-  airline: { code: 'UA', name: 'United Airlines' },
-  origin: { code: 'SFO', name: 'San Francisco International', city: 'San Francisco', timezone: 'America/Los_Angeles' },
-  destination: { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', timezone: 'America/New_York' },
-  scheduledDeparture: '2024-12-03T18:15:00',
-  scheduledArrival: '2024-12-04T02:45:00',
-  status: 'scheduled',
-  riskLevel: 'medium',
-  delayMinutes: 45,
-  delayReason: 'Historically late at this hour',
-  airlineStatus: 'On time',
-};
-
-const mockRouteResults: Flight[] = [
-  mockSearchResult,
-  {
-    ...mockSearchResult,
-    id: 'new-2',
-    flightNumber: 'UA1089',
-    scheduledDeparture: '2024-12-03T20:30:00',
-    scheduledArrival: '2024-12-04T04:50:00',
-    riskLevel: 'low',
-    delayMinutes: 0,
-  },
-  {
-    ...mockSearchResult,
-    id: 'new-3',
-    flightNumber: 'AA178',
-    airline: { code: 'AA', name: 'American Airlines' },
-    scheduledDeparture: '2024-12-03T19:45:00',
-    scheduledArrival: '2024-12-04T04:15:00',
-    riskLevel: 'low',
-    delayMinutes: 0,
-  },
-];
 
 function AddFlightScreen() {
   const navigate = useNavigate();
@@ -58,6 +20,8 @@ function AddFlightScreen() {
   // Flight number search
   const [airline, setAirline] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
+  const [originInput, setOriginInput] = useState('');
+  const [destinationInput, setDestinationInput] = useState('');
   const [date, setDate] = useState('');
 
   // Route search
@@ -80,7 +44,7 @@ function AddFlightScreen() {
     setRouteResults([]);
 
     if (mode === 'number') {
-      if (!airline || !flightNumber || !date) {
+      if (!airline || !flightNumber || !date || !originInput || !destinationInput) {
         setError('Please fill in all fields');
         setIsSearching(false);
         return;
@@ -92,28 +56,22 @@ function AddFlightScreen() {
       }
 
       try {
-        // Parse airline code from airline name input (e.g. "United" → "UA")
-        // We use the flightNumber prefix if it contains letters, else fall back
         const match = flightNumber.match(/^([A-Z]{2})/i);
         const airlineCode = match ? match[1].toUpperCase() : airline.slice(0, 2).toUpperCase();
         const numericFlight = flightNumber.replace(/^[A-Z]+/i, '');
         const fullFlightNumber = `${airlineCode}${numericFlight}`;
-
-        const depISO = `${date}T09:00:00`; // default morning if no time known
-        const payload = buildPredictPayload('', '', depISO, airline);
-        // For flight-number mode we don't have origin/destination yet — use placeholders
-        // and show the result with real risk from API
-        const originCode = 'SFO';
-        const destCode = 'JFK';
-        const realPayload = buildPredictPayload(originCode, destCode, depISO, airline);
-        const prediction = await flyrelyApi.predict(realPayload);
+        const originCode = originInput.toUpperCase().slice(0, 3);
+        const destCode = destinationInput.toUpperCase().slice(0, 3);
+        const depISO = `${date}T09:00:00`;
+        const payload = buildPredictPayload(originCode, destCode, depISO, airline);
+        const prediction = await flyrelyApi.predict(payload);
 
         const flight: Flight = {
-          id: `search-${Date.now()}`,
+          id: `flight-${Date.now()}`,
           flightNumber: fullFlightNumber,
           airline: { code: airlineCode, name: airline },
-          origin: { code: originCode, name: 'Departure Airport', city: 'Origin', timezone: 'UTC' },
-          destination: { code: destCode, name: 'Arrival Airport', city: 'Destination', timezone: 'UTC' },
+          origin: { code: originCode, name: originInput, city: originInput, timezone: 'UTC' },
+          destination: { code: destCode, name: destinationInput, city: destinationInput, timezone: 'UTC' },
           scheduledDeparture: depISO,
           scheduledArrival: new Date(new Date(depISO).getTime() + 5 * 3600000).toISOString(),
           status: 'scheduled',
@@ -124,8 +82,7 @@ function AddFlightScreen() {
         };
         setSearchResult(flight);
       } catch (e) {
-        // Fall back to mock if API is unavailable
-        setSearchResult(mockSearchResult);
+        setError('Could not get prediction. Please check your inputs and try again.');
       }
     } else {
       if (!origin || !destination || !routeDate) {
@@ -140,24 +97,25 @@ function AddFlightScreen() {
       }
 
       try {
-        // Generate a few departure times and get predictions for each
         const departures = [
-          { hour: 7, suffix: '07:00' },
-          { hour: 12, suffix: '12:00' },
-          { hour: 17, suffix: '17:00' },
+          { suffix: '07:00' },
+          { suffix: '12:00' },
+          { suffix: '17:00' },
         ];
 
         const results = await Promise.all(
-          departures.map(async ({ hour, suffix }, i) => {
+          departures.map(async ({ suffix }, i) => {
             const depISO = `${routeDate}T${suffix}:00`;
             const payload = buildPredictPayload(origin, destination, depISO);
             const prediction = await flyrelyApi.predict(payload);
+            const originCode = origin.toUpperCase().slice(0, 3);
+            const destCode = destination.toUpperCase().slice(0, 3);
             return {
-              id: `route-${i}`,
-              flightNumber: `AA${(100 + i * 11 + parseInt(origin.charCodeAt(0).toString())).toString().slice(-3)}`,
-              airline: { code: 'AA', name: 'American Airlines' },
-              origin: { code: origin.toUpperCase(), name: origin, city: origin, timezone: 'UTC' },
-              destination: { code: destination.toUpperCase(), name: destination, city: destination, timezone: 'UTC' },
+              id: `route-${Date.now()}-${i}`,
+              flightNumber: `FL${100 + i * 11}`,
+              airline: { code: 'FL', name: 'Various Airlines' },
+              origin: { code: originCode, name: origin, city: origin, timezone: 'UTC' },
+              destination: { code: destCode, name: destination, city: destination, timezone: 'UTC' },
               scheduledDeparture: depISO,
               scheduledArrival: new Date(new Date(depISO).getTime() + 5 * 3600000).toISOString(),
               status: 'scheduled' as const,
@@ -170,7 +128,7 @@ function AddFlightScreen() {
 
         setRouteResults(results);
       } catch (e) {
-        setRouteResults(mockRouteResults);
+        setError('Could not get predictions. Please check your inputs and try again.');
       }
     }
 
@@ -178,11 +136,14 @@ function AddFlightScreen() {
   };
 
   const handleAddFlight = async () => {
+    const flightToSave = searchResult || routeResults.find((f) => f.id === selectedFlight);
+    if (!flightToSave) return;
     setIsAdding(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    saveFlight(flightToSave);
+    await new Promise((resolve) => setTimeout(resolve, 400));
     setIsAdding(false);
     setShowConfirmModal(false);
-    navigate({ to: '/flights/$flightId', params: { flightId: searchResult?.id || selectedFlight || '1' } });
+    navigate({ to: '/flights/$flightId', params: { flightId: flightToSave.id } });
   };
 
   const flightToAdd = searchResult || routeResults.find((f) => f.id === selectedFlight);
@@ -196,37 +157,22 @@ function AddFlightScreen() {
           onBackClick={() => navigate({ to: '/' })}
         />
 
-        {/* Tab Switcher */}
         <div className="px-4 py-4">
           <div className="flex bg-navy-100 rounded-xl p-1">
             <button
-              onClick={() => {
-                setMode('number');
-                setSearchResult(null);
-                setRouteResults([]);
-                setError('');
-              }}
+              onClick={() => { setMode('number'); setSearchResult(null); setRouteResults([]); setError(''); }}
               className={cn(
                 'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all',
-                mode === 'number'
-                  ? 'bg-white text-navy-900 shadow-sm'
-                  : 'text-navy-600'
+                mode === 'number' ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-600'
               )}
             >
               Flight number
             </button>
             <button
-              onClick={() => {
-                setMode('route');
-                setSearchResult(null);
-                setRouteResults([]);
-                setError('');
-              }}
+              onClick={() => { setMode('route'); setSearchResult(null); setRouteResults([]); setError(''); }}
               className={cn(
                 'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all',
-                mode === 'route'
-                  ? 'bg-white text-navy-900 shadow-sm'
-                  : 'text-navy-600'
+                mode === 'route' ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-600'
               )}
             >
               Route
@@ -234,26 +180,36 @@ function AddFlightScreen() {
           </div>
         </div>
 
-        {/* Search Form */}
         <div className="flex-1 px-4">
           {mode === 'number' ? (
             <div className="space-y-4">
               <Input
                 label="Airline"
-                placeholder="e.g., American Airlines"
+                placeholder="e.g., United Airlines"
                 value={airline}
                 onChange={(e) => setAirline(e.target.value)}
                 leftIcon={<Plane className="w-5 h-5" />}
               />
-
               <Input
                 label="Flight number"
-                placeholder="e.g., 123"
+                placeholder="e.g., UA1071 or 1071"
                 value={flightNumber}
                 onChange={(e) => setFlightNumber(e.target.value)}
-                leftIcon={<span className="text-navy-400 font-medium">AA</span>}
               />
-
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="From"
+                  placeholder="e.g., SFO"
+                  value={originInput}
+                  onChange={(e) => setOriginInput(e.target.value)}
+                />
+                <Input
+                  label="To"
+                  placeholder="e.g., JFK"
+                  value={destinationInput}
+                  onChange={(e) => setDestinationInput(e.target.value)}
+                />
+              </div>
               <Input
                 label="Date"
                 type="date"
@@ -265,21 +221,19 @@ function AddFlightScreen() {
           ) : (
             <div className="space-y-4">
               <Input
-                label="From"
-                placeholder="City or airport code"
+                label="From (airport code)"
+                placeholder="e.g., SFO"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
                 leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
               />
-
               <Input
-                label="To"
-                placeholder="City or airport code"
+                label="To (airport code)"
+                placeholder="e.g., JFK"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 leftIcon={<Plane className="w-5 h-5 rotate-45" />}
               />
-
               <Input
                 label="Date"
                 type="date"
@@ -291,7 +245,7 @@ function AddFlightScreen() {
           )}
 
           {error && (
-            <p className="mt-4 text-sm text-red-600">{error}</p>
+            <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>
           )}
 
           <Button
@@ -305,7 +259,6 @@ function AddFlightScreen() {
             Search flight
           </Button>
 
-          {/* Search Results */}
           {searchResult && mode === 'number' && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
@@ -316,6 +269,9 @@ function AddFlightScreen() {
                 selected
                 onSelect={() => setShowConfirmModal(true)}
               />
+              <Button fullWidth size="lg" className="mt-4" onClick={() => setShowConfirmModal(true)}>
+                Track this flight
+              </Button>
             </div>
           )}
 
@@ -338,20 +294,14 @@ function AddFlightScreen() {
           )}
         </div>
 
-        {/* Bottom action for route search */}
         {selectedFlight && mode === 'route' && (
           <div className="sticky bottom-0 p-4 bg-white border-t border-navy-100">
-            <Button
-              fullWidth
-              size="lg"
-              onClick={() => setShowConfirmModal(true)}
-            >
+            <Button fullWidth size="lg" onClick={() => setShowConfirmModal(true)}>
               Track this flight
             </Button>
           </div>
         )}
 
-        {/* Confirm Modal */}
         <Modal
           isOpen={showConfirmModal}
           onClose={() => setShowConfirmModal(false)}
@@ -374,6 +324,16 @@ function AddFlightScreen() {
                   <span className="text-navy-400">·</span>
                   <span>{formatDate(flightToAdd.scheduledDeparture)}</span>
                 </div>
+                <div className="mt-3 pt-3 border-t border-navy-200 flex items-center gap-2">
+                  <span className={getRiskBadgeClass(flightToAdd.riskLevel)}>
+                    {getRiskLabel(flightToAdd.riskLevel)}
+                  </span>
+                  {flightToAdd.delayMinutes > 0 && (
+                    <span className="text-sm text-navy-600">
+                      · {flightToAdd.delayMinutes}-{flightToAdd.delayMinutes + 30} min delay expected
+                    </span>
+                  )}
+                </div>
               </div>
 
               <p className="text-sm text-navy-500">
@@ -381,11 +341,7 @@ function AddFlightScreen() {
               </p>
 
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  fullWidth
-                  onClick={() => setShowConfirmModal(false)}
-                >
+                <Button variant="outline" fullWidth onClick={() => setShowConfirmModal(false)}>
                   Cancel
                 </Button>
                 <Button fullWidth onClick={handleAddFlight} loading={isAdding}>
@@ -400,7 +356,6 @@ function AddFlightScreen() {
   );
 }
 
-// Flight search result card component
 function FlightSearchResult({
   flight,
   selected,
@@ -415,9 +370,7 @@ function FlightSearchResult({
       onClick={onSelect}
       className={cn(
         'w-full text-left p-4 rounded-xl border-2 transition-all',
-        selected
-          ? 'border-primary-500 bg-primary-50'
-          : 'border-navy-200 bg-white hover:border-navy-300'
+        selected ? 'border-primary-500 bg-primary-50' : 'border-navy-200 bg-white hover:border-navy-300'
       )}
     >
       <div className="flex items-center justify-between mb-2">
@@ -450,7 +403,7 @@ function FlightSearchResult({
       {selected && (
         <div className="mt-3 pt-3 border-t border-primary-200 flex items-center justify-center gap-2 text-primary-600 font-medium">
           <Check className="w-4 h-4" />
-          <span>Selected</span>
+          <span>Selected — tap to confirm</span>
         </div>
       )}
     </button>
