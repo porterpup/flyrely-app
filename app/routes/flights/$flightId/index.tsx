@@ -46,16 +46,21 @@ function FlightDetailsScreen() {
         flight.scheduledDeparture
       );
       const prediction = await flyrelyApi.predict(payload);
+      const estimatedDelay = prediction.risk_level === 'high'
+        ? Math.round(prediction.delay_probability * 90)
+        : prediction.risk_level === 'medium'
+        ? Math.round(prediction.delay_probability * 45)
+        : 0;
       const updated: Flight = {
         ...flight,
         riskLevel: prediction.risk_level,
-        delayMinutes: prediction.predicted_delay_minutes,
-        delayReason: prediction.factors.slice(0, 2).join(' • ') || flight.delayReason,
+        delayMinutes: estimatedDelay,
+        delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || flight.delayReason,
         predictedDeparture:
-          prediction.predicted_delay_minutes > 0
+          estimatedDelay > 0
             ? new Date(
                 new Date(flight.scheduledDeparture).getTime() +
-                  prediction.predicted_delay_minutes * 60000
+                  estimatedDelay * 60000
               ).toISOString()
             : undefined,
       };

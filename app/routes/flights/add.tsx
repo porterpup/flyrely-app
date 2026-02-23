@@ -66,6 +66,11 @@ function AddFlightScreen() {
         const payload = buildPredictPayload(originCode, destCode, depISO, airline);
         const prediction = await flyrelyApi.predict(payload);
 
+        const estimatedDelay = prediction.risk_level === 'high'
+          ? Math.round(prediction.delay_probability * 90)
+          : prediction.risk_level === 'medium'
+          ? Math.round(prediction.delay_probability * 45)
+          : 0;
         const flight: Flight = {
           id: `flight-${Date.now()}`,
           flightNumber: fullFlightNumber,
@@ -76,8 +81,8 @@ function AddFlightScreen() {
           scheduledArrival: new Date(new Date(depISO).getTime() + 5 * 3600000).toISOString(),
           status: 'scheduled',
           riskLevel: prediction.risk_level,
-          delayMinutes: prediction.predicted_delay_minutes,
-          delayReason: prediction.factors.slice(0, 2).join(' • ') || undefined,
+          delayMinutes: estimatedDelay,
+          delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
           airlineStatus: 'On time',
         };
         setSearchResult(flight);
@@ -110,6 +115,11 @@ function AddFlightScreen() {
             const prediction = await flyrelyApi.predict(payload);
             const originCode = origin.toUpperCase().slice(0, 3);
             const destCode = destination.toUpperCase().slice(0, 3);
+            const estimatedDelay = prediction.risk_level === 'high'
+              ? Math.round(prediction.delay_probability * 90)
+              : prediction.risk_level === 'medium'
+              ? Math.round(prediction.delay_probability * 45)
+              : 0;
             return {
               id: `route-${Date.now()}-${i}`,
               flightNumber: `FL${100 + i * 11}`,
@@ -120,8 +130,8 @@ function AddFlightScreen() {
               scheduledArrival: new Date(new Date(depISO).getTime() + 5 * 3600000).toISOString(),
               status: 'scheduled' as const,
               riskLevel: prediction.risk_level,
-              delayMinutes: prediction.predicted_delay_minutes,
-              delayReason: prediction.factors.slice(0, 1).join('') || undefined,
+              delayMinutes: estimatedDelay,
+              delayReason: prediction.risk_factors.slice(0, 1).join('') || undefined,
             } satisfies Flight;
           })
         );

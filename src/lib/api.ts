@@ -3,23 +3,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://web-production-ea1
 export interface PredictRequest {
   origin: string;
   destination: string;
-  dep_hour: number;
-  day_of_week: number;
-  month: number;
-  distance?: number;
+  departure_time: string; // ISO datetime, e.g. "2026-03-15T09:00:00"
   airline?: string;
 }
 
 export interface PredictResponse {
   delay_probability: number;
   risk_level: 'low' | 'medium' | 'high';
-  predicted_delay_minutes: number;
   confidence: number;
-  factors: string[];
-  weather?: {
-    origin?: Record<string, unknown>;
-    destination?: Record<string, unknown>;
-  };
+  origin: string;
+  destination: string;
+  departure_time: string;
+  airline?: string | null;
+  risk_factors: string[];
+  recommendations: string[];
+  origin_weather?: Record<string, unknown> | null;
+  destination_weather?: Record<string, unknown> | null;
 }
 
 export interface HealthResponse {
@@ -61,13 +60,10 @@ export function buildPredictPayload(
   departureDateISO: string,
   airline?: string
 ): PredictRequest {
-  const d = new Date(departureDateISO);
   return {
     origin: origin.toUpperCase(),
     destination: destination.toUpperCase(),
-    dep_hour: d.getHours(),
-    day_of_week: d.getDay(),
-    month: d.getMonth() + 1,
+    departure_time: departureDateISO,
     airline,
   };
 }
