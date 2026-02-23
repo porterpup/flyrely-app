@@ -22,6 +22,12 @@
     "lucide-react": "^0.460.0",
     "zod": "^3.23.8"
   },
+  "overrides": {
+    "@tanstack/router-generator": "1.120.20",
+    "@tanstack/router-core": "1.120.20",
+    "@tanstack/react-router": "1.120.20",
+    "@tanstack/start-config": "1.120.20"
+  },
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
