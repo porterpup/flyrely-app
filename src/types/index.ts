@@ -25,6 +25,14 @@ export interface Airline {
   logo?: string;
 }
 
+export interface DelaySeverity {
+  minor_pct: number;
+  moderate_pct: number;
+  severe_pct: number;
+  expected_delay_label: string;
+  expected_delay_range: string;
+}
+
 export interface Flight {
   id: string;
   flightNumber: string;
@@ -42,6 +50,7 @@ export interface Flight {
   airlineStatus?: string;
   gate?: string;
   terminal?: string;
+  delaySeverity?: DelaySeverity | null;
 }
 
 export interface Trip {

@@ -9,7 +9,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { Header, Button, Modal } from '~/components/ui';
-import { RemoveFlightModal } from '~/components/flight';
+import { RemoveFlightModal, DelaySeverityBar } from '~/components/flight';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
 import { getFlightById, removeFlight, saveFlight } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload } from '~/lib/api';
@@ -46,7 +46,14 @@ function FlightDetailsScreen() {
         flight.scheduledDeparture
       );
       const prediction = await flyrelyApi.predict(payload);
-      const estimatedDelay = prediction.risk_level === 'high'
+      const estimatedDelay = prediction.delay_severity
+        ? Math.round(
+            prediction.delay_probability *
+            (prediction.delay_severity.expected_delay_label === 'severe' ? 150
+             : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
+             : 25)
+          )
+        : prediction.risk_level === 'high'
         ? Math.round(prediction.delay_probability * 90)
         : prediction.risk_level === 'medium'
         ? Math.round(prediction.delay_probability * 45)
@@ -56,6 +63,7 @@ function FlightDetailsScreen() {
         riskLevel: prediction.risk_level,
         delayMinutes: estimatedDelay,
         delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || flight.delayReason,
+        delaySeverity: prediction.delay_severity ?? undefined,
         predictedDeparture:
           estimatedDelay > 0
             ? new Date(
@@ -246,6 +254,11 @@ function FlightDetailsScreen() {
                     </p>
                   )}
                 </div>
+                {flight.delaySeverity && flight.riskLevel !== 'low' && (
+                  <div className="p-4 border-t border-navy-100">
+                    <DelaySeverityBar severity={flight.delaySeverity} />
+                  </div>
+                )}
                 <div className="p-4 bg-navy-50">
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-navy-400 mt-0.5 flex-shrink-0" />

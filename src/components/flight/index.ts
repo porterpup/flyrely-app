@@ -5,3 +5,4 @@ export { NoPredictionBanner } from './NoPredictionBanner';
 export { CompletedFlightCard } from './CompletedFlightCard';
 export { FlightCard } from './FlightCard';
 export { AlertCard } from './AlertCard';
+export { DelaySeverityBar } from './DelaySeverityBar';

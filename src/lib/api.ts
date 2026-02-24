@@ -7,10 +7,24 @@ export interface PredictRequest {
   airline?: string;
 }
 
+export interface DelaySeverity {
+  /** Probability of a 15–44 min delay, given a delay occurs (0–1) */
+  minor_pct: number;
+  /** Probability of a 45–119 min delay, given a delay occurs (0–1) */
+  moderate_pct: number;
+  /** Probability of a 120+ min delay, given a delay occurs (0–1) */
+  severe_pct: number;
+  /** Most likely severity bucket: 'minor' | 'moderate' | 'severe' */
+  expected_delay_label: string;
+  /** Human-readable range, e.g. '15–44 min' */
+  expected_delay_range: string;
+}
+
 export interface PredictResponse {
   delay_probability: number;
   risk_level: 'low' | 'medium' | 'high';
   confidence: number;
+  delay_severity?: DelaySeverity | null;
   origin: string;
   destination: string;
   departure_time: string;

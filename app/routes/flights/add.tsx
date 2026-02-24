@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight } from 'lucide-react';
 import { Header, Button, Input, Modal } from '~/components/ui';
+import { DelaySeverityBar } from '~/components/flight';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload } from '~/lib/api';
 import { saveFlight } from '~/lib/flightStore';
@@ -66,7 +67,14 @@ function AddFlightScreen() {
         const payload = buildPredictPayload(originCode, destCode, depISO, airline);
         const prediction = await flyrelyApi.predict(payload);
 
-        const estimatedDelay = prediction.risk_level === 'high'
+        const estimatedDelay = prediction.delay_severity
+          ? Math.round(
+              prediction.delay_probability *
+              (prediction.delay_severity.expected_delay_label === 'severe' ? 150
+               : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
+               : 25)
+            )
+          : prediction.risk_level === 'high'
           ? Math.round(prediction.delay_probability * 90)
           : prediction.risk_level === 'medium'
           ? Math.round(prediction.delay_probability * 45)
@@ -84,6 +92,7 @@ function AddFlightScreen() {
           delayMinutes: estimatedDelay,
           delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
           airlineStatus: 'On time',
+          delaySeverity: prediction.delay_severity ?? undefined,
         };
         setSearchResult(flight);
       } catch (e) {
@@ -115,7 +124,14 @@ function AddFlightScreen() {
             const prediction = await flyrelyApi.predict(payload);
             const originCode = origin.toUpperCase().slice(0, 3);
             const destCode = destination.toUpperCase().slice(0, 3);
-            const estimatedDelay = prediction.risk_level === 'high'
+            const estimatedDelay = prediction.delay_severity
+              ? Math.round(
+                  prediction.delay_probability *
+                  (prediction.delay_severity.expected_delay_label === 'severe' ? 150
+                   : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
+                   : 25)
+                )
+              : prediction.risk_level === 'high'
               ? Math.round(prediction.delay_probability * 90)
               : prediction.risk_level === 'medium'
               ? Math.round(prediction.delay_probability * 45)
@@ -132,6 +148,7 @@ function AddFlightScreen() {
               riskLevel: prediction.risk_level,
               delayMinutes: estimatedDelay,
               delayReason: prediction.risk_factors.slice(0, 1).join('') || undefined,
+              delaySeverity: prediction.delay_severity ?? undefined,
             } satisfies Flight;
           })
         );
@@ -344,6 +361,11 @@ function AddFlightScreen() {
                     </span>
                   )}
                 </div>
+                {flightToAdd.delaySeverity && flightToAdd.riskLevel !== 'low' && (
+                  <div className="mt-3 pt-3 border-t border-navy-200">
+                    <DelaySeverityBar severity={flightToAdd.delaySeverity} compact />
+                  </div>
+                )}
               </div>
 
               <p className="text-sm text-navy-500">
