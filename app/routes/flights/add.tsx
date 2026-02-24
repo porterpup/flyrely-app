@@ -79,6 +79,8 @@ function AddFlightScreen() {
           : prediction.risk_level === 'medium'
           ? Math.round(prediction.delay_probability * 45)
           : 0;
+        const scheduledDep = new Date(depISO);
+        const scheduledArr = new Date(scheduledDep.getTime() + 5 * 3600000);
         const flight: Flight = {
           id: `flight-${Date.now()}`,
           flightNumber: fullFlightNumber,
@@ -86,13 +88,19 @@ function AddFlightScreen() {
           origin: { code: originCode, name: originInput, city: originInput, timezone: 'UTC' },
           destination: { code: destCode, name: destinationInput, city: destinationInput, timezone: 'UTC' },
           scheduledDeparture: depISO,
-          scheduledArrival: new Date(new Date(depISO).getTime() + 5 * 3600000).toISOString(),
+          scheduledArrival: scheduledArr.toISOString(),
           status: 'scheduled',
           riskLevel: prediction.risk_level,
           delayMinutes: estimatedDelay,
           delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
           airlineStatus: 'On time',
           delaySeverity: prediction.delay_severity ?? undefined,
+          predictedDeparture: estimatedDelay > 0
+            ? new Date(scheduledDep.getTime() + estimatedDelay * 60000).toISOString()
+            : undefined,
+          predictedArrival: estimatedDelay > 0
+            ? new Date(scheduledArr.getTime() + estimatedDelay * 60000).toISOString()
+            : undefined,
         };
         setSearchResult(flight);
       } catch (e) {
@@ -149,6 +157,12 @@ function AddFlightScreen() {
               delayMinutes: estimatedDelay,
               delayReason: prediction.risk_factors.slice(0, 1).join('') || undefined,
               delaySeverity: prediction.delay_severity ?? undefined,
+              predictedDeparture: estimatedDelay > 0
+                ? new Date(new Date(depISO).getTime() + estimatedDelay * 60000).toISOString()
+                : undefined,
+              predictedArrival: estimatedDelay > 0
+                ? new Date(new Date(depISO).getTime() + (5 * 60 + estimatedDelay) * 60000).toISOString()
+                : undefined,
             } satisfies Flight;
           })
         );
