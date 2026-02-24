@@ -5,7 +5,6 @@ import { AppShell } from '~/components/layout';
 import { cn } from '~/lib/utils';
 import { AIRLINES, POPULAR_ROUTES, getAirport } from '~/lib/airports';
 import { getFlights } from '~/lib/flightStore';
-import type { AirportInfo } from '~/lib/airports';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/explore/')({

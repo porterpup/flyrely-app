@@ -6,7 +6,7 @@ import { DelaySeverityBar } from '~/components/flight';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload } from '~/lib/api';
 import { saveFlight } from '~/lib/flightStore';
-import { searchAirports, searchAirlines, getAirport, getAirline } from '~/lib/airports';
+import { searchAirports, searchAirlines } from '~/lib/airports';
 import type { AirportInfo, AirlineInfo } from '~/lib/airports';
 import type { Flight } from '~/types';
 
@@ -621,9 +621,9 @@ function AddFlightScreen() {
                   <span className={getRiskBadgeClass(flightToAdd.riskLevel)}>
                     {getRiskLabel(flightToAdd.riskLevel)}
                   </span>
-                  {flightToAdd.delayMinutes > 0 && (
+                  {(flightToAdd.delayMinutes ?? 0) > 0 && (
                     <span className="text-sm text-navy-600">
-                      · {flightToAdd.delayMinutes}-{flightToAdd.delayMinutes + 30} min delay expected
+                      · {flightToAdd.delayMinutes}-{(flightToAdd.delayMinutes ?? 0) + 30} min delay expected
                     </span>
                   )}
                 </div>
