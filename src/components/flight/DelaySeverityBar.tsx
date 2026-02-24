@@ -3,31 +3,35 @@ import type { DelaySeverity } from '~/types';
 interface Props {
   severity: DelaySeverity;
   compact?: boolean;
+  /** Use light text — for rendering on dark/colored backgrounds */
+  onDark?: boolean;
 }
 
 /**
  * Visual breakdown of delay severity probabilities.
  * Shows: "If this flight is delayed: X% minor / Y% moderate / Z% severe"
  */
-export function DelaySeverityBar({ severity, compact = false }: Props) {
+export function DelaySeverityBar({ severity, compact = false, onDark = false }: Props) {
   const minorPct = Math.round(severity.minor_pct * 100);
   const moderatePct = Math.round(severity.moderate_pct * 100);
   const severePct = Math.round(severity.severe_pct * 100);
 
   if (compact) {
+    const labelClass = onDark ? 'text-white/60' : 'text-navy-500';
+    const textClass = onDark ? 'text-white/90' : 'text-navy-600';
     return (
-      <div className="flex items-center gap-2 text-xs text-navy-600">
-        <span className="font-medium text-navy-500">If delayed:</span>
+      <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${textClass}`}>
+        <span className={`font-medium ${labelClass}`}>If delayed:</span>
         <span className="inline-flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block flex-shrink-0" />
           {minorPct}% minor
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-orange-400 inline-block flex-shrink-0" />
           {moderatePct}% moderate
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-red-400 inline-block flex-shrink-0" />
           {severePct}% severe
         </span>
       </div>

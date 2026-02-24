@@ -1,6 +1,7 @@
 import { Plane, AlertCircle, Clock } from 'lucide-react';
 import { cn, formatDate, formatTime, getRiskLabel } from '~/lib/utils';
 import type { Flight, RiskLevel } from '~/types';
+import { DelaySeverityBar } from './DelaySeverityBar';
 
 interface FlightCardProps {
   flight: Flight;
@@ -93,8 +94,8 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
       {showRiskAlert && (
         <div className={cn('rounded-xl p-4', risk.bg)}>
           <div className="flex items-start gap-3">
-            <AlertCircle className={cn('w-5 h-5 mt-0.5', risk.icon)} />
-            <div>
+            <AlertCircle className={cn('w-5 h-5 mt-0.5 flex-shrink-0', risk.icon)} />
+            <div className="flex-1 min-w-0">
               <p className={cn('font-semibold', risk.text)}>
                 {flight.riskLevel === 'high' ? 'High risk' : 'At risk'} ·{' '}
                 {flight.delayMinutes
@@ -105,6 +106,11 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
                 <p className={cn('text-sm mt-1', risk.text, 'opacity-80')}>
                   {flight.delayReason}
                 </p>
+              )}
+              {flight.delaySeverity && (
+                <div className="mt-3 pt-3 border-t border-white/10">
+                  <DelaySeverityBar severity={flight.delaySeverity} compact onDark />
+                </div>
               )}
             </div>
           </div>
