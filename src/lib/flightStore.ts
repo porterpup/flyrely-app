@@ -42,3 +42,45 @@ export function getUpcomingFlights(): Flight[] {
         new Date(b.scheduledDeparture).getTime()
     );
 }
+
+/** Returns flights whose scheduled departure is in the past, newest first. */
+export function getCompletedFlights(): Flight[] {
+  const now = new Date();
+  return getFlights()
+    .filter((f) => new Date(f.scheduledDeparture) < now)
+    .sort(
+      (a, b) =>
+        new Date(b.scheduledDeparture).getTime() -
+        new Date(a.scheduledDeparture).getTime()
+    );
+}
+
+/**
+ * Auto-marks any flight whose departure was more than 2 hours ago as
+ * 'completed' and saves it. Call this on app mount to keep the upcoming
+ * list clean without requiring manual removal.
+ */
+export function autoCompleteOldFlights(): void {
+  if (typeof window === 'undefined') return;
+  const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
+  const flights = getFlights();
+  let changed = false;
+  for (const f of flights) {
+    if (new Date(f.scheduledDeparture) < cutoff && f.status !== 'completed') {
+      f.status = 'completed';
+      changed = true;
+    }
+  }
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(flights));
+  }
+}
+
+/** Permanently removes all past (completed) flights from storage. */
+export function clearCompletedFlights(): void {
+  if (typeof window === 'undefined') return;
+  const upcoming = getFlights().filter(
+    (f) => new Date(f.scheduledDeparture) >= new Date()
+  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(upcoming));
+}

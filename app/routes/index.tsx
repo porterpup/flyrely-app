@@ -4,7 +4,7 @@ import { Plus, History } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
-import { getUpcomingFlights } from '~/lib/flightStore';
+import { getUpcomingFlights, autoCompleteOldFlights } from '~/lib/flightStore';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/')({
@@ -16,6 +16,7 @@ function HomeScreen() {
   const [flights, setFlights] = useState<Flight[]>([]);
 
   useEffect(() => {
+    autoCompleteOldFlights(); // migrate departed flights to history
     setFlights(getUpcomingFlights());
   }, []);
 
