@@ -84,3 +84,34 @@ export function clearCompletedFlights(): void {
   );
   localStorage.setItem(STORAGE_KEY, JSON.stringify(upcoming));
 }
+
+/**
+ * Returns true if a flight is due for a prediction refresh.
+ * Schedule:
+ *   - More than 48hrs until departure: refresh if last checked > 24hrs ago (or never)
+ *   - 2–48hrs until departure: refresh if last checked > 2hrs ago
+ *   - < 2hrs until departure: always refresh (user is about to fly)
+ *   - Past departure: never refresh
+ */
+export function shouldRefreshFlight(flight: Flight): boolean {
+  const now = Date.now();
+  const depMs = new Date(flight.scheduledDeparture).getTime();
+  const hoursUntilDep = (depMs - now) / 3600000;
+
+  // Past departure — don't refresh
+  if (hoursUntilDep < 0) return false;
+
+  const lastChecked = (flight as Flight & { lastCheckedAt?: number }).lastCheckedAt ?? 0;
+  const hoursSinceCheck = (now - lastChecked) / 3600000;
+
+  if (hoursUntilDep > 48) return hoursSinceCheck > 24;
+  if (hoursUntilDep > 2) return hoursSinceCheck > 2;
+  return true; // < 2hrs: always refresh
+}
+
+/** Stamp a flight with the current check time and save. */
+export function stampFlightChecked(flight: Flight): Flight {
+  const stamped = { ...flight, lastCheckedAt: Date.now() } as Flight & { lastCheckedAt: number };
+  saveFlight(stamped as unknown as Flight);
+  return stamped as unknown as Flight;
+}

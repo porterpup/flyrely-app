@@ -51,6 +51,7 @@ export interface Flight {
   gate?: string;
   terminal?: string;
   delaySeverity?: DelaySeverity | null;
+  lastCheckedAt?: number;
 }
 
 export interface Trip {

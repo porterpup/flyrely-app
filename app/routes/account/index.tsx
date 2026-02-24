@@ -3,7 +3,6 @@ import {
   User,
   Bell,
   CreditCard,
-  Settings,
   HelpCircle,
   MessageSquare,
   FileText,
@@ -11,9 +10,9 @@ import {
   LogOut,
   ChevronRight,
   Crown,
+  BarChart3,
 } from 'lucide-react';
 import { AppShell } from '~/components/layout';
-import { Button } from '~/components/ui';
 
 export const Route = createFileRoute('/account/')({
   component: AccountScreen,
@@ -36,6 +35,12 @@ const menuSections = [
         to: '/account/settings',
       },
       {
+        icon: BarChart3,
+        label: 'API Usage',
+        description: 'Prediction stats & cost forecast',
+        to: '/account/usage',
+      },
+      {
         icon: CreditCard,
         label: 'Plans & billing',
         description: 'Free plan',
@@ -52,12 +57,14 @@ const menuSections = [
         label: 'Help & support',
         description: 'FAQs and contact us',
         to: '/account/support',
+        badge: undefined,
       },
       {
         icon: MessageSquare,
         label: 'Give feedback',
         description: 'Help us improve FlyRely',
         to: '/account/feedback',
+        badge: undefined,
       },
     ],
   },
@@ -68,11 +75,13 @@ const menuSections = [
         icon: FileText,
         label: 'Terms of service',
         to: '/legal/terms',
+        description: undefined,
       },
       {
         icon: Shield,
         label: 'Privacy policy',
         to: '/legal/privacy',
+        description: undefined,
       },
     ],
   },

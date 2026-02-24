@@ -227,6 +227,7 @@ function AddFlightScreen() {
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('09:00');
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   // Route search
   const [routeOriginCode, setRouteOriginCode] = useState('');
@@ -415,6 +416,43 @@ function AddFlightScreen() {
     setError('');
   };
 
+  const handleLookup = async () => {
+    if (!flightNumber || !date) return;
+    setIsLookingUp(true);
+    try {
+      const res = await fetch(
+        `https://web-production-ea1e9.up.railway.app/flight-lookup?flight_number=${encodeURIComponent(flightNumber)}&date=${date}`
+      );
+      const data = await res.json();
+      if (data.found) {
+        // Auto-fill origin
+        if (data.origin) {
+          setOriginCode(data.origin);
+          // Also update the AirportAutocomplete query via a ref — we'll use a key trick instead
+        }
+        // Auto-fill destination
+        if (data.destination) {
+          setDestCode(data.destination);
+        }
+        // Auto-fill airline
+        if (data.airline_name) {
+          setAirlineName(data.airline_name);
+          if (data.airline_code) setAirlineCodeState(data.airline_code);
+        }
+        // Auto-fill time
+        if (data.scheduled_departure) {
+          setDepartureTime(data.scheduled_departure);
+        }
+      } else {
+        setError(data.error || 'Flight not found. Fill in the details manually.');
+      }
+    } catch {
+      setError('Could not look up flight. Fill in the details manually.');
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
+
   const flightToAdd = searchResult || routeResults.find((f) => f.id === selectedFlight);
 
   return (
@@ -461,14 +499,33 @@ function AddFlightScreen() {
                   if (info) setAirlineCodeState(info.code);
                 }}
               />
-              <Input
-                label="Flight number"
-                placeholder="e.g., UA1071 or 1071"
-                value={flightNumber}
-                onChange={(e) => setFlightNumber(e.target.value)}
-              />
+              <div>
+                <div className="block text-sm font-medium text-navy-700 mb-1">Flight number</div>
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <input
+                      type="text"
+                      value={flightNumber}
+                      onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
+                      placeholder="e.g., UA1071"
+                      className="w-full rounded-xl border border-navy-200 bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    loading={isLookingUp}
+                    onClick={handleLookup}
+                    disabled={!flightNumber || !date}
+                  >
+                    Look up
+                  </Button>
+                </div>
+                <p className="text-xs text-navy-400 mt-1">Enter flight number + date, then tap "Look up" to auto-fill details</p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <AirportAutocomplete
+                  key={originCode}
                   label="From"
                   placeholder="e.g., SFO"
                   value={originCode}
@@ -476,6 +533,7 @@ function AddFlightScreen() {
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
                 <AirportAutocomplete
+                  key={destCode}
                   label="To"
                   placeholder="e.g., JFK"
                   value={destCode}
