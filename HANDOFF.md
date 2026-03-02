@@ -33,11 +33,11 @@
 
 ### API Environment Variables (in `/flyrely-api/.env`)
 
-These are the actual values configured for both local development and Railway production:
+These are configured in Railway and your local `.env` file (never commit `.env` to the repo):
 
 ```env
-RESEND_API_KEY=re_6wgfnfQU_Q1jbDbSSVq6JAN8UqUHkYNbj
-AVIATION_STACK_KEY=6bc85edb9b9c70491952b2fb15752d74
+RESEND_API_KEY=<get from Resend dashboard>
+AVIATION_STACK_KEY=<get from AviationStack dashboard>
 ```
 
 ### Additional Variables (Set in Railway Dashboard)
@@ -265,16 +265,11 @@ cd flyrely-api && pip install -r requirements.txt && cd ..
 ### Configure Environment
 
 #### Backend (flyrely-api/.env)
-Copy the environment variables listed above:
-```bash
-cat > flyrely-api/.env << 'EOF'
-RESEND_API_KEY=re_6wgfnfQU_Q1jbDbSSVq6JAN8UqUHkYNbj
-AVIATION_STACK_KEY=6bc85edb9b9c70491952b2fb15752d74
-EOF
-```
+Get values from their respective dashboards and create a local `.env` (never commit this file):
 
-Add the remaining variables (ask for values or check Railway dashboard):
 ```env
+RESEND_API_KEY=<get from Resend dashboard>
+AVIATION_STACK_KEY=<get from AviationStack dashboard>
 WEATHER_API_KEY=<get from Tomorrow.io>
 WEATHER_API_PROVIDER=tomorrow
 NOTIFY_FROM_EMAIL=alerts@flyrely.app
