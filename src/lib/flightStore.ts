@@ -50,8 +50,7 @@ export function getCompletedFlights(): Flight[] {
     .filter((f) => new Date(f.scheduledDeparture) < now)
     .sort(
       (a, b) =>
-        new Date(b.scheduledDeparture).getTime() -
-        new Date(a.scheduledDeparture).getTime()
+        new Date(b.scheduledDeparture).getTime() - new Date(a.scheduledDeparture).getTime()
     );
 }
 
@@ -114,4 +113,9 @@ export function stampFlightChecked(flight: Flight): Flight {
   const stamped = { ...flight, lastCheckedAt: Date.now() } as Flight & { lastCheckedAt: number };
   saveFlight(stamped as unknown as Flight);
   return stamped as unknown as Flight;
+}
+
+// NOTE: we add user_id support for future Supabase migration.
+export function attachUserIdToFlight(flight: Flight, userId: string): Flight {
+  return { ...flight, user_id: userId } as Flight & { user_id: string };
 }
