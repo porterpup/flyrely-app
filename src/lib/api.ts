@@ -84,7 +84,8 @@ export function buildPredictPayload(
 
 /** Map raw delay probability/minutes to a RiskLevel matching the app's type */
 export function toRiskLevel(prob: number): 'low' | 'medium' | 'high' {
-  if (prob < 0.35) return 'low';
-  if (prob < 0.65) return 'medium';
+  // Calibrated thresholds: Low < 0.15, Medium 0.15–0.25, High > 0.25
+  if (prob < 0.15) return 'low';
+  if (prob < 0.25) return 'medium';
   return 'high';
 }
