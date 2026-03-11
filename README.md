@@ -16,8 +16,9 @@ npm run dev
 ## Notes
 
 - Thresholds for mapping model probability → risk level were calibrated to match model outputs.
-  - Low: probability < 0.15
-  - Medium: 0.15 ≤ probability < 0.25
-  - High: probability ≥ 0.25
+  - Calibration v2 thresholds (updated):
+    - Low: probability < 0.20
+    - Medium: 0.20 ≤ probability < 0.30
+    - High: probability ≥ 0.30
 - The frontend uses `toRiskLevel` in `src/lib/api.ts` to map API probabilities to UI risk levels.
 - Ensure the backend `/predict` endpoint uses the same thresholds to set `risk_level` in responses.
