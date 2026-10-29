@@ -1,6 +1,6 @@
 import { AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
 import { Button } from '~/components/ui';
-import { formatDate, formatTime } from '~/lib/utils';
+import { formatDate } from '~/lib/utils';
 
 type UnsupportedReason =
   | 'airline_not_supported'

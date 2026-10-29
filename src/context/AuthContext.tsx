@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { supabase } from '~/lib/supabaseAuth'
+import { getSupabase } from '~/lib/supabaseAuth'
 
 type User = {
   id: string
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true
     async function init() {
-      const { data } = await supabase.auth.getSession()
+      const { data } = await getSupabase().auth.getSession()
       if (!mounted) return
       setUser(data.session?.user ? { id: data.session.user.id, email: data.session.user.email } : null)
       setLoading(false)
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     init()
 
-    const { subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = getSupabase().auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
       if (session?.user) {
         setUser({ id: session.user.id, email: session.user.email })
@@ -49,18 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signInWithMagicLink(email: string) {
     setLoading(true)
-    const res = await supabase.auth.signInWithOtp({ email })
+    const res = await getSupabase().auth.signInWithOtp({ email })
     setLoading(false)
     return { error: res.error }
   }
 
   async function signInWithProvider(provider: 'google') {
     // opens provider flow in new window
-    await supabase.auth.signInWithOAuth({ provider })
+    await getSupabase().auth.signInWithOAuth({ provider })
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    await getSupabase().auth.signOut()
     setUser(null)
   }
 

@@ -20,6 +20,7 @@ import { Route as FlightsAddImport } from './routes/flights/add'
 import { Route as AuthSignupImport } from './routes/auth/signup'
 import { Route as AuthLoginImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
+import { Route as AccountUsageImport } from './routes/account/usage'
 import { Route as AccountSettingsImport } from './routes/account/settings'
 import { Route as AccountBillingImport } from './routes/account/billing'
 import { Route as FlightsFlightIdIndexImport } from './routes/flights/$flightId/index'
@@ -82,6 +83,12 @@ const AuthForgotPasswordRoute = AuthForgotPasswordImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AccountUsageRoute = AccountUsageImport.update({
+  id: '/account/usage',
+  path: '/account/usage',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const AccountSettingsRoute = AccountSettingsImport.update({
   id: '/account/settings',
   path: '/account/settings',
@@ -136,6 +143,13 @@ declare module '@tanstack/react-router' {
       path: '/account/settings'
       fullPath: '/account/settings'
       preLoaderRoute: typeof AccountSettingsImport
+      parentRoute: typeof rootRoute
+    }
+    '/account/usage': {
+      id: '/account/usage'
+      path: '/account/usage'
+      fullPath: '/account/usage'
+      preLoaderRoute: typeof AccountUsageImport
       parentRoute: typeof rootRoute
     }
     '/auth/forgot-password': {
@@ -224,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account/billing': typeof AccountBillingRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
@@ -241,6 +256,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account/billing': typeof AccountBillingRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
@@ -259,6 +275,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account/billing': typeof AccountBillingRoute
   '/account/settings': typeof AccountSettingsRoute
+  '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/signup': typeof AuthSignupRoute
@@ -278,6 +295,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account/billing'
     | '/account/settings'
+    | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/signup'
@@ -294,6 +312,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account/billing'
     | '/account/settings'
+    | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/signup'
@@ -310,6 +329,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account/billing'
     | '/account/settings'
+    | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/signup'
@@ -328,6 +348,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountBillingRoute: typeof AccountBillingRoute
   AccountSettingsRoute: typeof AccountSettingsRoute
+  AccountUsageRoute: typeof AccountUsageRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthSignupRoute: typeof AuthSignupRoute
@@ -345,6 +366,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountBillingRoute: AccountBillingRoute,
   AccountSettingsRoute: AccountSettingsRoute,
+  AccountUsageRoute: AccountUsageRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthSignupRoute: AuthSignupRoute,
@@ -371,6 +393,7 @@ export const routeTree = rootRoute
         "/",
         "/account/billing",
         "/account/settings",
+        "/account/usage",
         "/auth/forgot-password",
         "/auth/login",
         "/auth/signup",
@@ -392,6 +415,9 @@ export const routeTree = rootRoute
     },
     "/account/settings": {
       "filePath": "account/settings.tsx"
+    },
+    "/account/usage": {
+      "filePath": "account/usage.tsx"
     },
     "/auth/forgot-password": {
       "filePath": "auth/forgot-password.tsx"

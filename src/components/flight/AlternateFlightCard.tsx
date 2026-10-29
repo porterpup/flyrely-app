@@ -1,4 +1,4 @@
-import { Plane, Clock, ArrowRight } from 'lucide-react';
+import { Plane, ArrowRight } from 'lucide-react';
 import { cn, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
 import type { AlternateFlight } from '~/types';
 

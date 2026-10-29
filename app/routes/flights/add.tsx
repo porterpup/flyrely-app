@@ -4,7 +4,7 @@ import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react'
 import { Header, Button, Input, Modal } from '~/components/ui';
 import { DelaySeverityBar } from '~/components/flight';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
-import { flyrelyApi, buildPredictPayload } from '~/lib/api';
+import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight } from '~/lib/flightStore';
 import { searchAirports, searchAirlines } from '~/lib/airports';
 import type { AirportInfo, AirlineInfo } from '~/lib/airports';
@@ -227,7 +227,6 @@ function AddFlightScreen() {
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('09:00');
-  const [isLookingUp, setIsLookingUp] = useState(false);
 
   // Route search
   const [routeOriginCode, setRouteOriginCode] = useState('');
@@ -268,7 +267,8 @@ function AddFlightScreen() {
         const numericFlight = flightNumber.replace(/^[A-Z]+/i, '');
         const fullFlightNumber = `${derivedCode}${numericFlight}`;
         const depISO = `${date}T${departureTime}:00`;
-        const payload = buildPredictPayload(originCode, destCode, depISO, derivedCode);
+        const flightId = `flight-${Date.now()}`;
+        const payload = buildPredictPayload(originCode, destCode, depISO, derivedCode, flightId);
         const prediction = await flyrelyApi.predict(payload);
 
         const estimatedDelay = prediction.delay_severity
@@ -286,7 +286,7 @@ function AddFlightScreen() {
         const scheduledDep = new Date(depISO);
         const scheduledArr = new Date(scheduledDep.getTime() + 5 * 3600000);
         const flight: Flight = {
-          id: `flight-${Date.now()}`,
+          id: flightId,
           flightNumber: fullFlightNumber,
           airline: { code: derivedCode, name: airlineName },
           origin: {
@@ -318,7 +318,9 @@ function AddFlightScreen() {
         };
         setSearchResult(flight);
       } catch (e) {
-        setError('Could not get prediction. Please check your inputs and try again.');
+        setError(e instanceof PredictionUnavailableError
+          ? 'Predictions are temporarily unavailable. Please try again shortly.'
+          : 'Could not get prediction. Please check your inputs and try again.');
       }
     } else {
       if (!routeOriginCode || !routeDestCode || !routeDate) {
@@ -342,7 +344,8 @@ function AddFlightScreen() {
         const results = await Promise.all(
           departures.map(async ({ suffix }, i) => {
             const depISO = `${routeDate}T${suffix}:00`;
-            const payload = buildPredictPayload(routeOriginCode, routeDestCode, depISO);
+            const routeId = `route-${Date.now()}-${i}`;
+            const payload = buildPredictPayload(routeOriginCode, routeDestCode, depISO, undefined, routeId);
             const prediction = await flyrelyApi.predict(payload);
             const estimatedDelay = prediction.delay_severity
               ? Math.round(
@@ -357,7 +360,7 @@ function AddFlightScreen() {
               ? Math.round(prediction.delay_probability * 45)
               : 0;
             return {
-              id: `route-${Date.now()}-${i}`,
+              id: routeId,
               flightNumber: `FL${100 + i * 11}`,
               airline: { code: 'FL', name: 'Various Airlines' },
               origin: {
@@ -391,7 +394,9 @@ function AddFlightScreen() {
 
         setRouteResults(results);
       } catch (e) {
-        setError('Could not get predictions. Please check your inputs and try again.');
+        setError(e instanceof PredictionUnavailableError
+          ? 'Predictions are temporarily unavailable. Please try again shortly.'
+          : 'Could not get predictions. Please check your inputs and try again.');
       }
     }
 
@@ -414,43 +419,6 @@ function AddFlightScreen() {
     setRouteResults([]);
     setSelectedFlight(null);
     setError('');
-  };
-
-  const handleLookup = async () => {
-    if (!flightNumber || !date) return;
-    setIsLookingUp(true);
-    try {
-      const res = await fetch(
-        `https://web-production-ea1e9.up.railway.app/flight-lookup?flight_number=${encodeURIComponent(flightNumber)}&date=${date}`
-      );
-      const data = await res.json();
-      if (data.found) {
-        // Auto-fill origin
-        if (data.origin) {
-          setOriginCode(data.origin);
-          // Also update the AirportAutocomplete query via a ref — we'll use a key trick instead
-        }
-        // Auto-fill destination
-        if (data.destination) {
-          setDestCode(data.destination);
-        }
-        // Auto-fill airline
-        if (data.airline_name) {
-          setAirlineName(data.airline_name);
-          if (data.airline_code) setAirlineCodeState(data.airline_code);
-        }
-        // Auto-fill time
-        if (data.scheduled_departure) {
-          setDepartureTime(data.scheduled_departure);
-        }
-      } else {
-        setError(data.error || 'Flight not found. Fill in the details manually.');
-      }
-    } catch {
-      setError('Could not look up flight. Fill in the details manually.');
-    } finally {
-      setIsLookingUp(false);
-    }
   };
 
   const flightToAdd = searchResult || routeResults.find((f) => f.id === selectedFlight);
@@ -501,27 +469,13 @@ function AddFlightScreen() {
               />
               <div>
                 <div className="block text-sm font-medium text-navy-700 mb-1">Flight number</div>
-                <div className="flex gap-2">
-                  <div className="flex-1 relative">
-                    <input
-                      type="text"
-                      value={flightNumber}
-                      onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
-                      placeholder="e.g., UA1071"
-                      className="w-full rounded-xl border border-navy-200 bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    loading={isLookingUp}
-                    onClick={handleLookup}
-                    disabled={!flightNumber || !date}
-                  >
-                    Look up
-                  </Button>
-                </div>
-                <p className="text-xs text-navy-400 mt-1">Enter flight number + date, then tap "Look up" to auto-fill details</p>
+                <input
+                  type="text"
+                  value={flightNumber}
+                  onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
+                  placeholder="e.g., UA1071"
+                  className="w-full rounded-xl border border-navy-200 bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <AirportAutocomplete

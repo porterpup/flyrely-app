@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 
-export default function LoginRoute() {
+export const Route = createFileRoute('/auth/login')({
+  component: LoginRoute,
+})
+
+function LoginRoute() {
   const { signInWithMagicLink, signInWithProvider } = useAuth()
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<string | null>(null)
-  const nav = useNavigate()
 
   async function handleMagicLink(e: React.FormEvent) {
     e.preventDefault()

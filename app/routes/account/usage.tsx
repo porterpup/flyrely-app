@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { BarChart3, TrendingUp, DollarSign, Zap, Download } from 'lucide-react';
 import { Header } from '~/components/ui';
+import { API_BASE_URL } from '~/lib/api';
 
 export const Route = createFileRoute('/account/usage')({
   component: UsageDashboardScreen,
 });
-
-const API_BASE = 'https://web-production-ea1e9.up.railway.app';
 
 interface UsageData {
   period_days: number;
@@ -32,14 +31,17 @@ function UsageDashboardScreen() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    fetch(`${API_BASE}/usage?days=${period}`)
-      .then((r) => r.json())
+    fetch(`${API_BASE_URL}/usage?days=${period}`)
+      .then((r) => {
+        if (!r.ok) throw new Error(`usage ${r.status}`);
+        return r.json();
+      })
       .then((d) => { setData(d); setLoading(false); })
       .catch(() => { setError('Could not load usage data'); setLoading(false); });
   }, [period]);
 
   const handleExport = () => {
-    window.open(`${API_BASE}/usage/export`, '_blank');
+    window.open(`${API_BASE_URL}/usage/export`, '_blank');
   };
 
   const maxDailyPredictions = data

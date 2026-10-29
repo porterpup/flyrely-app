@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Check, Crown, Plane, Bell, MessageSquare, Zap, X } from 'lucide-react';
+import { Check, Crown, X } from 'lucide-react';
 import { Header, Button, Modal } from '~/components/ui';
 import { cn } from '~/lib/utils';
 

@@ -1,4 +1,4 @@
-import { Check, Clock, AlertTriangle, Plane } from 'lucide-react';
+import { Check, Clock, Plane } from 'lucide-react';
 import { cn, formatDate, formatTime } from '~/lib/utils';
 import type { Flight } from '~/types';
 
