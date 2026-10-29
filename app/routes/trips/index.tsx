@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { Plus, ChevronDown, ChevronRight, Plane, Calendar, MoreVertical } from 'lucide-react';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Plus, ChevronDown, ChevronRight, Plane } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button, Modal, Input } from '~/components/ui';
 import { FlightCard } from '~/components/flight';

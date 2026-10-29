@@ -7,13 +7,12 @@ import {
   RefreshCw,
   Info,
   CheckCircle,
-  Mail,
 } from 'lucide-react';
 import { Header, Button } from '~/components/ui';
-import { RemoveFlightModal, DelaySeverityBar } from '~/components/flight';
+import { RemoveFlightModal, DelaySeverityBar, NoPredictionBanner } from '~/components/flight';
 import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
-import { flyrelyApi, buildPredictPayload } from '~/lib/api';
+import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/$flightId/')({
@@ -27,10 +26,7 @@ function FlightDetailsScreen() {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
-  const [notifyEmail, setNotifyEmail] = useState('');
-  const [notifySent, setNotifySent] = useState(false);
-  const [notifyLoading, setNotifyLoading] = useState(false);
-  const [notifyError, setNotifyError] = useState('');
+  const [predictionUnavailable, setPredictionUnavailable] = useState(false);
 
   useEffect(() => {
     const f = getFlightById(flightId);
@@ -45,7 +41,8 @@ function FlightDetailsScreen() {
               f.origin.code,
               f.destination.code,
               f.scheduledDeparture,
-              f.airline.code
+              f.airline.code,
+              f.id
             );
             const prediction = await flyrelyApi.predict(payload);
             const estimatedDelay = prediction.delay_severity
@@ -75,8 +72,9 @@ function FlightDetailsScreen() {
             };
             const stamped = stampFlightChecked(updated);
             setFlight(stamped);
-          } catch {
-            // silent — keep existing data
+            setPredictionUnavailable(false);
+          } catch (e) {
+            if (e instanceof PredictionUnavailableError) setPredictionUnavailable(true);
             stampFlightChecked(f); // still stamp so we don't retry every load
           }
         })();
@@ -93,7 +91,9 @@ function FlightDetailsScreen() {
       const payload = buildPredictPayload(
         flight.origin.code,
         flight.destination.code,
-        flight.scheduledDeparture
+        flight.scheduledDeparture,
+        flight.airline.code,
+        flight.id
       );
       const prediction = await flyrelyApi.predict(payload);
       const estimatedDelay = prediction.delay_severity
@@ -124,8 +124,10 @@ function FlightDetailsScreen() {
       };
       saveFlight(updated);
       setFlight(updated);
+      setPredictionUnavailable(false);
     } catch {
-      // keep existing on error
+      // keep existing data, but tell the user the refresh produced no prediction
+      setPredictionUnavailable(true);
     }
     setIsRefreshing(false);
   };
@@ -265,6 +267,14 @@ function FlightDetailsScreen() {
           </div>
 
           <div className="px-4 py-6 space-y-6">
+            {predictionUnavailable && (
+              <NoPredictionBanner
+                type="temporary"
+                reason="We couldn't get a fresh prediction. The risk shown is from the last successful check."
+                onRetry={handleRefresh}
+              />
+            )}
+
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Status Overview
@@ -321,83 +331,6 @@ function FlightDetailsScreen() {
               </div>
             </section>
 
-            {flight.riskLevel !== 'low' && (
-              <section>
-                <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
-                  Email Alert
-                </h3>
-                <div className="bg-white border border-navy-200 rounded-xl p-4">
-                  {notifySent ? (
-                    <div className="flex items-center gap-3 text-green-700">
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <p className="text-sm font-medium">Alert sent to {notifyEmail}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm text-navy-600 mb-3">
-                        Get a delay alert email for this flight.
-                      </p>
-                      <div className="flex gap-2">
-                        <div className="flex-1 relative">
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-                            <Mail className="w-4 h-4" />
-                          </div>
-                          <input
-                            type="email"
-                            value={notifyEmail}
-                            onChange={(e) => { setNotifyEmail(e.target.value); setNotifyError(''); }}
-                            placeholder="you@example.com"
-                            className="w-full rounded-lg border border-navy-200 bg-white pl-9 pr-3 py-2.5 text-sm text-navy-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-                          />
-                        </div>
-                        <Button
-                          size="sm"
-                          loading={notifyLoading}
-                          onClick={async () => {
-                            if (!notifyEmail.includes('@')) {
-                              setNotifyError('Enter a valid email');
-                              return;
-                            }
-                            setNotifyLoading(true);
-                            setNotifyError('');
-                            try {
-                              const res = await fetch('https://web-production-ea1e9.up.railway.app/notify', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  flight_number: flight.flightNumber,
-                                  origin: flight.origin.code,
-                                  destination: flight.destination.code,
-                                  scheduled_departure: flight.scheduledDeparture,
-                                  airline: flight.airline.code,
-                                  airline_name: flight.airline.name,
-                                  risk_level: flight.riskLevel,
-                                  delay_probability: (flight.delayMinutes ?? 0) > 0 ? 0.6 : 0.35,
-                                  delay_minutes: flight.delayMinutes,
-                                  delay_reason: flight.delayReason,
-                                  recipient_email: notifyEmail,
-                                }),
-                              });
-                              if (!res.ok) throw new Error('Failed');
-                              setNotifySent(true);
-                            } catch {
-                              setNotifyError('Could not send — try again');
-                            } finally {
-                              setNotifyLoading(false);
-                            }
-                          }}
-                        >
-                          Send
-                        </Button>
-                      </div>
-                      {notifyError && (
-                        <p className="mt-2 text-xs text-red-600">{notifyError}</p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </section>
-            )}
 
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">

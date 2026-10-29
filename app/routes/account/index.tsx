@@ -12,13 +12,22 @@ import {
   Crown,
   BarChart3,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 
 export const Route = createFileRoute('/account/')({
   component: AccountScreen,
 });
 
-const menuSections = [
+type MenuItem = {
+  icon: LucideIcon;
+  label: string;
+  description?: string;
+  to: string;
+  badge?: string;
+};
+
+const menuSections: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Account',
     items: [

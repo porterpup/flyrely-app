@@ -1,14 +1,19 @@
 import React, { useState } from 'react'
-import { supabase } from '~/lib/supabaseAuth'
+import { createFileRoute } from '@tanstack/react-router'
+import { getSupabase } from '~/lib/supabaseAuth'
 
-export default function SignupRoute() {
+export const Route = createFileRoute('/auth/signup')({
+  component: SignupRoute,
+})
+
+function SignupRoute() {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<string | null>(null)
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault()
     setStatus('Creating account...')
-    const res = await supabase.auth.signUp({ email, password: undefined })
+    const res = await getSupabase().auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     if (res.error) setStatus('Signup failed: ' + res.error.message)
     else setStatus('Check your email for a sign-in link (magic link).')
   }

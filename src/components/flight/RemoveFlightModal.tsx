@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, AlertTriangle, BellOff } from 'lucide-react';
+import { Trash2, BellOff } from 'lucide-react';
 import { Button, Modal } from '~/components/ui';
 import { formatDate } from '~/lib/utils';
 import type { Flight } from '~/types';
