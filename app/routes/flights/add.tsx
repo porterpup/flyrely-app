@@ -268,7 +268,7 @@ function AddFlightScreen() {
         const fullFlightNumber = `${derivedCode}${numericFlight}`;
         const depISO = `${date}T${departureTime}:00`;
         const flightId = `flight-${Date.now()}`;
-        const payload = buildPredictPayload(originCode, destCode, depISO, derivedCode, flightId);
+        const payload = buildPredictPayload(originCode, destCode, depISO, derivedCode, flightId, fullFlightNumber);
         const prediction = await flyrelyApi.predict(payload);
 
         const estimatedDelay = prediction.delay_severity

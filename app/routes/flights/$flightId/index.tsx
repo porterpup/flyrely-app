@@ -42,7 +42,8 @@ function FlightDetailsScreen() {
               f.destination.code,
               f.scheduledDeparture,
               f.airline.code,
-              f.id
+              f.id,
+              f.flightNumber
             );
             const prediction = await flyrelyApi.predict(payload);
             const estimatedDelay = prediction.delay_severity
@@ -93,7 +94,8 @@ function FlightDetailsScreen() {
         flight.destination.code,
         flight.scheduledDeparture,
         flight.airline.code,
-        flight.id
+        flight.id,
+        flight.flightNumber
       );
       const prediction = await flyrelyApi.predict(payload);
       const estimatedDelay = prediction.delay_severity

@@ -7,7 +7,10 @@ export interface PredictRequest {
   origin: string;
   destination: string;
   departure_time: string; // local scheduled time, ISO without offset, e.g. "2026-03-15T09:00:00"
+  /** Ticketing airline code; the API predicts for whoever operates the flight */
   airline?: string;
+  /** Ticketed flight number, e.g. "DL1234"; lets the API find the operating carrier */
+  flight_number?: string;
 }
 
 export interface DelaySeverity {
@@ -35,6 +38,11 @@ export interface PredictResponse {
   destination: string;
   departure_time: string;
   airline: string | null;
+  flight_number: string | null;
+  /** Carrier that flies the plane (e.g. 'OO' SkyWest for a Delta ticket); null if unknown */
+  operating_airline: string | null;
+  operating_airline_name: string | null;
+  operating_flight_number: string | null;
   /** Weather is not a model input; false means risk factors exclude weather */
   weather_available: boolean;
   origin_weather: Record<string, unknown> | null;
@@ -97,6 +105,10 @@ function normalizePrediction(raw: Partial<PredictResponse>): PredictResponse {
     destination: raw.destination ?? '',
     departure_time: raw.departure_time ?? '',
     airline: raw.airline ?? null,
+    flight_number: raw.flight_number ?? null,
+    operating_airline: raw.operating_airline ?? null,
+    operating_airline_name: raw.operating_airline_name ?? null,
+    operating_flight_number: raw.operating_flight_number ?? null,
     weather_available: raw.weather_available ?? false,
     origin_weather: raw.origin_weather ?? null,
     destination_weather: raw.destination_weather ?? null,
@@ -127,7 +139,8 @@ export function buildPredictPayload(
   destination: string,
   departureDateISO: string,
   airline?: string,
-  flightId?: string
+  flightId?: string,
+  flightNumber?: string
 ): PredictRequest {
   return {
     flight_id: flightId,
@@ -135,6 +148,7 @@ export function buildPredictPayload(
     destination: destination.toUpperCase(),
     departure_time: departureDateISO,
     airline,
+    flight_number: flightNumber,
   };
 }
 
