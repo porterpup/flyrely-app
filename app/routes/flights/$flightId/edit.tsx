@@ -5,6 +5,7 @@ import { Button, Header, Input } from '~/components/ui';
 import { getFlightById, saveFlight } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { getAirport, getAirline } from '~/lib/airports';
+import { parseFlightNumber } from '~/lib/utils';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/$flightId/edit')({
@@ -103,22 +104,20 @@ function EditFlightScreen() {
       return;
     }
 
-    const prefix = newFlightNumber.match(/^([A-Z0-9]{2})\d/)?.[1];
-    const airlineInfo = prefix ? getAirline(prefix) : undefined;
-    if (!airlineInfo) {
-      setError(
-        'Flight number must start with a supported airline code, e.g. DL1234 or UA567'
-      );
+    const parsed = parseFlightNumber(newFlightNumber);
+    if (!parsed) {
+      setError('Enter a valid flight number, e.g. DL1234 or B6123');
       return;
     }
+    const airlineInfo = getAirline(parsed.airlineCode);
 
     setIsSaving(true);
     const originInfo = getAirport(newOrigin);
     const destInfo = getAirport(newDestination);
     const edited: Flight = {
       ...flight,
-      flightNumber: newFlightNumber,
-      airline: { code: airlineInfo.code, name: airlineInfo.name },
+      flightNumber: `${parsed.airlineCode}${parsed.number}`,
+      airline: { code: parsed.airlineCode, name: airlineInfo?.name ?? parsed.airlineCode },
       origin: {
         code: newOrigin,
         name: originInfo?.name ?? (newOrigin === flight.origin.code ? flight.origin.name : newOrigin),
@@ -139,9 +138,9 @@ function EditFlightScreen() {
             newOrigin,
             newDestination,
             newDeparture,
-            airlineInfo.code,
+            parsed.airlineCode,
             flight.id,
-            newFlightNumber
+            `${parsed.airlineCode}${parsed.number}`
           )
         );
         edited.riskLevel = prediction.risk_level;

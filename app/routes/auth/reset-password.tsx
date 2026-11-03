@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 
@@ -13,6 +13,16 @@ function ResetPasswordRoute() {
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [linkExpired, setLinkExpired] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const get = (k: string) => hash.get(k) ?? params.get(k)
+    if (get('error_code') === 'otp_expired' || get('error') === 'access_denied') {
+      setLinkExpired(true)
+    }
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +40,20 @@ function ResetPasswordRoute() {
     setBusy(false)
     if (error) setError(error)
     else navigate({ to: '/' })
+  }
+
+  if (linkExpired) {
+    return (
+      <div className="p-4 max-w-md mx-auto">
+        <h1 className="text-2xl font-semibold mb-4">Reset link expired</h1>
+        <p className="text-sm text-gray-700">
+          This reset link has expired. Request a new one.
+        </p>
+        <p className="mt-4 text-sm">
+          <Link to="/auth/forgot-password" className="text-primary-600">Request a new reset link</Link>
+        </p>
+      </div>
+    )
   }
 
   return (

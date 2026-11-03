@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { LogOut, Mail } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { useAuth } from '~/context/AuthContext';
 
@@ -38,17 +38,6 @@ function AccountScreen() {
             )}
           </div>
         </div>
-
-        {/* Support */}
-        <a
-          href="mailto:support@flyrely.com"
-          className="mt-6 flex items-center gap-3 p-4 bg-white border border-navy-200 rounded-xl hover:bg-navy-50 transition-colors"
-        >
-          <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
-            <Mail className="w-5 h-5 text-navy-600" />
-          </div>
-          <span className="font-medium text-navy-900">Contact support</span>
-        </a>
 
         {/* Sign Out */}
         {user && (

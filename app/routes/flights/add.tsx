@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
 import { Header, Button, Input, Modal } from '~/components/ui';
 import { DelaySeverityBar } from '~/components/flight';
-import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance } from '~/lib/utils';
+import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance, parseFlightNumber } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight } from '~/lib/flightStore';
 import { searchAirports, searchAirlines } from '~/lib/airports';
@@ -249,9 +249,21 @@ function AddFlightScreen() {
       }
 
       try {
-        const match = flightNumber.match(/^([A-Z]{2})/i);
-        const derivedCode = match ? match[1].toUpperCase() : (airlineCode || airlineName.slice(0, 2).toUpperCase());
-        const numericFlight = flightNumber.replace(/^[A-Z]+/i, '');
+        const parsed = parseFlightNumber(flightNumber);
+        const bareNumber = flightNumber.trim().match(/^\d{1,4}[A-Za-z]?$/);
+        let derivedCode: string;
+        let numericFlight: string;
+        if (parsed) {
+          derivedCode = parsed.airlineCode;
+          numericFlight = parsed.number;
+        } else if (bareNumber) {
+          derivedCode = airlineCode || airlineName.slice(0, 2).toUpperCase();
+          numericFlight = flightNumber.trim().replace(/[A-Za-z]$/, '');
+        } else {
+          setError('Enter a valid flight number, e.g. DL1234 or B6123');
+          setIsSearching(false);
+          return;
+        }
         const fullFlightNumber = `${derivedCode}${numericFlight}`;
         const depISO = `${date}T${departureTime}:00`;
         const flightId = `flight-${Date.now()}`;

@@ -60,3 +60,14 @@ export function formatDelayChance(probability?: number): string | null {
   if (typeof probability !== 'number') return null;
   return `${Math.round(probability * 100)}% chance of delay`;
 }
+
+/**
+ * Parse an IATA flight number like "B6123", "b6 123" or "DL5030".
+ * Airline code is 2 chars (letters/digits, at least one letter), followed by 1-4 digits
+ * and an optional operational suffix letter (dropped).
+ */
+export function parseFlightNumber(input: string): { airlineCode: string; number: string } | null {
+  const m = input.replace(/\s+/g, '').toUpperCase().match(/^([A-Z0-9]{2})(\d{1,4})[A-Z]?$/);
+  if (!m || !/[A-Z]/.test(m[1])) return null;
+  return { airlineCode: m[1], number: m[2] };
+}
