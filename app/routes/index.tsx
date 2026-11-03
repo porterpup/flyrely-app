@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Plus, History, Search, ChevronRight } from 'lucide-react';
+import { Plus, History, Search } from 'lucide-react';
 import { AppShell } from '~/components/layout';
-import { Button } from '~/components/ui';
+import { Button, SectionHeader, FieldBox, Alert, OptionTile } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
 import { getUpcomingFlights, autoCompleteOldFlights } from '~/lib/flightStore';
 import { formatDate, formatDelayChance, getRiskLabel } from '~/lib/utils';
@@ -34,14 +34,13 @@ function HomeScreen() {
     return (
       <AppShell>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
-          <h1 className="text-2xl text-navy-ink mb-2">No upcoming flights</h1>
-          <p className="text-navy-caption mb-8 max-w-xs">
+          <h1 className="text-title-lg text-ink mb-2">No upcoming flights</h1>
+          <p className="text-body-lg text-ink-caption mb-8 max-w-xs">
             Add your first flight to start tracking delays and stay informed.
           </p>
           <Button
-            size="lg"
             fullWidth
-            icon={<Plus className="w-5 h-5" />}
+            icon={<Plus className="w-4 h-4" />}
             onClick={() => navigate({ to: '/flights/add' })}
           >
             Add your flight
@@ -55,13 +54,18 @@ function HomeScreen() {
     <AppShell>
       <div className="px-6 pt-10 pb-6">
         <section className="mb-4">
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-2xl text-navy-ink">Next Flight</h1>
-            <Link to="/flights/add" className="flex items-center gap-2 text-navy-ink text-base">
-              <Plus className="w-4 h-4" />
-              Add Flight
-            </Link>
-          </div>
+          <SectionHeader
+            as="h1"
+            kind="no-space"
+            className="mb-3"
+            title="Next Flight"
+            action={
+              <Link to="/flights/add" className="flex items-center gap-1 px-3.5 py-3 text-action-md text-ink rounded-btn-sm hover:bg-surface-muted">
+                <Plus className="w-4 h-4" />
+                Add Flight
+              </Link>
+            }
+          />
 
           {nextFlight && (
             <FlightCard
@@ -73,19 +77,15 @@ function HomeScreen() {
           )}
         </section>
 
-        <Link
-          to="/flights/add"
-          className="flex items-center border border-navy-stroke rounded-2xl mb-8 text-navy-caption h-14"
-        >
-          <span className="w-14 flex justify-center border-r border-navy-stroke h-full items-center">
-            <Search className="w-5 h-5" />
-          </span>
-          <span className="px-4">Search to add flights</span>
+        <Link to="/flights/add" className="block mb-4 rounded-field focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent">
+          <FieldBox interactive={false} leading={<Search />}>
+            <span className="flex-1 px-2 py-3.5 text-body-lg text-ink-caption">Search to add flights</span>
+          </FieldBox>
         </Link>
 
         {flights.length > 1 && (
           <section className="mb-8">
-            <h2 className="text-2xl text-navy-ink mb-4">Upcoming flights</h2>
+            <SectionHeader title="Upcoming flights" />
             <div className="space-y-3">
               {flights.slice(1).map((flight) => (
                 <FlightCard
@@ -103,28 +103,29 @@ function HomeScreen() {
 
         {alerts.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-2xl text-navy-ink mb-4">Recent Alerts</h2>
+            <SectionHeader title="Recent Alerts" />
             <div className="space-y-3">
               {alerts.map((f) => (
                 <Link
                   key={f.id}
                   to="/flights/$flightId"
                   params={{ flightId: f.id }}
-                  className="flex items-center justify-between bg-warn-bg rounded-2xl px-4 py-4 text-warn-text"
+                  className="block rounded-alert focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
                 >
-                  <div className="min-w-0">
-                    <p className="text-sm">
-                      {getRiskLabel(f.riskLevel)}:{' '}
-                      <span className="font-semibold">
-                        {formatDelayChance(f.delayProbability) ?? 'delay possible'}
-                      </span>
-                    </p>
-                    <p className="text-xs mt-0.5 truncate">
-                      {f.flightNumber} · {f.origin.code} to {f.destination.code} ·{' '}
-                      {formatDate(f.scheduledDeparture)}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-navy-400 flex-shrink-0" />
+                  <Alert
+                    status={f.riskLevel === 'high' ? 'error' : 'warning'}
+                    showIcon={false}
+                    showRightIcon
+                    lineOne={
+                      <>
+                        {getRiskLabel(f.riskLevel)}:{' '}
+                        <span className="font-semibold">
+                          {formatDelayChance(f.delayProbability) ?? 'delay possible'}
+                        </span>
+                      </>
+                    }
+                    lineTwo={`${f.flightNumber} · ${f.origin.code} to ${f.destination.code} · ${formatDate(f.scheduledDeparture)}`}
+                  />
                 </Link>
               ))}
             </div>
@@ -132,23 +133,13 @@ function HomeScreen() {
         )}
 
         <section>
-          <h2 className="text-2xl text-navy-ink mb-4">More Options</h2>
+          <SectionHeader title="More Options" />
           <div className="grid grid-cols-2 gap-3">
-            <Link
-              to="/flights/history"
-              className="p-4 min-h-[104px] bg-navy-50 border border-navy-stroke rounded-2xl"
-            >
-              <History className="w-5 h-5 text-navy-caption mb-3" />
-              <p className="text-navy-ink">View all flights</p>
-              <p className="text-xs text-navy-caption mt-1">See your full schedule</p>
+            <Link to="/flights/history" className="block rounded-tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent">
+              <OptionTile icon={<History />} title="View all flights" description="See your full schedule" className="h-full" />
             </Link>
-            <Link
-              to="/flights/add"
-              className="p-4 min-h-[104px] bg-navy-50 border border-navy-stroke rounded-2xl"
-            >
-              <Plus className="w-5 h-5 text-navy-caption mb-3" />
-              <p className="text-navy-ink">Add flight</p>
-              <p className="text-xs text-navy-caption mt-1">Track another trip</p>
+            <Link to="/flights/add" className="block rounded-tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent">
+              <OptionTile icon={<Plus />} title="Add flight" description="Track another trip" className="h-full" />
             </Link>
           </div>
         </section>

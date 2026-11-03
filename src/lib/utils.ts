@@ -1,6 +1,28 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
 import type { RiskLevel } from '~/types';
+
+// Teach tailwind-merge about the Figma type scale and radii so `text-body-sm`
+// is treated as a font size (not a colour) and `rounded-btn` as a radius.
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      'font-size': [
+        {
+          text: [
+            'display-lg', 'display-md', 'display-sm',
+            'heading-lg', 'heading-md', 'heading-sm',
+            'title-lg', 'title-md', 'title-sm',
+            'body-lg', 'body-md', 'body-sm',
+            'action-md', 'action-lg',
+          ],
+        },
+      ],
+      rounded: [{ rounded: ['btn', 'btn-sm', 'field', 'alert', 'tile', 'panel', 'ticket', 'pill'] }],
+      shadow: [{ shadow: ['elevation-1', 'nav'] }],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,17 +46,6 @@ export function formatDate(isoDate: string): string {
 
 export function formatDateTime(isoDate: string): string {
   return `${formatDate(isoDate)} · ${formatTime(isoDate)}`;
-}
-
-export function getRiskBadgeClass(risk: RiskLevel): string {
-  switch (risk) {
-    case 'low':
-      return 'risk-badge risk-badge-low';
-    case 'medium':
-      return 'risk-badge risk-badge-medium';
-    case 'high':
-      return 'risk-badge risk-badge-high';
-  }
 }
 
 export function getRiskLabel(risk: RiskLevel): string {

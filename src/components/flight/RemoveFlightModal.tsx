@@ -65,7 +65,7 @@ export function RemoveFlightModal({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <Button variant="outline" fullWidth onClick={onClose}>
+          <Button variant="secondary" fullWidth onClick={onClose}>
             Keep Flight
           </Button>
           <Button

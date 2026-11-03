@@ -3,9 +3,10 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Plane, ChevronRight } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button } from '~/components/ui';
+import { RiskPill } from '~/components/flight';
 import { getAirport } from '~/lib/airports';
 import { getFlights } from '~/lib/flightStore';
-import { getRiskBadgeClass, getRiskLabel, formatDelayChance } from '~/lib/utils';
+import { formatDelayChance } from '~/lib/utils';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/explore/')({
@@ -55,7 +56,7 @@ function ExploreScreen() {
             <p className="text-navy-500 mb-8 max-w-xs">
               Add a flight and its route will show up here with your latest delay predictions.
             </p>
-            <Button size="lg" onClick={() => navigate({ to: '/flights/add' })}>
+            <Button onClick={() => navigate({ to: '/flights/add' })}>
               Add flight
             </Button>
           </div>
@@ -94,9 +95,7 @@ function ExploreScreen() {
                     </p>
                   </div>
                 </div>
-                <span className={getRiskBadgeClass(latest.riskLevel)}>
-                  {getRiskLabel(latest.riskLevel)}
-                </span>
+                <RiskPill risk={latest.riskLevel} emphasis="soft" />
               </button>
             );
           })}

@@ -51,6 +51,41 @@ export default {
           DEFAULT: '#0E9F4A',
           bg: '#DDF5E6',
         },
+        // ── Semantic tokens (Figma "Aviato" variables) ───────────────────
+        // Use these in components. Raw scales above are legacy / palette only.
+        surface: {
+          DEFAULT: '#FFFFFF', // Surface/background
+          card: '#123A75', // Brand/primary, dark ticket + screen surfaces
+          panel: '#1A4A8F', // raised panel on a dark card
+          muted: '#F2F3F6', // Surface/card-dark, tiles and default pill
+          divider: '#DDE1E8', // Surface/divider, field borders
+          stroke: '#EBEDF1', // Surface/stroke, hairlines, nav border
+          accent: '#276EF1', // Surface/accent, active tab, links, plane
+          icon: '#000006', // Surface/icon, outline button border
+        },
+        ink: {
+          DEFAULT: '#000006', // Type/heading
+          sub: '#0A1220', // Type/subheading
+          caption: '#3D4553', // Type/caption
+          'on-dark': '#FFFFFF',
+          'on-dark-muted': 'rgba(255, 255, 255, 0.5)',
+        },
+        // Alert + pill status pairs (Status/*-text on Status/*-background)
+        status: {
+          'success-bg': '#EAFFF3',
+          'success-text': '#008344',
+          'warning-bg': '#FFF7E2',
+          'warning-text': '#966A00',
+          'error-bg': '#FFE3E9',
+          'error-text': '#CD1A3B',
+          'info-bg': '#DBE7FF',
+          'info-text': '#2F5DB2',
+          // Solid, high-emphasis fills used on the dark ticket / prediction panel
+          'warning-solid': '#FFB400',
+          'success-solid': '#0E9F4A',
+          'error-solid': '#CD1A3B',
+          'info-solid': '#276EF1',
+        },
         // Accent - Orange/Amber
         accent: {
           50: '#FFFBEB',
@@ -77,11 +112,44 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
+      // Type scale from Figma Typography frame (34:669): size / line-height / tracking / weight
+      fontSize: {
+        'display-lg': ['64px', { lineHeight: '96px', letterSpacing: '0.21875px' }],
+        'display-md': ['56px', { lineHeight: '84px', letterSpacing: '0.30078125px' }],
+        'display-sm': ['48px', { lineHeight: '72px', letterSpacing: '0.3515625px' }],
+        'heading-lg': ['40px', { lineHeight: '60px', letterSpacing: '0.37109375px' }],
+        'heading-md': ['32px', { lineHeight: '48px', letterSpacing: '0.40625px' }],
+        'heading-sm': ['28px', { lineHeight: '42px', letterSpacing: '0.3828125px' }],
+        'title-lg': ['24px', { lineHeight: '36px', letterSpacing: '0.0703125px' }],
+        'title-md': ['20px', { lineHeight: '30px', letterSpacing: '-0.44921875px', fontWeight: '500' }],
+        'title-sm': ['18px', { lineHeight: '27px', letterSpacing: '-0.439453125px' }],
+        'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '-0.3125px' }],
+        'body-md': ['14px', { lineHeight: '21px', letterSpacing: '-0.150390625px' }],
+        'body-sm': ['12px', { lineHeight: '18px', letterSpacing: '0px' }],
+        // Button label (action/action-md)
+        'action-md': ['16px', { lineHeight: '16px', letterSpacing: '-0.5px' }],
+        'action-lg': ['16px', { lineHeight: '24px', letterSpacing: '-0.5px' }],
+      },
       boxShadow: {
+        // Shadow/elevation-1
+        'elevation-1': '0 -1px 20px rgba(0, 0, 6, 0.05)',
         nav: '0 -1px 20px rgba(0, 0, 6, 0.05)',
       },
+      // Radii used by Figma components
       borderRadius: {
         '4xl': '2rem',
+        btn: '16px', // Button default
+        'btn-sm': '12px', // Button small
+        field: '14px', // Input / select
+        alert: '12px', // Alert
+        tile: '16px', // Option tile
+        panel: '24px', // Raised panel on a dark card
+        ticket: '22px', // Ticket / flight card
+        pill: '9999px',
+      },
+      spacing: {
+        gutter: '24px', // screen side padding
+        inset: '16px', // card / alert inner padding
       },
     },
   },

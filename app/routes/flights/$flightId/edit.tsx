@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock } from 'lucide-react';
-import { Button, Header, Input } from '~/components/ui';
+import { Alert, Button, Header, Input } from '~/components/ui';
 import { getFlightById, saveFlight } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { getAirport, getAirline } from '~/lib/airports';
@@ -11,9 +11,6 @@ import type { Flight } from '~/types';
 export const Route = createFileRoute('/flights/$flightId/edit')({
   component: EditFlightScreen,
 });
-
-const inputCls =
-  'w-full rounded-xl border border-navy-200 bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20';
 
 function EditFlightScreen() {
   const navigate = useNavigate();
@@ -171,37 +168,11 @@ function EditFlightScreen() {
         <Header title="Edit Flight" showBack onBackClick={goBack} />
 
         <div className="flex-1 px-4 py-4 space-y-4">
-          <div>
-            <div className="block text-sm font-medium text-navy-700 mb-1">Flight number</div>
-            <input
-              type="text"
-              value={flightNumber}
-              onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
-              className={inputCls}
-            />
-          </div>
+          <Input label="Flight number" type="text" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} />
 
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <div className="block text-sm font-medium text-navy-700 mb-1">From</div>
-              <input
-                type="text"
-                maxLength={3}
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value.toUpperCase())}
-                className={inputCls}
-              />
-            </div>
-            <div>
-              <div className="block text-sm font-medium text-navy-700 mb-1">To</div>
-              <input
-                type="text"
-                maxLength={3}
-                value={destination}
-                onChange={(e) => setDestination(e.target.value.toUpperCase())}
-                className={inputCls}
-              />
-            </div>
+            <Input label="From" type="text" maxLength={3} value={origin} onChange={(e) => setOrigin(e.target.value.toUpperCase())} />
+            <Input label="To" type="text" maxLength={3} value={destination} onChange={(e) => setDestination(e.target.value.toUpperCase())} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -210,35 +181,28 @@ function EditFlightScreen() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              leftIcon={<Calendar className="w-5 h-5" />}
+              leftIcon={<Calendar />}
             />
-            <div>
-              <div className="block text-sm font-medium text-navy-700 mb-1">Departure time</div>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  className={`${inputCls} pl-10`}
-                />
-              </div>
-            </div>
+            <Input
+              label="Departure time"
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              leftIcon={<Clock />}
+            />
           </div>
 
           {predictionInputsChanged && (
-            <p className="text-sm text-navy-500">
+            <p className="text-body-md text-ink-caption">
               Changing the route, date, time or flight number gets a new delay prediction when you save.
             </p>
           )}
 
-          {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>}
+          {error && <Alert status="error" showIcon={false} lineOne={error} />}
         </div>
 
         <div className="sticky bottom-0 p-4 bg-white border-t border-navy-100 flex gap-3">
-          <Button variant="outline" fullWidth onClick={goBack}>
+          <Button variant="secondary" fullWidth onClick={goBack}>
             Cancel
           </Button>
           <Button fullWidth onClick={handleSave} loading={isSaving}>

@@ -181,7 +181,7 @@ function FlightHistoryScreen() {
               history. This action cannot be undone.
             </p>
             <div className="flex gap-3">
-              <Button variant="outline" fullWidth onClick={() => setShowClearModal(false)}>
+              <Button variant="secondary" fullWidth onClick={() => setShowClearModal(false)}>
                 Cancel
               </Button>
               <Button variant="danger" fullWidth onClick={handleClearAll}>

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Search, Calendar, Plane, Check, ArrowRight, Clock, ChevronDown } from 'lucide-react';
-import { Header, Button, Input, Modal } from '~/components/ui';
-import { DelaySeverityBar } from '~/components/flight';
-import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance, parseFlightNumber } from '~/lib/utils';
+import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
+import { fieldControlClass } from '~/components/ui/Field';
+import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
+import { DelaySeverityBar, RiskPill } from '~/components/flight';
+import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlights } from '~/lib/flightStore';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
@@ -75,39 +76,30 @@ function AirportAutocomplete({
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <div className="block text-sm font-medium text-navy-700 mb-1">{label}</div>
-      <div className="relative">
-        {leftIcon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-            {leftIcon}
-          </div>
-        )}
+    <div ref={containerRef} className="relative flex flex-col gap-1.5">
+      <FieldLabel>{label}</FieldLabel>
+      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-status-success-text bg-status-success-bg')}>
         <input
           type="text"
           value={query}
           onChange={handleInput}
           onFocus={() => query.length >= 1 && suggestions.length > 0 && setOpen(true)}
           placeholder={placeholder}
-          className={cn(
-            'w-full rounded-xl border bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all',
-            'border-navy-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
-            leftIcon && 'pl-10',
-            confirmed && 'border-green-400 bg-green-50'
-          )}
+          aria-label={label}
+          className={cn(fieldControlClass, leftIcon && 'pl-2')}
         />
-      </div>
+      </FieldBox>
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-navy-200 rounded-xl shadow-lg overflow-hidden">
+        <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-field border border-surface-divider bg-white shadow-lg">
           {suggestions.map((ap) => (
             <li key={ap.code}>
               <button
                 type="button"
                 onMouseDown={() => select(ap)}
-                className="w-full text-left px-4 py-3 hover:bg-navy-50 flex items-center justify-between"
+                className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-muted"
               >
-                <span className="font-semibold text-navy-900">{ap.code}</span>
-                <span className="text-sm text-navy-500 truncate ml-3">{ap.city}</span>
+                <span className="font-semibold text-ink">{ap.code}</span>
+                <span className="ml-3 truncate text-body-md text-ink-caption">{ap.city}</span>
               </button>
             </li>
           ))}
@@ -132,9 +124,6 @@ function dedupeRecent(flights: Flight[]): Flight[] {
     })
     .slice(0, 10);
 }
-
-const fieldClass =
-  'w-full rounded-2xl border border-navy-stroke bg-white px-4 py-4 text-base text-navy-ink outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20';
 
 function AddFlightScreen() {
   const navigate = useNavigate();
@@ -255,22 +244,16 @@ function AddFlightScreen() {
         <div className="pt-4" />
 
         <div className="flex-1 px-4">
-          <div className="flex rounded-full bg-navy-stroke p-1 mb-6" role="tablist">
-            {([['number', 'Flight number'], ['recent', 'Recent']] as const).map(([key, label]) => (
-              <button
-                key={key}
-                role="tab"
-                aria-selected={tab === key}
-                onClick={() => setTab(key)}
-                className={cn(
-                  'flex-1 rounded-full py-2 text-sm transition-colors',
-                  tab === key ? 'bg-white text-navy-ink shadow-sm' : 'text-navy-caption'
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedTabs
+            aria-label="Add flight method"
+            className="mb-6"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: 'number', label: 'Flight number' },
+              { value: 'recent', label: 'Recent' },
+            ]}
+          />
 
           {tab === 'recent' && (
             <div className="space-y-3">
@@ -311,45 +294,37 @@ function AddFlightScreen() {
 
           {tab === 'number' && (
             <div className="space-y-4">
+              <Select
+                label="Airline"
+                id="airline"
+                value={airlineCode}
+                placeholderSelected={!airlineCode}
+                onChange={(e) => {
+                  const al = AIRLINES.find((x) => x.code === e.target.value);
+                  setAirlineCodeState(al?.code ?? '');
+                  setAirlineName(al?.name ?? '');
+                }}
+              >
+                <option value="">Select airline</option>
+                {AIRLINES.map((al) => (
+                  <option key={al.code} value={al.code}>
+                    {al.name}
+                  </option>
+                ))}
+              </Select>
               <div>
-                <label htmlFor="airline" className="block text-sm text-navy-ink mb-2">
-                  Airline
-                </label>
-                <div className="relative">
-                  <select
-                    id="airline"
-                    value={airlineCode}
-                    onChange={(e) => {
-                      const al = AIRLINES.find((x) => x.code === e.target.value);
-                      setAirlineCodeState(al?.code ?? '');
-                      setAirlineName(al?.name ?? '');
-                    }}
-                    className={cn(fieldClass, 'appearance-none pr-12', !airlineCode && 'text-navy-400')}
-                  >
-                    <option value="">Select airline</option>
-                    {AIRLINES.map((al) => (
-                      <option key={al.code} value={al.code}>
-                        {al.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-5 h-5 absolute right-4 top-1/2 -translate-y-1/2 text-navy-caption pointer-events-none" />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="flight-number" className="block text-sm text-navy-ink mb-2">
+                <label htmlFor="flight-number" className="block px-1 pb-1.5 text-body-md text-ink-sub">
                   Flight number
                 </label>
                 <div className="flex items-center gap-3">
-                  <span className="w-10 text-navy-caption text-base">{airlineCode || '--'}</span>
-                  <input
+                  <span className="w-10 text-body-lg text-ink-caption">{airlineCode || '--'}</span>
+                  <Input
                     id="flight-number"
                     type="text"
                     inputMode="numeric"
                     value={flightNumber}
                     onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
                     placeholder="123"
-                    className={fieldClass}
                   />
                 </div>
               </div>
@@ -377,39 +352,29 @@ function AddFlightScreen() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  leftIcon={<Calendar className="w-5 h-5" />}
+                  leftIcon={<Calendar />}
                 />
-                <div>
-                  <div className="block text-sm font-medium text-navy-700 mb-1">
-                    Departure time
-                  </div>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-                      <Clock className="w-5 h-5" />
-                    </div>
-                    <input
-                      type="time"
-                      value={departureTime}
-                      onChange={(e) => setDepartureTime(e.target.value)}
-                      className="w-full rounded-xl border border-navy-200 bg-white pl-10 pr-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
-                </div>
+                <Input
+                  label="Departure time"
+                  type="time"
+                  value={departureTime}
+                  onChange={(e) => setDepartureTime(e.target.value)}
+                  leftIcon={<Clock />}
+                />
               </div>
             </div>
           )}
 
           {error && (
-            <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>
+            <Alert className="mt-4" status="error" showIcon={false} lineOne={error} />
           )}
 
           {tab === 'number' && <Button
             fullWidth
-            size="lg"
             className="mt-6"
             onClick={handleSearch}
             loading={isSearching}
-            icon={<Search className="w-5 h-5" />}
+            icon={<Search className="w-4 h-4" />}
           >
             Search flight
           </Button>}
@@ -424,7 +389,7 @@ function AddFlightScreen() {
                 selected
                 onSelect={() => setShowConfirmModal(true)}
               />
-              <Button fullWidth size="lg" className="mt-4" onClick={() => setShowConfirmModal(true)}>
+              <Button fullWidth className="mt-4" onClick={() => setShowConfirmModal(true)}>
                 Track this flight
               </Button>
             </div>
@@ -457,9 +422,7 @@ function AddFlightScreen() {
                   <span>{formatTime(flightToAdd.scheduledDeparture)}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-navy-200 flex items-center gap-2">
-                  <span className={getRiskBadgeClass(flightToAdd.riskLevel)}>
-                    {getRiskLabel(flightToAdd.riskLevel)}
-                  </span>
+                  <RiskPill risk={flightToAdd.riskLevel} emphasis="soft" />
                   {formatDelayChance(flightToAdd.delayProbability) && (
                     <span className="text-sm text-navy-600">
                       · {formatDelayChance(flightToAdd.delayProbability)}
@@ -478,7 +441,7 @@ function AddFlightScreen() {
               </p>
 
               <div className="flex gap-3">
-                <Button variant="outline" fullWidth onClick={() => setShowConfirmModal(false)}>
+                <Button variant="secondary" fullWidth onClick={() => setShowConfirmModal(false)}>
                   Cancel
                 </Button>
                 <Button fullWidth onClick={handleAddFlight} loading={isAdding}>
@@ -516,9 +479,7 @@ function FlightSearchResult({
           <span className="font-semibold text-navy-900">{flight.flightNumber}</span>
           <span className="text-sm text-navy-500">{flight.airline.name}</span>
         </div>
-        <span className={getRiskBadgeClass(flight.riskLevel)}>
-          {getRiskLabel(flight.riskLevel)}
-        </span>
+        <RiskPill risk={flight.riskLevel} emphasis="soft" />
       </div>
 
       <div className="flex items-center gap-3">
