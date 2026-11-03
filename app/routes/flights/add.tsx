@@ -14,8 +14,6 @@ export const Route = createFileRoute('/flights/add')({
   component: AddFlightScreen,
 });
 
-type SearchMode = 'number' | 'route';
-
 // ── Autocomplete components ────────────────────────────────────────────────
 
 function AirportAutocomplete({
@@ -215,7 +213,6 @@ function AirlineAutocomplete({
 
 function AddFlightScreen() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<SearchMode>('number');
 
   // Flight number search
   const [airlineName, setAirlineName] = useState('');
@@ -226,19 +223,10 @@ function AddFlightScreen() {
   const [destCode, setDestCode] = useState('');
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
   const [date, setDate] = useState('');
-  const [departureTime, setDepartureTime] = useState('09:00');
-
-  // Route search
-  const [routeOriginCode, setRouteOriginCode] = useState('');
-  const [routeOriginInfo, setRouteOriginInfo] = useState<AirportInfo | undefined>();
-  const [routeDestCode, setRouteDestCode] = useState('');
-  const [routeDestInfo, setRouteDestInfo] = useState<AirportInfo | undefined>();
-  const [routeDate, setRouteDate] = useState('');
+  const [departureTime, setDepartureTime] = useState('');
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<Flight | null>(null);
-  const [routeResults, setRouteResults] = useState<Flight[]>([]);
-  const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
@@ -247,10 +235,9 @@ function AddFlightScreen() {
     setError('');
     setIsSearching(true);
     setSearchResult(null);
-    setRouteResults([]);
 
-    if (mode === 'number') {
-      if (!airlineName || !flightNumber || !date || !originCode || !destCode) {
+    {
+      if (!airlineName || !flightNumber || !date || !departureTime || !originCode || !destCode) {
         setError('Please fill in all fields');
         setIsSearching(false);
         return;
@@ -298,68 +285,13 @@ function AddFlightScreen() {
           ? 'Predictions are temporarily unavailable. Please try again shortly.'
           : 'Could not get prediction. Please check your inputs and try again.');
       }
-    } else {
-      if (!routeOriginCode || !routeDestCode || !routeDate) {
-        setError('Please fill in all fields');
-        setIsSearching(false);
-        return;
-      }
-      if (routeOriginCode.toUpperCase() === routeDestCode.toUpperCase()) {
-        setError('Origin and destination cannot be the same');
-        setIsSearching(false);
-        return;
-      }
-
-      try {
-        const departures = [
-          { suffix: '07:00' },
-          { suffix: '12:00' },
-          { suffix: '17:00' },
-        ];
-
-        const results = await Promise.all(
-          departures.map(async ({ suffix }, i) => {
-            const depISO = `${routeDate}T${suffix}:00`;
-            const routeId = `route-${Date.now()}-${i}`;
-            const payload = buildPredictPayload(routeOriginCode, routeDestCode, depISO, undefined, routeId);
-            const prediction = await flyrelyApi.predict(payload);
-            return {
-              id: routeId,
-              flightNumber: `FL${100 + i * 11}`,
-              airline: { code: 'FL', name: 'Various Airlines' },
-              origin: {
-                code: routeOriginCode,
-                name: routeOriginInfo?.name ?? routeOriginCode,
-                city: routeOriginInfo?.city ?? routeOriginCode,
-                  },
-              destination: {
-                code: routeDestCode,
-                name: routeDestInfo?.name ?? routeDestCode,
-                city: routeDestInfo?.city ?? routeDestCode,
-                  },
-              scheduledDeparture: depISO,
-              status: 'scheduled' as const,
-              riskLevel: prediction.risk_level,
-              delayProbability: prediction.delay_probability,
-              delayReason: prediction.risk_factors.slice(0, 1).join('') || undefined,
-              delaySeverity: prediction.delay_severity ?? undefined,
-            } satisfies Flight;
-          })
-        );
-
-        setRouteResults(results);
-      } catch (e) {
-        setError(e instanceof PredictionUnavailableError
-          ? 'Predictions are temporarily unavailable. Please try again shortly.'
-          : 'Could not get predictions. Please check your inputs and try again.');
-      }
     }
 
     setIsSearching(false);
   };
 
   const handleAddFlight = async () => {
-    const flightToSave = searchResult || routeResults.find((f) => f.id === selectedFlight);
+    const flightToSave = searchResult;
     if (!flightToSave) return;
     setIsAdding(true);
     saveFlight(flightToSave);
@@ -369,14 +301,7 @@ function AddFlightScreen() {
     navigate({ to: '/flights/$flightId', params: { flightId: flightToSave.id } });
   };
 
-  const clearMode = () => {
-    setSearchResult(null);
-    setRouteResults([]);
-    setSelectedFlight(null);
-    setError('');
-  };
-
-  const flightToAdd = searchResult || routeResults.find((f) => f.id === selectedFlight);
+  const flightToAdd = searchResult;
 
   return (
     <div className="app-container">
@@ -387,31 +312,10 @@ function AddFlightScreen() {
           onBackClick={() => navigate({ to: '/' })}
         />
 
-        <div className="px-4 py-4">
-          <div className="flex bg-navy-100 rounded-xl p-1">
-            <button
-              onClick={() => { setMode('number'); clearMode(); }}
-              className={cn(
-                'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all',
-                mode === 'number' ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-600'
-              )}
-            >
-              Flight number
-            </button>
-            <button
-              onClick={() => { setMode('route'); clearMode(); }}
-              className={cn(
-                'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all',
-                mode === 'route' ? 'bg-white text-navy-900 shadow-sm' : 'text-navy-600'
-              )}
-            >
-              Route
-            </button>
-          </div>
-        </div>
+        <div className="pt-4" />
 
         <div className="flex-1 px-4">
-          {mode === 'number' ? (
+          {(
             <div className="space-y-4">
               <AirlineAutocomplete
                 label="Airline"
@@ -476,30 +380,6 @@ function AddFlightScreen() {
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <AirportAutocomplete
-                label="From"
-                placeholder="City or airport code"
-                value={routeOriginCode}
-                onChange={(code, info) => { setRouteOriginCode(code); setRouteOriginInfo(info); }}
-                leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
-              />
-              <AirportAutocomplete
-                label="To"
-                placeholder="City or airport code"
-                value={routeDestCode}
-                onChange={(code, info) => { setRouteDestCode(code); setRouteDestInfo(info); }}
-                leftIcon={<Plane className="w-5 h-5 rotate-45" />}
-              />
-              <Input
-                label="Date"
-                type="date"
-                value={routeDate}
-                onChange={(e) => setRouteDate(e.target.value)}
-                leftIcon={<Calendar className="w-5 h-5" />}
-              />
-            </div>
           )}
 
           {error && (
@@ -517,7 +397,7 @@ function AddFlightScreen() {
             Search flight
           </Button>
 
-          {searchResult && mode === 'number' && (
+          {searchResult && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Your Flight
@@ -533,32 +413,7 @@ function AddFlightScreen() {
             </div>
           )}
 
-          {routeResults.length > 0 && mode === 'route' && (
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
-                Available Flights
-              </h3>
-              <div className="space-y-3">
-                {routeResults.map((flight) => (
-                  <FlightSearchResult
-                    key={flight.id}
-                    flight={flight}
-                    selected={selectedFlight === flight.id}
-                    onSelect={() => setSelectedFlight(flight.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
         </div>
-
-        {selectedFlight && mode === 'route' && (
-          <div className="sticky bottom-0 p-4 bg-white border-t border-navy-100">
-            <Button fullWidth size="lg" onClick={() => setShowConfirmModal(true)}>
-              Track this flight
-            </Button>
-          </div>
-        )}
 
         <Modal
           isOpen={showConfirmModal}

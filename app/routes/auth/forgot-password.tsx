@@ -110,7 +110,7 @@ function ForgotPasswordScreen() {
             <Input
               label="Email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={error}

@@ -1,63 +1,60 @@
-/** All airports supported by the FlyRely prediction API */
+/** Airports and airlines for form autocomplete (names and codes only; no statistics). */
 export interface AirportInfo {
   code: string;
   name: string;
   city: string;
-  delayRate: number; // historical delay rate 0–1
-  isHub: boolean;
 }
 
 export const AIRPORTS: AirportInfo[] = [
-  { code: 'ATL', name: 'Hartsfield-Jackson Atlanta International', city: 'Atlanta', delayRate: 0.21, isHub: true },
-  { code: 'AUS', name: 'Austin-Bergstrom International', city: 'Austin', delayRate: 0.19, isHub: false },
-  { code: 'BNA', name: 'Nashville International', city: 'Nashville', delayRate: 0.20, isHub: false },
-  { code: 'BOS', name: 'Logan International', city: 'Boston', delayRate: 0.23, isHub: true },
-  { code: 'BWI', name: 'Baltimore/Washington International', city: 'Baltimore', delayRate: 0.20, isHub: false },
-  { code: 'CLT', name: 'Charlotte Douglas International', city: 'Charlotte', delayRate: 0.21, isHub: true },
-  { code: 'DCA', name: 'Ronald Reagan Washington National', city: 'Washington D.C.', delayRate: 0.22, isHub: false },
-  { code: 'DEN', name: 'Denver International', city: 'Denver', delayRate: 0.22, isHub: true },
-  { code: 'DFW', name: 'Dallas/Fort Worth International', city: 'Dallas', delayRate: 0.20, isHub: true },
-  { code: 'DTW', name: 'Detroit Metropolitan Wayne County', city: 'Detroit', delayRate: 0.20, isHub: true },
-  { code: 'EWR', name: 'Newark Liberty International', city: 'Newark', delayRate: 0.27, isHub: true },
-  { code: 'FLL', name: 'Fort Lauderdale-Hollywood International', city: 'Fort Lauderdale', delayRate: 0.21, isHub: false },
-  { code: 'IAH', name: 'George Bush Intercontinental', city: 'Houston', delayRate: 0.21, isHub: true },
-  { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', delayRate: 0.26, isHub: true },
-  { code: 'LAS', name: 'Harry Reid International', city: 'Las Vegas', delayRate: 0.19, isHub: true },
-  { code: 'LAX', name: 'Los Angeles International', city: 'Los Angeles', delayRate: 0.19, isHub: true },
-  { code: 'LGA', name: 'LaGuardia Airport', city: 'New York', delayRate: 0.26, isHub: true },
-  { code: 'MCO', name: 'Orlando International', city: 'Orlando', delayRate: 0.20, isHub: true },
-  { code: 'MDW', name: 'Chicago Midway International', city: 'Chicago', delayRate: 0.22, isHub: false },
-  { code: 'MIA', name: 'Miami International', city: 'Miami', delayRate: 0.21, isHub: true },
-  { code: 'MSP', name: 'Minneapolis-Saint Paul International', city: 'Minneapolis', delayRate: 0.21, isHub: true },
-  { code: 'ORD', name: "O'Hare International", city: 'Chicago', delayRate: 0.25, isHub: true },
-  { code: 'PDX', name: 'Portland International', city: 'Portland', delayRate: 0.19, isHub: false },
-  { code: 'PHL', name: 'Philadelphia International', city: 'Philadelphia', delayRate: 0.24, isHub: true },
-  { code: 'PHX', name: 'Phoenix Sky Harbor International', city: 'Phoenix', delayRate: 0.18, isHub: true },
-  { code: 'SAN', name: 'San Diego International', city: 'San Diego', delayRate: 0.17, isHub: false },
-  { code: 'SEA', name: 'Seattle-Tacoma International', city: 'Seattle', delayRate: 0.20, isHub: true },
-  { code: 'SFO', name: 'San Francisco International', city: 'San Francisco', delayRate: 0.24, isHub: true },
-  { code: 'SLC', name: 'Salt Lake City International', city: 'Salt Lake City', delayRate: 0.18, isHub: false },
-  { code: 'TPA', name: 'Tampa International', city: 'Tampa', delayRate: 0.19, isHub: false },
+  { code: 'ATL', name: 'Hartsfield-Jackson Atlanta International', city: 'Atlanta' },
+  { code: 'AUS', name: 'Austin-Bergstrom International', city: 'Austin' },
+  { code: 'BNA', name: 'Nashville International', city: 'Nashville' },
+  { code: 'BOS', name: 'Logan International', city: 'Boston' },
+  { code: 'BWI', name: 'Baltimore/Washington International', city: 'Baltimore' },
+  { code: 'CLT', name: 'Charlotte Douglas International', city: 'Charlotte' },
+  { code: 'DCA', name: 'Ronald Reagan Washington National', city: 'Washington D.C.' },
+  { code: 'DEN', name: 'Denver International', city: 'Denver' },
+  { code: 'DFW', name: 'Dallas/Fort Worth International', city: 'Dallas' },
+  { code: 'DTW', name: 'Detroit Metropolitan Wayne County', city: 'Detroit' },
+  { code: 'EWR', name: 'Newark Liberty International', city: 'Newark' },
+  { code: 'FLL', name: 'Fort Lauderdale-Hollywood International', city: 'Fort Lauderdale' },
+  { code: 'IAH', name: 'George Bush Intercontinental', city: 'Houston' },
+  { code: 'JFK', name: 'John F. Kennedy International', city: 'New York' },
+  { code: 'LAS', name: 'Harry Reid International', city: 'Las Vegas' },
+  { code: 'LAX', name: 'Los Angeles International', city: 'Los Angeles' },
+  { code: 'LGA', name: 'LaGuardia Airport', city: 'New York' },
+  { code: 'MCO', name: 'Orlando International', city: 'Orlando' },
+  { code: 'MDW', name: 'Chicago Midway International', city: 'Chicago' },
+  { code: 'MIA', name: 'Miami International', city: 'Miami' },
+  { code: 'MSP', name: 'Minneapolis-Saint Paul International', city: 'Minneapolis' },
+  { code: 'ORD', name: "O'Hare International", city: 'Chicago' },
+  { code: 'PDX', name: 'Portland International', city: 'Portland' },
+  { code: 'PHL', name: 'Philadelphia International', city: 'Philadelphia' },
+  { code: 'PHX', name: 'Phoenix Sky Harbor International', city: 'Phoenix' },
+  { code: 'SAN', name: 'San Diego International', city: 'San Diego' },
+  { code: 'SEA', name: 'Seattle-Tacoma International', city: 'Seattle' },
+  { code: 'SFO', name: 'San Francisco International', city: 'San Francisco' },
+  { code: 'SLC', name: 'Salt Lake City International', city: 'Salt Lake City' },
+  { code: 'TPA', name: 'Tampa International', city: 'Tampa' },
 ];
 
 export interface AirlineInfo {
   code: string;
   name: string;
-  delayRate: number;
 }
 
 export const AIRLINES: AirlineInfo[] = [
-  { code: 'AA', name: 'American Airlines', delayRate: 0.21 },
-  { code: 'AS', name: 'Alaska Airlines', delayRate: 0.17 },
-  { code: 'B6', name: 'JetBlue Airways', delayRate: 0.24 },
-  { code: 'DL', name: 'Delta Air Lines', delayRate: 0.18 },
-  { code: 'F9', name: 'Frontier Airlines', delayRate: 0.27 },
-  { code: 'G4', name: 'Allegiant Air', delayRate: 0.26 },
-  { code: 'HA', name: 'Hawaiian Airlines', delayRate: 0.16 },
-  { code: 'NK', name: 'Spirit Airlines', delayRate: 0.28 },
-  { code: 'SY', name: 'Sun Country Airlines', delayRate: 0.25 },
-  { code: 'UA', name: 'United Airlines', delayRate: 0.22 },
-  { code: 'WN', name: 'Southwest Airlines', delayRate: 0.23 },
+  { code: 'AA', name: 'American Airlines' },
+  { code: 'AS', name: 'Alaska Airlines' },
+  { code: 'B6', name: 'JetBlue Airways' },
+  { code: 'DL', name: 'Delta Air Lines' },
+  { code: 'F9', name: 'Frontier Airlines' },
+  { code: 'G4', name: 'Allegiant Air' },
+  { code: 'HA', name: 'Hawaiian Airlines' },
+  { code: 'NK', name: 'Spirit Airlines' },
+  { code: 'SY', name: 'Sun Country Airlines' },
+  { code: 'UA', name: 'United Airlines' },
+  { code: 'WN', name: 'Southwest Airlines' },
 ];
 
 /** Search airports by code, name, or city (case-insensitive) */
@@ -92,17 +89,3 @@ export function getAirport(code: string): AirportInfo | undefined {
 export function getAirline(code: string): AirlineInfo | undefined {
   return AIRLINES.find((a) => a.code === code.toUpperCase());
 }
-
-/** Popular well-known routes with on-time pct derived from delay rates */
-export const POPULAR_ROUTES = [
-  { from: 'JFK', to: 'LAX' },
-  { from: 'SFO', to: 'JFK' },
-  { from: 'ORD', to: 'ATL' },
-  { from: 'LAX', to: 'ORD' },
-  { from: 'DFW', to: 'LAX' },
-  { from: 'ATL', to: 'MIA' },
-  { from: 'BOS', to: 'DCA' },
-  { from: 'SEA', to: 'SFO' },
-  { from: 'DEN', to: 'PHX' },
-  { from: 'EWR', to: 'ATL' },
-];

@@ -18,7 +18,7 @@ You are the planner for the FlyRely app (TypeScript, TanStack Start 1.82, React 
 
 - The API client (`api.ts`) canonical `/predict` types must match the backend contract exactly: send `flight_id`; `risk_factors` and `recommendations` are never undefined; a 503 from the API is a no-prediction state, shown with the NoPredictionBanner pattern — never a guessed prediction.
 - One API base URL from env (default localhost). Never hardcode a Railway URL or reintroduce the old dead URLs.
-- Auth is magic-link (`signInWithOtp`). Never use sign-up with `password: undefined`. The Supabase client is created lazily, with a clear error when env is missing.
+- Auth is Supabase email + password. Never use sign-up with `password: undefined`. The Supabase client is created lazily, with a clear error when env is missing.
 - `/notify` (email alerts) and `/flight-lookup` are deferred. Do not re-add their UI or API calls.
 - `npm run typecheck` must be 0 errors. ESLint is not installed in this repo; do not plan a lint step.
 - `package-lock.json` must stay in sync so `npm ci` works.

@@ -132,8 +132,6 @@ function FlightDetailsScreen() {
     );
   }
 
-  const showAlternatives = flight.riskLevel === 'high' || flight.riskLevel === 'medium';
-
   return (
     <div className="app-container">
       <div className="screen">
@@ -312,31 +310,21 @@ function FlightDetailsScreen() {
               </div>
             </section>
 
-            {showAlternatives && (
-              <Link
-                to="/flights/$flightId/alternatives"
-                params={{ flightId }}
-                className="flex items-center justify-between p-4 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <RefreshCw className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-primary-900">View alternative flights</p>
-                    <p className="text-sm text-primary-700">
-                      Find lower-risk options on the same route
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-primary-600" />
-              </Link>
-            )}
-
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Manage Flight
               </h3>
+              <Link
+                to="/flights/$flightId/edit"
+                params={{ flightId }}
+                className="w-full flex items-center justify-between p-4 mb-3 bg-white border border-navy-200 rounded-xl hover:border-navy-300 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">✏️</span>
+                  <span className="font-medium text-navy-900">Edit flight</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-navy-400" />
+              </Link>
               <button
                 onClick={() => setShowRemoveModal(true)}
                 className="w-full flex items-center justify-between p-4 bg-white border border-navy-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-colors group"

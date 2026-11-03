@@ -1,6 +1,6 @@
 # Running FlyRely locally
 
-Requires Node 20.x.
+Works with Node 20 or newer (including Node 24).
 
 1. Start the API (from the repo root's sibling directory):
 
