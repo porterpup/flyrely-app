@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 
@@ -7,13 +7,17 @@ export const Route = createFileRoute('/auth/signup')({
 })
 
 function SignupRoute() {
-  const { signUp } = useAuth()
+  const { signUp, user, configured } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [confirmationSent, setConfirmationSent] = useState(false)
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (user) navigate({ to: '/' })
+  }, [user, navigate])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,6 +52,11 @@ function SignupRoute() {
   return (
     <div className="p-4 max-w-md mx-auto">
       <h1 className="text-2xl font-semibold mb-4">Sign up</h1>
+      {!configured && (
+        <p className="mb-3 rounded bg-amber-50 p-3 text-sm text-amber-800">
+          Sign-in isn't configured
+        </p>
+      )}
       <form onSubmit={handleSubmit} className="space-y-3">
         <label className="block">
           <span className="text-sm text-gray-600">Email</span>
@@ -72,7 +81,7 @@ function SignupRoute() {
             required
           />
         </label>
-        <button className="btn-primary w-full" type="submit" disabled={busy}>
+        <button className="btn-primary w-full" type="submit" disabled={busy || !configured}>
           {busy ? 'Creating account...' : 'Create account'}
         </button>
       </form>

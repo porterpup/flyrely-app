@@ -11,7 +11,7 @@ Works with Node 20 or newer (including Node 24).
 2. Create a free Supabase project (https://supabase.com):
    - Authentication -> Providers: make sure Email is enabled.
    - For testing, turn off "Confirm email" so sign-up signs you in immediately.
-   - Authentication -> URL Configuration: Site URL `http://localhost:3000`, add redirect URL `http://localhost:3000/**`.
+   - Authentication -> URL Configuration: Site URL `http://localhost:3000`, add redirect URL `http://localhost:3000/**` (this also covers the password-reset link, which lands on `/auth/reset-password`).
    - Settings -> API: copy the project URL and the anon key.
 
 3. Configure the app. Copy `.env.example` to `.env.local` and fill in:

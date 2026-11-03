@@ -2,11 +2,33 @@ import type { Flight } from '~/types';
 
 const STORAGE_KEY = 'flyrely_flights';
 
+/**
+ * Older versions stored invented values (scheduledArrival = departure + 5h,
+ * delayMinutes, predictedDeparture/Arrival, airlineStatus). Never show them.
+ */
+const LEGACY_FIELDS = [
+  'scheduledArrival',
+  'delayMinutes',
+  'predictedDeparture',
+  'predictedArrival',
+  'airlineStatus',
+] as const;
+
+export function stripLegacyFields(raw: unknown): Flight | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const copy = { ...(raw as Record<string, unknown>) };
+  for (const key of LEGACY_FIELDS) delete copy[key];
+  return copy as unknown as Flight;
+}
+
 export function getFlights(): Flight[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Flight[]) : [];
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(stripLegacyFields).filter((f): f is Flight => f !== null);
   } catch {
     return [];
   }

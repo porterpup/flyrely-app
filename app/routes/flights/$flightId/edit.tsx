@@ -4,7 +4,7 @@ import { Calendar, Clock } from 'lucide-react';
 import { Button, Header, Input } from '~/components/ui';
 import { getFlightById, saveFlight } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
-import { getAirport } from '~/lib/airports';
+import { getAirport, getAirline } from '~/lib/airports';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/$flightId/edit')({
@@ -103,12 +103,22 @@ function EditFlightScreen() {
       return;
     }
 
+    const prefix = newFlightNumber.match(/^([A-Z0-9]{2})\d/)?.[1];
+    const airlineInfo = prefix ? getAirline(prefix) : undefined;
+    if (!airlineInfo) {
+      setError(
+        'Flight number must start with a supported airline code, e.g. DL1234 or UA567'
+      );
+      return;
+    }
+
     setIsSaving(true);
     const originInfo = getAirport(newOrigin);
     const destInfo = getAirport(newDestination);
     const edited: Flight = {
       ...flight,
       flightNumber: newFlightNumber,
+      airline: { code: airlineInfo.code, name: airlineInfo.name },
       origin: {
         code: newOrigin,
         name: originInfo?.name ?? (newOrigin === flight.origin.code ? flight.origin.name : newOrigin),
@@ -129,7 +139,7 @@ function EditFlightScreen() {
             newOrigin,
             newDestination,
             newDeparture,
-            flight.airline.code,
+            airlineInfo.code,
             flight.id,
             newFlightNumber
           )
@@ -137,6 +147,7 @@ function EditFlightScreen() {
         edited.riskLevel = prediction.risk_level;
         edited.delayProbability = prediction.delay_probability;
         edited.delayReason = prediction.risk_factors.slice(0, 2).join(' • ') || undefined;
+        edited.warnings = prediction.warnings;
         edited.delaySeverity = prediction.delay_severity ?? undefined;
         edited.lastCheckedAt = Date.now();
       } catch (e) {

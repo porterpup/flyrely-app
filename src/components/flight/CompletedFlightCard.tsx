@@ -61,7 +61,7 @@ export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProp
       {/* Date & Times */}
       <div className="flex items-center justify-between text-sm text-navy-500">
         <span>{formatDate(flight.scheduledDeparture)}</span>
-        <span>Departed {formatTime(flight.scheduledDeparture)}</span>
+        <span>Scheduled {formatTime(flight.scheduledDeparture)}</span>
       </div>
     </button>
   );

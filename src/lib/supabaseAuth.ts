@@ -34,6 +34,10 @@ export async function signOut() {
 }
 
 export async function resetPasswordForEmail(email: string) {
-  const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/login` : undefined
+  const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/reset-password` : undefined
   return getSupabase().auth.resetPasswordForEmail(email, { redirectTo })
+}
+
+export async function updateUserPassword(password: string) {
+  return getSupabase().auth.updateUser({ password })
 }

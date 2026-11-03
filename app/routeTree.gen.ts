@@ -18,6 +18,7 @@ import { Route as AccountIndexImport } from './routes/account/index'
 import { Route as FlightsHistoryImport } from './routes/flights/history'
 import { Route as FlightsAddImport } from './routes/flights/add'
 import { Route as AuthSignupImport } from './routes/auth/signup'
+import { Route as AuthResetPasswordImport } from './routes/auth/reset-password'
 import { Route as AuthLoginImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
 import { Route as AccountUsageImport } from './routes/account/usage'
@@ -65,6 +66,12 @@ const FlightsAddRoute = FlightsAddImport.update({
 const AuthSignupRoute = AuthSignupImport.update({
   id: '/auth/signup',
   path: '/auth/signup',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthResetPasswordRoute = AuthResetPasswordImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -128,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/login'
       fullPath: '/auth/login'
       preLoaderRoute: typeof AuthLoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordImport
       parentRoute: typeof rootRoute
     }
     '/auth/signup': {
@@ -196,6 +210,7 @@ export interface FileRoutesByFullPath {
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
@@ -211,6 +226,7 @@ export interface FileRoutesByTo {
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
@@ -227,6 +243,7 @@ export interface FileRoutesById {
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
@@ -244,6 +261,7 @@ export interface FileRouteTypes {
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
+    | '/auth/reset-password'
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
@@ -258,6 +276,7 @@ export interface FileRouteTypes {
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
+    | '/auth/reset-password'
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
@@ -272,6 +291,7 @@ export interface FileRouteTypes {
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
+    | '/auth/reset-password'
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
@@ -288,6 +308,7 @@ export interface RootRouteChildren {
   AccountUsageRoute: typeof AccountUsageRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignupRoute: typeof AuthSignupRoute
   FlightsAddRoute: typeof FlightsAddRoute
   FlightsHistoryRoute: typeof FlightsHistoryRoute
@@ -303,6 +324,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountUsageRoute: AccountUsageRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignupRoute: AuthSignupRoute,
   FlightsAddRoute: FlightsAddRoute,
   FlightsHistoryRoute: FlightsHistoryRoute,
@@ -327,6 +349,7 @@ export const routeTree = rootRoute
         "/account/usage",
         "/auth/forgot-password",
         "/auth/login",
+        "/auth/reset-password",
         "/auth/signup",
         "/flights/add",
         "/flights/history",
@@ -348,6 +371,9 @@ export const routeTree = rootRoute
     },
     "/auth/login": {
       "filePath": "auth/login.tsx"
+    },
+    "/auth/reset-password": {
+      "filePath": "auth/reset-password.tsx"
     },
     "/auth/signup": {
       "filePath": "auth/signup.tsx"

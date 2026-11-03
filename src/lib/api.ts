@@ -31,7 +31,8 @@ export interface PredictResponse {
   flight_id: string;
   delay_probability: number;
   risk_level: 'low' | 'medium' | 'high';
-  confidence: number;
+  /** Model confidence (0-1) when the API provides it; never inferred client-side */
+  confidence?: number;
   /** null when the severity model is unavailable */
   delay_severity: DelaySeverity | null;
   origin: string;
@@ -99,7 +100,7 @@ function normalizePrediction(raw: Partial<PredictResponse>): PredictResponse {
     flight_id: raw.flight_id ?? '',
     delay_probability: raw.delay_probability,
     risk_level: raw.risk_level,
-    confidence: raw.confidence ?? Math.max(raw.delay_probability, 1 - raw.delay_probability),
+    confidence: raw.confidence,
     delay_severity: raw.delay_severity ?? null,
     origin: raw.origin ?? '',
     destination: raw.destination ?? '',

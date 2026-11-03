@@ -58,7 +58,7 @@ export function RemoveFlightModal({
           <div className="flex items-start gap-2">
             <BellOff className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-amber-800">
-              You'll stop receiving alerts and predictions for this flight.
+              This flight and its prediction will be removed from your list.
             </p>
           </div>
         </div>

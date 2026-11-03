@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import {
   getSupabase,
   isSupabaseConfigured,
@@ -8,6 +9,7 @@ import {
   signInWithPassword,
   signOut as supabaseSignOut,
   signUp as supabaseSignUp,
+  updateUserPassword,
 } from '~/lib/supabaseAuth'
 
 type User = {
@@ -29,6 +31,7 @@ type AuthContextValue = {
   signUp: (email: string, password: string) => Promise<SignUpResult>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<AuthResult>
+  updatePassword: (password: string) => Promise<AuthResult>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -37,6 +40,7 @@ const notConfigured = (): AuthResult => ({ error: NOT_CONFIGURED_MESSAGE })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured()
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(configured)
 
@@ -53,10 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = data.session?.user
       setUser(u ? { id: u.id, email: u.email } : null)
       setLoading(false)
+    }).catch(() => {
+      if (!mounted) return
+      setUser(null)
+      setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
+      if (event === 'PASSWORD_RECOVERY') navigate({ to: '/auth/reset-password' })
       setUser(session?.user ? { id: session.user.id, email: session.user.email } : null)
     })
 
@@ -64,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configured])
 
   async function signIn(email: string, password: string): Promise<AuthResult> {
@@ -90,8 +100,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
+  async function updatePassword(password: string): Promise<AuthResult> {
+    if (!configured) return notConfigured()
+    const { error } = await updateUserPassword(password)
+    return { error: error?.message ?? null }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, configured, signIn, signUp, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, loading, configured, signIn, signUp, signOut, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

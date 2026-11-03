@@ -50,7 +50,8 @@ function FlightDetailsScreen() {
               ...f,
               riskLevel: prediction.risk_level,
               delayProbability: prediction.delay_probability,
-              delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || f.delayReason,
+              delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+              warnings: prediction.warnings,
               delaySeverity: prediction.delay_severity ?? undefined,
             };
             const stamped = stampFlightChecked(updated);
@@ -84,7 +85,8 @@ function FlightDetailsScreen() {
         ...flight,
         riskLevel: prediction.risk_level,
         delayProbability: prediction.delay_probability,
-        delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || flight.delayReason,
+        delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+        warnings: prediction.warnings,
         delaySeverity: prediction.delay_severity ?? undefined,
       };
       saveFlight(updated);
@@ -279,11 +281,22 @@ function FlightDetailsScreen() {
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-navy-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-navy-500">
-                      Predictions are based on historical performance and current conditions. Tap
-                      refresh to update.
+                      Predictions are based on historical delay patterns for this route, airline and
+                      time of day. Tap refresh to update.
                     </p>
                   </div>
                 </div>
+                {flight.warnings && flight.warnings.length > 0 && (
+                  <div className="p-4 border-t border-navy-100">
+                    <ul className="space-y-1">
+                      {flight.warnings.map((w) => (
+                        <li key={w} className="text-xs text-navy-400">
+                          {w}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -299,14 +312,6 @@ function FlightDetailsScreen() {
                     {formatTime(flight.scheduledDeparture)}
                   </p>
                 </div>
-                {flight.scheduledArrival && (
-                  <div className="p-4 border-t border-navy-100">
-                    <p className="text-sm text-navy-500 mb-1">Scheduled arrival</p>
-                    <p className="font-semibold text-navy-900">
-                      {formatTime(flight.scheduledArrival)}
-                    </p>
-                  </div>
-                )}
               </div>
             </section>
 

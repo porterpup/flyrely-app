@@ -278,6 +278,7 @@ function AddFlightScreen() {
           delayProbability: prediction.delay_probability,
           delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
           delaySeverity: prediction.delay_severity ?? undefined,
+          warnings: prediction.warnings,
         };
         setSearchResult(flight);
       } catch (e) {
@@ -457,7 +458,7 @@ function AddFlightScreen() {
               </div>
 
               <p className="text-sm text-navy-500">
-                You'll receive delay predictions and alerts for this flight.
+                You'll see delay predictions for this flight, and can refresh them anytime.
               </p>
 
               <div className="flex gap-3">

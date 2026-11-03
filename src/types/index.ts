@@ -40,8 +40,6 @@ export interface Flight {
   origin: Airport;
   destination: Airport;
   scheduledDeparture: string; // ISO date
-  /** Only set when known from a real source; the prediction API does not provide arrival times. */
-  scheduledArrival?: string;
   status: FlightStatus;
   riskLevel: RiskLevel;
   /** Model probability of a 15+ minute delay (0-1), straight from /predict. */
@@ -51,4 +49,6 @@ export interface Flight {
   terminal?: string;
   delaySeverity?: DelaySeverity | null;
   lastCheckedAt?: number;
+  /** Data-coverage caveats from /predict, e.g. airport not in historical data. */
+  warnings?: string[];
 }
