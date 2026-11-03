@@ -241,10 +241,6 @@ function FlightDetailsScreen() {
 
                 {flight.delaySeverity && flight.riskLevel !== 'low' && (
                   <div className="mt-5 pt-4 border-t border-black/10 text-navy-ink">
-                    <p className="text-xs mb-2">
-                      If delayed, most likely {flight.delaySeverity.expected_delay_label} (
-                      {flight.delaySeverity.expected_delay_range})
-                    </p>
                     <DelaySeverityBar severity={flight.delaySeverity} compact />
                   </div>
                 )}
