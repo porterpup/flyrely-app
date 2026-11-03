@@ -25,7 +25,15 @@ export const Route = createRootRoute({
         content: 'AI-powered flight delay predictions. Stay ahead of delays before they happen.',
       },
     ],
-    links: [{ rel: 'stylesheet', href: globalsCss }],
+    links: [
+      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+      },
+      { rel: 'stylesheet', href: globalsCss },
+    ],
   }),
 });
 

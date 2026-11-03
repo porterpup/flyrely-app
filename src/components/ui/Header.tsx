@@ -22,7 +22,7 @@ export function Header({
     <header
       className={cn(
         'sticky top-0 z-10 px-4 py-3',
-        transparent ? 'bg-transparent' : 'bg-white border-b border-navy-100'
+        transparent ? 'bg-transparent' : 'bg-white'
       )}
     >
       <div className="flex items-center justify-between">
@@ -38,7 +38,7 @@ export function Header({
         </div>
 
         <div className="flex-1 text-center">
-          <h1 className="text-lg font-semibold text-navy-900">{title}</h1>
+          <h1 className="text-base font-normal text-navy-ink">{title}</h1>
           {subtitle && (
             <p className="text-sm text-navy-500 mt-0.5">{subtitle}</p>
           )}

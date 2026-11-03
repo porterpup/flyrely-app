@@ -30,6 +30,26 @@ export default {
           700: '#334155',
           800: '#1E293B',
           900: '#0F172A',
+          // Figma redesign surfaces
+          card: '#123A75',
+          panel: '#1A4A8F',
+          ink: '#000006',
+          caption: '#3D4553',
+          stroke: '#EBEDF1',
+        },
+        // Figma accent blue (active tab, links)
+        brand: '#276EF1',
+        // Figma warning (At risk) badge / prediction panel
+        warn: {
+          DEFAULT: '#FFB400',
+          ink: '#000006',
+          bg: '#FFF4D6',
+          text: '#7A5200',
+        },
+        // Figma green pill (On track / Already tracking)
+        ok: {
+          DEFAULT: '#0E9F4A',
+          bg: '#DDF5E6',
         },
         // Accent - Orange/Amber
         accent: {
@@ -56,6 +76,9 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        nav: '0 -1px 20px rgba(0, 0, 6, 0.05)',
       },
       borderRadius: {
         '4xl': '2rem',

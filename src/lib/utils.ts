@@ -55,10 +55,10 @@ export function formatDelayRange(minDelay: number, maxDelay: number): string {
   return `${minDelay}-${maxDelay} min delay`;
 }
 
-/** Model output only: "34% chance of delay", or null if no probability is stored. */
+/** Model output only: "34% chance of a 15+ min delay", or null if no probability is stored. */
 export function formatDelayChance(probability?: number): string | null {
   if (typeof probability !== 'number') return null;
-  return `${Math.round(probability * 100)}% chance of delay`;
+  return `${Math.round(probability * 100)}% chance of a 15+ min delay`;
 }
 
 /**
@@ -70,4 +70,14 @@ export function parseFlightNumber(input: string): { airlineCode: string; number:
   const m = input.replace(/\s+/g, '').toUpperCase().match(/^([A-Z0-9]{2})(\d{1,4})[A-Z]?$/);
   if (!m || !/[A-Z]/.test(m[1])) return null;
   return { airlineCode: m[1], number: m[2] };
+}
+
+/** Long date for headers, e.g. "Tuesday, December 9, 2025". */
+export function formatLongDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
