@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
 import { Header, Button, Input, Modal } from '~/components/ui';
 import { DelaySeverityBar } from '~/components/flight';
-import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
+import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight } from '~/lib/flightStore';
 import { searchAirports, searchAirlines } from '~/lib/airports';
@@ -271,20 +271,6 @@ function AddFlightScreen() {
         const payload = buildPredictPayload(originCode, destCode, depISO, derivedCode, flightId, fullFlightNumber);
         const prediction = await flyrelyApi.predict(payload);
 
-        const estimatedDelay = prediction.delay_severity
-          ? Math.round(
-              prediction.delay_probability *
-              (prediction.delay_severity.expected_delay_label === 'severe' ? 150
-               : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
-               : 25)
-            )
-          : prediction.risk_level === 'high'
-          ? Math.round(prediction.delay_probability * 90)
-          : prediction.risk_level === 'medium'
-          ? Math.round(prediction.delay_probability * 45)
-          : 0;
-        const scheduledDep = new Date(depISO);
-        const scheduledArr = new Date(scheduledDep.getTime() + 5 * 3600000);
         const flight: Flight = {
           id: flightId,
           flightNumber: fullFlightNumber,
@@ -293,28 +279,18 @@ function AddFlightScreen() {
             code: originCode,
             name: originInfo?.name ?? originCode,
             city: originInfo?.city ?? originCode,
-            timezone: 'UTC',
           },
           destination: {
             code: destCode,
             name: destInfo?.name ?? destCode,
             city: destInfo?.city ?? destCode,
-            timezone: 'UTC',
           },
           scheduledDeparture: depISO,
-          scheduledArrival: scheduledArr.toISOString(),
           status: 'scheduled',
           riskLevel: prediction.risk_level,
-          delayMinutes: estimatedDelay,
+          delayProbability: prediction.delay_probability,
           delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
-          airlineStatus: 'On time',
           delaySeverity: prediction.delay_severity ?? undefined,
-          predictedDeparture: estimatedDelay > 0
-            ? new Date(scheduledDep.getTime() + estimatedDelay * 60000).toISOString()
-            : undefined,
-          predictedArrival: estimatedDelay > 0
-            ? new Date(scheduledArr.getTime() + estimatedDelay * 60000).toISOString()
-            : undefined,
         };
         setSearchResult(flight);
       } catch (e) {
@@ -347,18 +323,6 @@ function AddFlightScreen() {
             const routeId = `route-${Date.now()}-${i}`;
             const payload = buildPredictPayload(routeOriginCode, routeDestCode, depISO, undefined, routeId);
             const prediction = await flyrelyApi.predict(payload);
-            const estimatedDelay = prediction.delay_severity
-              ? Math.round(
-                  prediction.delay_probability *
-                  (prediction.delay_severity.expected_delay_label === 'severe' ? 150
-                   : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
-                   : 25)
-                )
-              : prediction.risk_level === 'high'
-              ? Math.round(prediction.delay_probability * 90)
-              : prediction.risk_level === 'medium'
-              ? Math.round(prediction.delay_probability * 45)
-              : 0;
             return {
               id: routeId,
               flightNumber: `FL${100 + i * 11}`,
@@ -367,27 +331,18 @@ function AddFlightScreen() {
                 code: routeOriginCode,
                 name: routeOriginInfo?.name ?? routeOriginCode,
                 city: routeOriginInfo?.city ?? routeOriginCode,
-                timezone: 'UTC',
-              },
+                  },
               destination: {
                 code: routeDestCode,
                 name: routeDestInfo?.name ?? routeDestCode,
                 city: routeDestInfo?.city ?? routeDestCode,
-                timezone: 'UTC',
-              },
+                  },
               scheduledDeparture: depISO,
-              scheduledArrival: new Date(new Date(depISO).getTime() + 5 * 3600000).toISOString(),
               status: 'scheduled' as const,
               riskLevel: prediction.risk_level,
-              delayMinutes: estimatedDelay,
+              delayProbability: prediction.delay_probability,
               delayReason: prediction.risk_factors.slice(0, 1).join('') || undefined,
               delaySeverity: prediction.delay_severity ?? undefined,
-              predictedDeparture: estimatedDelay > 0
-                ? new Date(new Date(depISO).getTime() + estimatedDelay * 60000).toISOString()
-                : undefined,
-              predictedArrival: estimatedDelay > 0
-                ? new Date(new Date(depISO).getTime() + (5 * 60 + estimatedDelay) * 60000).toISOString()
-                : undefined,
             } satisfies Flight;
           })
         );
@@ -633,9 +588,9 @@ function AddFlightScreen() {
                   <span className={getRiskBadgeClass(flightToAdd.riskLevel)}>
                     {getRiskLabel(flightToAdd.riskLevel)}
                   </span>
-                  {(flightToAdd.delayMinutes ?? 0) > 0 && (
+                  {formatDelayChance(flightToAdd.delayProbability) && (
                     <span className="text-sm text-navy-600">
-                      · {flightToAdd.delayMinutes}-{(flightToAdd.delayMinutes ?? 0) + 30} min delay expected
+                      · {formatDelayChance(flightToAdd.delayProbability)}
                     </span>
                   )}
                 </div>
@@ -706,7 +661,7 @@ function FlightSearchResult({
         </div>
         <div className="text-center">
           <p className="font-bold text-navy-900">{flight.destination.code}</p>
-          <p className="text-xs text-navy-500">{formatTime(flight.scheduledArrival)}</p>
+          <p className="text-xs text-navy-500">{formatDelayChance(flight.delayProbability) ?? ''}</p>
         </div>
       </div>
 

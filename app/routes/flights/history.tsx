@@ -54,8 +54,9 @@ function FlightHistoryScreen() {
 
   const stats = {
     total: allCompleted.length,
-    onTime: allCompleted.filter((f) => !f.delayMinutes || f.delayMinutes <= 15).length,
-    delayed: allCompleted.filter((f) => f.delayMinutes && f.delayMinutes > 15).length,
+    // Predicted risk at tracking time; actual outcomes are not recorded.
+    lowRisk: allCompleted.filter((f) => f.riskLevel === 'low').length,
+    elevatedRisk: allCompleted.filter((f) => f.riskLevel !== 'low').length,
   };
 
   function handleClearAll() {
@@ -104,12 +105,12 @@ function FlightHistoryScreen() {
                   <p className="text-xs text-navy-500">Total flights</p>
                 </div>
                 <div className="bg-green-50 rounded-xl p-3 text-center">
-                  <p className="text-2xl font-bold text-green-700">{stats.onTime}</p>
-                  <p className="text-xs text-green-600">On time</p>
+                  <p className="text-2xl font-bold text-green-700">{stats.lowRisk}</p>
+                  <p className="text-xs text-green-600">Predicted low risk</p>
                 </div>
                 <div className="bg-amber-50 rounded-xl p-3 text-center">
-                  <p className="text-2xl font-bold text-amber-700">{stats.delayed}</p>
-                  <p className="text-xs text-amber-600">Delayed</p>
+                  <p className="text-2xl font-bold text-amber-700">{stats.elevatedRisk}</p>
+                  <p className="text-xs text-amber-600">Predicted at risk</p>
                 </div>
               </div>
             </div>

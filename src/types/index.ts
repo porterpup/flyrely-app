@@ -16,7 +16,7 @@ export interface Airport {
   code: string;
   name: string;
   city: string;
-  timezone: string;
+  timezone?: string;
 }
 
 export interface Airline {
@@ -40,14 +40,13 @@ export interface Flight {
   origin: Airport;
   destination: Airport;
   scheduledDeparture: string; // ISO date
-  scheduledArrival: string;
-  predictedDeparture?: string;
-  predictedArrival?: string;
+  /** Only set when known from a real source; the prediction API does not provide arrival times. */
+  scheduledArrival?: string;
   status: FlightStatus;
   riskLevel: RiskLevel;
-  delayMinutes?: number;
+  /** Model probability of a 15+ minute delay (0-1), straight from /predict. */
+  delayProbability?: number;
   delayReason?: string;
-  airlineStatus?: string;
   gate?: string;
   terminal?: string;
   delaySeverity?: DelaySeverity | null;

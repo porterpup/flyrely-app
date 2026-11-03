@@ -1,19 +1,8 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import {
-  User,
-  Bell,
-  CreditCard,
-  HelpCircle,
-  MessageSquare,
-  FileText,
-  Shield,
-  LogOut,
-  ChevronRight,
-  Crown,
-  BarChart3,
-} from 'lucide-react';
+import { Bell, CreditCard, LogOut, ChevronRight, Crown, Mail } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { AppShell } from '~/components/layout';
+import { useAuth } from '~/context/AuthContext';
 
 export const Route = createFileRoute('/account/')({
   component: AccountScreen,
@@ -32,22 +21,10 @@ const menuSections: { title: string; items: MenuItem[] }[] = [
     title: 'Account',
     items: [
       {
-        icon: User,
-        label: 'Profile',
-        description: 'Name, email, phone number',
-        to: '/account/profile',
-      },
-      {
         icon: Bell,
         label: 'Notification settings',
         description: 'Manage alerts and preferences',
         to: '/account/settings',
-      },
-      {
-        icon: BarChart3,
-        label: 'API Usage',
-        description: 'Prediction stats & cost forecast',
-        to: '/account/usage',
       },
       {
         icon: CreditCard,
@@ -58,46 +35,18 @@ const menuSections: { title: string; items: MenuItem[] }[] = [
       },
     ],
   },
-  {
-    title: 'Support',
-    items: [
-      {
-        icon: HelpCircle,
-        label: 'Help & support',
-        description: 'FAQs and contact us',
-        to: '/account/support',
-        badge: undefined,
-      },
-      {
-        icon: MessageSquare,
-        label: 'Give feedback',
-        description: 'Help us improve FlyRely',
-        to: '/account/feedback',
-        badge: undefined,
-      },
-    ],
-  },
-  {
-    title: 'Legal',
-    items: [
-      {
-        icon: FileText,
-        label: 'Terms of service',
-        to: '/legal/terms',
-        description: undefined,
-      },
-      {
-        icon: Shield,
-        label: 'Privacy policy',
-        to: '/legal/privacy',
-        description: undefined,
-      },
-    ],
-  },
 ];
 
 function AccountScreen() {
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
+  const email = user?.email ?? null;
+  const initial = email ? email[0].toUpperCase() : '?';
+
+  async function handleSignOut() {
+    await signOut();
+    navigate({ to: '/' });
+  }
 
   return (
     <AppShell>
@@ -105,11 +54,18 @@ function AccountScreen() {
         {/* Profile Header */}
         <div className="flex items-center gap-4 mb-8">
           <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary-600">JD</span>
+            <span className="text-2xl font-bold text-primary-600">{initial}</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold text-navy-900">John Doe</h1>
-            <p className="text-navy-500">john@example.com</p>
+            {email ? (
+              <h1 className="text-xl font-bold text-navy-900">{email}</h1>
+            ) : (
+              !loading && (
+                <Link to="/auth/login" className="text-xl font-bold text-primary-600">
+                  Sign in
+                </Link>
+              )
+            )}
           </div>
         </div>
 
@@ -176,14 +132,27 @@ function AccountScreen() {
           ))}
         </div>
 
-        {/* Sign Out */}
-        <button
-          onClick={() => navigate({ to: '/auth/login' })}
-          className="w-full mt-8 flex items-center justify-center gap-2 p-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+        {/* Support */}
+        <a
+          href="mailto:support@flyrely.com"
+          className="mt-6 flex items-center gap-3 p-4 bg-white border border-navy-200 rounded-xl hover:bg-navy-50 transition-colors"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Sign out</span>
-        </button>
+          <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
+            <Mail className="w-5 h-5 text-navy-600" />
+          </div>
+          <span className="font-medium text-navy-900">Contact support</span>
+        </a>
+
+        {/* Sign Out */}
+        {user && (
+          <button
+            onClick={handleSignOut}
+            className="w-full mt-8 flex items-center justify-center gap-2 p-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign out</span>
+          </button>
+        )}
 
         {/* Version */}
         <p className="text-center text-sm text-navy-400 mt-6 mb-4">

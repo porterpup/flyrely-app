@@ -28,7 +28,6 @@ const mockTrips: Trip[] = [
         scheduledArrival: '2024-12-04T02:45:00',
         status: 'scheduled',
         riskLevel: 'medium',
-        delayMinutes: 45,
       },
       {
         id: '2',

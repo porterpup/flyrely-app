@@ -18,10 +18,8 @@ const mockCurrentFlight: Flight = {
   destination: { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', timezone: 'America/New_York' },
   scheduledDeparture: '2024-12-03T18:15:00',
   scheduledArrival: '2024-12-04T02:45:00',
-  predictedDeparture: '2024-12-03T19:15:00',
   status: 'scheduled',
   riskLevel: 'high',
-  delayMinutes: 60,
   delayReason: 'Weather conditions at destination',
 };
 
@@ -97,8 +95,7 @@ function AlternativeFlightsScreen() {
                   High delay risk on {currentFlight.flightNumber}
                 </h3>
                 <p className="text-sm text-red-700 mt-1">
-                  Expected {currentFlight.delayMinutes}+ min delay due to{' '}
-                  {currentFlight.delayReason?.toLowerCase()}
+                  {currentFlight.delayReason ?? 'Elevated delay risk for this route and time'}
                 </p>
               </div>
             </div>
