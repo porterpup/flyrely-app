@@ -21,7 +21,6 @@ import { Route as AuthSignupImport } from './routes/auth/signup'
 import { Route as AuthLoginImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
 import { Route as AccountUsageImport } from './routes/account/usage'
-import { Route as AccountBillingImport } from './routes/account/billing'
 import { Route as FlightsFlightIdIndexImport } from './routes/flights/$flightId/index'
 import { Route as FlightsFlightIdEditImport } from './routes/flights/$flightId/edit'
 
@@ -87,12 +86,6 @@ const AccountUsageRoute = AccountUsageImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AccountBillingRoute = AccountBillingImport.update({
-  id: '/account/billing',
-  path: '/account/billing',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const FlightsFlightIdIndexRoute = FlightsFlightIdIndexImport.update({
   id: '/flights/$flightId/',
   path: '/flights/$flightId/',
@@ -114,13 +107,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/account/billing': {
-      id: '/account/billing'
-      path: '/account/billing'
-      fullPath: '/account/billing'
-      preLoaderRoute: typeof AccountBillingImport
       parentRoute: typeof rootRoute
     }
     '/account/usage': {
@@ -207,7 +193,6 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account/billing': typeof AccountBillingRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -223,7 +208,6 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account/billing': typeof AccountBillingRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -240,7 +224,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/account/billing': typeof AccountBillingRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -258,7 +241,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/account/billing'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -273,7 +255,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account/billing'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -288,7 +269,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/account/billing'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -305,7 +285,6 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountBillingRoute: typeof AccountBillingRoute
   AccountUsageRoute: typeof AccountUsageRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -321,7 +300,6 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountBillingRoute: AccountBillingRoute,
   AccountUsageRoute: AccountUsageRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
@@ -346,7 +324,6 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/account/billing",
         "/account/usage",
         "/auth/forgot-password",
         "/auth/login",
@@ -362,9 +339,6 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
-    },
-    "/account/billing": {
-      "filePath": "account/billing.tsx"
     },
     "/account/usage": {
       "filePath": "account/usage.tsx"
