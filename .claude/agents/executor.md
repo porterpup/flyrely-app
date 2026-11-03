@@ -16,12 +16,12 @@ You are the executor for the FlyRely app (TypeScript, TanStack Start, Supabase a
 ## Hard rules
 
 - Keep the API client (`api.ts`) contract intact. Never change a request/response field, add an endpoint call, or hardcode a base URL.
-- Auth stays magic-link. Never touch the auth flow beyond what the task specifies.
+- Auth is Supabase email + password. Never touch the auth flow beyond what the task specifies.
 - Do not re-add `/notify` or `/flight-lookup` UI.
 
 ## Guardrails
 
-- Never commit, push, merge, or create a branch.
+- Commit on a feature branch; the main session handles push/merge. Never push or merge.
 - Never touch secrets, `.env` files, or credentials.
 - Never edit deployment config (Railway).
 

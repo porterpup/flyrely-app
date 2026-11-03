@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Meta, Scripts } from '@tanstack/start';
+import { AuthProvider } from '~/context/AuthContext';
 import globalsCss from '~/styles/globals.css?url';
 
 const queryClient = new QueryClient({
@@ -36,9 +37,11 @@ function RootComponent() {
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
-          <div className="min-h-screen bg-navy-50">
-            <Outlet />
-          </div>
+          <AuthProvider>
+            <div className="min-h-screen bg-navy-50">
+              <Outlet />
+            </div>
+          </AuthProvider>
         </QueryClientProvider>
         <Scripts />
       </body>

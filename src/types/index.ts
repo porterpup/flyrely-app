@@ -16,7 +16,7 @@ export interface Airport {
   code: string;
   name: string;
   city: string;
-  timezone: string;
+  timezone?: string;
 }
 
 export interface Airline {
@@ -40,59 +40,15 @@ export interface Flight {
   origin: Airport;
   destination: Airport;
   scheduledDeparture: string; // ISO date
-  scheduledArrival: string;
-  predictedDeparture?: string;
-  predictedArrival?: string;
   status: FlightStatus;
   riskLevel: RiskLevel;
-  delayMinutes?: number;
+  /** Model probability of a 15+ minute delay (0-1), straight from /predict. */
+  delayProbability?: number;
   delayReason?: string;
-  airlineStatus?: string;
   gate?: string;
   terminal?: string;
   delaySeverity?: DelaySeverity | null;
   lastCheckedAt?: number;
-}
-
-export interface Trip {
-  id: string;
-  name: string;
-  flights: Flight[];
-  createdAt: string;
-}
-
-export interface AlternateFlight {
-  id: string;
-  flightNumber: string;
-  airline: Airline;
-  scheduledDeparture: string;
-  scheduledArrival: string;
-  riskLevel: RiskLevel;
-  availableSeats?: number;
-  priceDifference?: number;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  name?: string;
-  phone?: string;
-  notificationPreferences: NotificationPreferences;
-}
-
-export interface NotificationPreferences {
-  push: boolean;
-  email: boolean;
-  sms: boolean;
-  minSeverity: RiskLevel;
-}
-
-export interface Notification {
-  id: string;
-  flightId: string;
-  type: 'risk_change' | 'delay_update' | 'gate_change' | 'status_change';
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
+  /** Data-coverage caveats from /predict, e.g. airport not in historical data. */
+  warnings?: string[];
 }

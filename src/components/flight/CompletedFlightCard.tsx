@@ -1,5 +1,5 @@
 import { Check, Clock, Plane } from 'lucide-react';
-import { cn, formatDate, formatTime } from '~/lib/utils';
+import { cn, formatDate, formatTime, getRiskLabel } from '~/lib/utils';
 import type { Flight } from '~/types';
 
 interface CompletedFlightCardProps {
@@ -8,8 +8,8 @@ interface CompletedFlightCardProps {
 }
 
 export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProps) {
-  const wasDelayed = flight.delayMinutes && flight.delayMinutes > 15;
-  const wasOnTime = !wasDelayed;
+  // We don't track actual outcomes, so show the prediction made for this flight.
+  const wasLowRisk = flight.riskLevel === 'low';
 
   return (
     <button
@@ -31,20 +31,15 @@ export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProp
         <div
           className={cn(
             'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-            wasOnTime ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+            wasLowRisk ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
           )}
         >
-          {wasOnTime ? (
-            <>
-              <Check className="w-3.5 h-3.5" />
-              <span>On time</span>
-            </>
+          {wasLowRisk ? (
+            <Check className="w-3.5 h-3.5" />
           ) : (
-            <>
-              <Clock className="w-3.5 h-3.5" />
-              <span>{flight.delayMinutes}m late</span>
-            </>
+            <Clock className="w-3.5 h-3.5" />
           )}
+          <span>Predicted: {getRiskLabel(flight.riskLevel)}</span>
         </div>
       </div>
 
@@ -66,7 +61,7 @@ export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProp
       {/* Date & Times */}
       <div className="flex items-center justify-between text-sm text-navy-500">
         <span>{formatDate(flight.scheduledDeparture)}</span>
-        <span>Landed {formatTime(flight.scheduledArrival)}</span>
+        <span>Scheduled {formatTime(flight.scheduledDeparture)}</span>
       </div>
     </button>
   );

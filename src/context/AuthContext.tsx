@@ -1,71 +1,113 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { getSupabase } from '~/lib/supabaseAuth'
+import { useNavigate } from '@tanstack/react-router'
+import {
+  getSupabase,
+  isSupabaseConfigured,
+  NOT_CONFIGURED_MESSAGE,
+  resetPasswordForEmail,
+  signInWithPassword,
+  signOut as supabaseSignOut,
+  signUp as supabaseSignUp,
+  updateUserPassword,
+} from '~/lib/supabaseAuth'
 
 type User = {
   id: string
   email?: string | null
 }
 
+type AuthResult = { error: string | null }
+type SignUpResult = AuthResult & {
+  /** True when a session was returned (email confirmation is off) */
+  signedIn: boolean
+}
+
 type AuthContextValue = {
   user: User | null
   loading: boolean
-  signInWithMagicLink: (email: string) => Promise<{ error: unknown }>
-  signInWithProvider: (provider: 'google') => Promise<void>
+  configured: boolean
+  signIn: (email: string, password: string) => Promise<AuthResult>
+  signUp: (email: string, password: string) => Promise<SignUpResult>
   signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<AuthResult>
+  updatePassword: (password: string) => Promise<AuthResult>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+const notConfigured = (): AuthResult => ({ error: NOT_CONFIGURED_MESSAGE })
+
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const configured = isSupabaseConfigured()
+  const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(configured)
 
   useEffect(() => {
-    let mounted = true
-    async function init() {
-      const { data } = await getSupabase().auth.getSession()
-      if (!mounted) return
-      setUser(data.session?.user ? { id: data.session.user.id, email: data.session.user.email } : null)
+    if (!configured) {
       setLoading(false)
+      return
     }
+    let mounted = true
+    const supabase = getSupabase()
 
-    init()
-
-    const { data: { subscription } } = getSupabase().auth.onAuthStateChange((_event, session) => {
+    supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return
-      if (session?.user) {
-        setUser({ id: session.user.id, email: session.user.email })
-      } else {
-        setUser(null)
-      }
+      const u = data.session?.user
+      setUser(u ? { id: u.id, email: u.email } : null)
+      setLoading(false)
+    }).catch(() => {
+      if (!mounted) return
+      setUser(null)
+      setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
+      if (event === 'PASSWORD_RECOVERY') navigate({ to: '/auth/reset-password' })
+      setUser(session?.user ? { id: session.user.id, email: session.user.email } : null)
     })
 
     return () => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configured])
 
-  async function signInWithMagicLink(email: string) {
-    setLoading(true)
-    const res = await getSupabase().auth.signInWithOtp({ email })
-    setLoading(false)
-    return { error: res.error }
+  async function signIn(email: string, password: string): Promise<AuthResult> {
+    if (!configured) return notConfigured()
+    const { error } = await signInWithPassword(email, password)
+    return { error: error?.message ?? null }
   }
 
-  async function signInWithProvider(provider: 'google') {
-    // opens provider flow in new window
-    await getSupabase().auth.signInWithOAuth({ provider })
+  async function signUp(email: string, password: string): Promise<SignUpResult> {
+    if (!configured) return { ...notConfigured(), signedIn: false }
+    const { data, error } = await supabaseSignUp(email, password)
+    return { error: error?.message ?? null, signedIn: Boolean(data?.session) }
   }
 
   async function signOut() {
-    await getSupabase().auth.signOut()
+    if (!configured) return
+    await supabaseSignOut()
     setUser(null)
   }
 
+  async function resetPassword(email: string): Promise<AuthResult> {
+    if (!configured) return notConfigured()
+    const { error } = await resetPasswordForEmail(email)
+    return { error: error?.message ?? null }
+  }
+
+  async function updatePassword(password: string): Promise<AuthResult> {
+    if (!configured) return notConfigured()
+    const { error } = await updateUserPassword(password)
+    return { error: error?.message ?? null }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithMagicLink, signInWithProvider, signOut }}>
+    <AuthContext.Provider value={{ user, loading, configured, signIn, signUp, signOut, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

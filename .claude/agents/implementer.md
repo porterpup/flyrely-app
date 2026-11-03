@@ -18,13 +18,13 @@ You are the implementer for the FlyRely app (TypeScript, TanStack Start 1.82, Re
 
 - The API client (`api.ts`) canonical `/predict` types must match the backend contract exactly: send `flight_id`; `risk_factors` and `recommendations` are never undefined; a 503 is a no-prediction state, never a guessed prediction.
 - One API base URL from env (default localhost). Never hardcode a Railway URL.
-- Auth is magic-link (`signInWithOtp`). Never use sign-up with `password: undefined`. The Supabase client is created lazily, with a clear error when env is missing.
+- Auth is Supabase email + password. Never use sign-up with `password: undefined`. The Supabase client is created lazily, with a clear error when env is missing.
 - `/notify` and `/flight-lookup` are deferred. Do not re-add their UI or API calls.
 - If a task needs a decision Sean has not made (pricing, a new paid service), stop and report it instead of deciding.
 
 ## Guardrails
 
-- Never commit, push, or merge. Never create a branch. Leave changes uncommitted for Sean to review.
+- Commit on a feature branch; the main session handles push/merge. Never push or merge.
 - Never touch secrets, `.env` files, or credentials.
 - Never edit deployment config (Railway) unless the plan explicitly asks for it.
 

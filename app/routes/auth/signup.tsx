@@ -1,27 +1,63 @@
-import React, { useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
-import { getSupabase } from '~/lib/supabaseAuth'
+import React, { useEffect, useState } from 'react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useAuth } from '~/context/AuthContext'
 
 export const Route = createFileRoute('/auth/signup')({
   component: SignupRoute,
 })
 
 function SignupRoute() {
+  const { signUp, user, configured } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [confirmationSent, setConfirmationSent] = useState(false)
+  const [busy, setBusy] = useState(false)
 
-  async function handleSignUp(e: React.FormEvent) {
+  useEffect(() => {
+    if (user) navigate({ to: '/' })
+  }, [user, navigate])
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setStatus('Creating account...')
-    const res = await getSupabase().auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
-    if (res.error) setStatus('Signup failed: ' + res.error.message)
-    else setStatus('Check your email for a sign-in link (magic link).')
+    setError(null)
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+    setBusy(true)
+    const { error, signedIn } = await signUp(email, password)
+    setBusy(false)
+    if (error) setError(error)
+    else if (signedIn) navigate({ to: '/' })
+    else setConfirmationSent(true)
+  }
+
+  if (confirmationSent) {
+    return (
+      <div className="p-4 max-w-md mx-auto">
+        <h1 className="text-2xl font-semibold mb-4">Check your email</h1>
+        <p className="text-sm text-gray-700">
+          We sent a confirmation link to <span className="font-medium">{email}</span>. Open it to
+          finish creating your account, then sign in.
+        </p>
+        <Link to="/auth/login" className="mt-4 inline-block text-sm text-primary-600">
+          Back to sign in
+        </Link>
+      </div>
+    )
   }
 
   return (
     <div className="p-4 max-w-md mx-auto">
       <h1 className="text-2xl font-semibold mb-4">Sign up</h1>
-      <form onSubmit={handleSignUp} className="space-y-3">
+      {!configured && (
+        <p className="mb-3 rounded bg-amber-50 p-3 text-sm text-amber-800">
+          Sign-in isn't configured
+        </p>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-3">
         <label className="block">
           <span className="text-sm text-gray-600">Email</span>
           <input
@@ -29,14 +65,30 @@ function SignupRoute() {
             className="mt-1 block w-full rounded border px-3 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
             required
           />
         </label>
-        <div>
-          <button className="btn-primary" type="submit">Create account</button>
-        </div>
+        <label className="block">
+          <span className="text-sm text-gray-600">Password</span>
+          <input
+            type="password"
+            className="mt-1 block w-full rounded border px-3 py-2"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={6}
+            required
+          />
+        </label>
+        <button className="btn-primary w-full" type="submit" disabled={busy || !configured}>
+          {busy ? 'Creating account...' : 'Create account'}
+        </button>
       </form>
-      {status && <p className="mt-3 text-sm text-gray-700">{status}</p>}
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      <p className="mt-4 text-sm">
+        Already have an account? <Link to="/auth/login" className="text-primary-600">Sign in</Link>
+      </p>
     </div>
   )
 }

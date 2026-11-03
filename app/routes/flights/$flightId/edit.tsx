@@ -1,261 +1,250 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Calendar, Plane, Search, Check, AlertCircle } from 'lucide-react';
-import { Button, Header, Input, Modal } from '~/components/ui';
-import { cn, formatDate } from '~/lib/utils';
+import { Calendar, Clock } from 'lucide-react';
+import { Button, Header, Input } from '~/components/ui';
+import { getFlightById, saveFlight } from '~/lib/flightStore';
+import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
+import { getAirport, getAirline } from '~/lib/airports';
+import { parseFlightNumber } from '~/lib/utils';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/$flightId/edit')({
   component: EditFlightScreen,
 });
 
-// Mock current flight data
-const mockFlight: Flight = {
-  id: '1',
-  flightNumber: 'UA1071',
-  airline: { code: 'UA', name: 'United Airlines' },
-  origin: { code: 'SFO', name: 'San Francisco International', city: 'San Francisco', timezone: 'America/Los_Angeles' },
-  destination: { code: 'JFK', name: 'John F. Kennedy International', city: 'New York', timezone: 'America/New_York' },
-  scheduledDeparture: '2024-12-03T18:15:00',
-  scheduledArrival: '2024-12-04T02:45:00',
-  status: 'scheduled',
-  riskLevel: 'medium',
-};
-
-// Mock alternative flights on same route/date
-const mockSameRouteFlight = [
-  { id: '2', flightNumber: 'UA1089', departureTime: '8:30 PM', airline: 'United Airlines' },
-  { id: '3', flightNumber: 'UA1095', departureTime: '10:15 PM', airline: 'United Airlines' },
-];
-
-type EditMode = 'date' | 'flight';
+const inputCls =
+  'w-full rounded-xl border border-navy-200 bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20';
 
 function EditFlightScreen() {
   const navigate = useNavigate();
   const { flightId } = Route.useParams();
 
-  const [editMode, setEditMode] = useState<EditMode>('date');
-  const [selectedDate, setSelectedDate] = useState(mockFlight.scheduledDeparture.split('T')[0]);
-  const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [flight, setFlight] = useState<Flight | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [flightNumber, setFlightNumber] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  const currentFlight = mockFlight;
-  const altFlights = mockSameRouteFlight;
+  useEffect(() => {
+    const f = getFlightById(flightId);
+    if (!f) {
+      setNotFound(true);
+      return;
+    }
+    setFlight(f);
+    setFlightNumber(f.flightNumber);
+    setOrigin(f.origin.code);
+    setDestination(f.destination.code);
+    const [d, t] = f.scheduledDeparture.split('T');
+    setDate(d);
+    setTime((t ?? '').slice(0, 5));
+  }, [flightId]);
 
-  const handleSearch = async () => {
-    setIsSearching(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSearching(false);
-  };
+  const goBack = () => navigate({ to: '/flights/$flightId', params: { flightId } });
+
+  if (notFound) {
+    return (
+      <div className="app-container">
+        <div className="screen">
+          <Header title="Edit Flight" showBack onBackClick={() => navigate({ to: '/' })} />
+          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
+            <div className="text-5xl mb-4">🔍</div>
+            <h2 className="text-xl font-bold text-navy-900 mb-2">Flight not found</h2>
+            <p className="text-navy-500 mb-6">This flight may have been removed.</p>
+            <Button onClick={() => navigate({ to: '/' })}>Go home</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!flight) {
+    return (
+      <div className="app-container">
+        <div className="screen">
+          <Header title="Edit Flight" showBack onBackClick={() => navigate({ to: '/' })} />
+          <div className="flex-1 flex items-center justify-center py-20">
+            <div className="text-navy-400">Loading...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const newDeparture = `${date}T${time}:00`;
+  const newFlightNumber = flightNumber.trim().toUpperCase();
+  const newOrigin = origin.trim().toUpperCase();
+  const newDestination = destination.trim().toUpperCase();
+
+  const originalDeparture = flight.scheduledDeparture.length === 16
+    ? `${flight.scheduledDeparture}:00`
+    : flight.scheduledDeparture;
+  const predictionInputsChanged =
+    newOrigin !== flight.origin.code ||
+    newDestination !== flight.destination.code ||
+    newDeparture !== originalDeparture ||
+    newFlightNumber !== flight.flightNumber;
 
   const handleSave = async () => {
-    setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSaving(false);
-    setShowConfirmModal(false);
-    navigate({ to: '/flights/$flightId', params: { flightId } });
-  };
+    setError('');
+    if (!newFlightNumber || !date || !time) {
+      setError('Please fill in all fields');
+      return;
+    }
+    if (!/^[A-Z]{3}$/.test(newOrigin) || !/^[A-Z]{3}$/.test(newDestination)) {
+      setError('Use 3-letter airport codes, e.g. SFO');
+      return;
+    }
+    if (newOrigin === newDestination) {
+      setError('Origin and destination cannot be the same');
+      return;
+    }
 
-  const hasChanges =
-    editMode === 'date'
-      ? selectedDate !== currentFlight.scheduledDeparture.split('T')[0]
-      : selectedFlight !== null;
+    const parsed = parseFlightNumber(newFlightNumber);
+    if (!parsed) {
+      setError('Enter a valid flight number, e.g. DL1234 or B6123');
+      return;
+    }
+    const airlineInfo = getAirline(parsed.airlineCode);
+
+    setIsSaving(true);
+    const originInfo = getAirport(newOrigin);
+    const destInfo = getAirport(newDestination);
+    const edited: Flight = {
+      ...flight,
+      flightNumber: `${parsed.airlineCode}${parsed.number}`,
+      airline: { code: parsed.airlineCode, name: airlineInfo?.name ?? parsed.airlineCode },
+      origin: {
+        code: newOrigin,
+        name: originInfo?.name ?? (newOrigin === flight.origin.code ? flight.origin.name : newOrigin),
+        city: originInfo?.city ?? (newOrigin === flight.origin.code ? flight.origin.city : newOrigin),
+      },
+      destination: {
+        code: newDestination,
+        name: destInfo?.name ?? (newDestination === flight.destination.code ? flight.destination.name : newDestination),
+        city: destInfo?.city ?? (newDestination === flight.destination.code ? flight.destination.city : newDestination),
+      },
+      scheduledDeparture: newDeparture,
+    };
+
+    if (predictionInputsChanged) {
+      try {
+        const prediction = await flyrelyApi.predict(
+          buildPredictPayload(
+            newOrigin,
+            newDestination,
+            newDeparture,
+            parsed.airlineCode,
+            flight.id,
+            `${parsed.airlineCode}${parsed.number}`
+          )
+        );
+        edited.riskLevel = prediction.risk_level;
+        edited.delayProbability = prediction.delay_probability;
+        edited.delayReason = prediction.risk_factors.slice(0, 2).join(' • ') || undefined;
+        edited.warnings = prediction.warnings;
+        edited.delaySeverity = prediction.delay_severity ?? undefined;
+        edited.lastCheckedAt = Date.now();
+      } catch (e) {
+        setError(
+          e instanceof PredictionUnavailableError
+            ? 'Predictions are temporarily unavailable, so the flight was not changed. Please try again shortly.'
+            : 'Could not get a new prediction, so the flight was not changed. Please check your inputs and try again.'
+        );
+        setIsSaving(false);
+        return;
+      }
+    }
+
+    saveFlight(edited);
+    setIsSaving(false);
+    goBack();
+  };
 
   return (
     <div className="app-container">
       <div className="screen">
-        <Header
-          title="Edit Flight"
-          showBack
-          onBackClick={() => navigate({ to: '/flights/$flightId', params: { flightId } })}
-        />
+        <Header title="Edit Flight" showBack onBackClick={goBack} />
 
-        {/* Current Flight Info */}
-        <div className="px-4 py-4">
-          <div className="bg-navy-50 rounded-xl p-4">
-            <p className="text-sm text-navy-500 mb-1">Currently tracking</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <Plane className="w-5 h-5 text-navy-600" />
-              </div>
-              <div>
-                <p className="font-semibold text-navy-900">
-                  {currentFlight.flightNumber}
-                </p>
-                <p className="text-sm text-navy-600">
-                  {currentFlight.origin.code} → {currentFlight.destination.code} ·{' '}
-                  {formatDate(currentFlight.scheduledDeparture)}
-                </p>
-              </div>
-            </div>
+        <div className="flex-1 px-4 py-4 space-y-4">
+          <div>
+            <div className="block text-sm font-medium text-navy-700 mb-1">Flight number</div>
+            <input
+              type="text"
+              value={flightNumber}
+              onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
+              className={inputCls}
+            />
           </div>
-        </div>
 
-        {/* Edit Mode Tabs */}
-        <div className="px-4 mb-4">
-          <div className="flex bg-navy-100 rounded-xl p-1">
-            <button
-              onClick={() => setEditMode('date')}
-              className={cn(
-                'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all',
-                editMode === 'date'
-                  ? 'bg-white text-navy-900 shadow-sm'
-                  : 'text-navy-600'
-              )}
-            >
-              Change Date
-            </button>
-            <button
-              onClick={() => setEditMode('flight')}
-              className={cn(
-                'flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all',
-                editMode === 'flight'
-                  ? 'bg-white text-navy-900 shadow-sm'
-                  : 'text-navy-600'
-              )}
-            >
-              Different Flight
-            </button>
-          </div>
-        </div>
-
-        {/* Edit Content */}
-        <div className="flex-1 px-4 pb-4">
-          {editMode === 'date' ? (
-            <div className="space-y-4">
-              <p className="text-navy-600">
-                Select a new date for flight {currentFlight.flightNumber}
-              </p>
-
-              <Input
-                label="New departure date"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                leftIcon={<Calendar className="h-5 w-5" />}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <div className="block text-sm font-medium text-navy-700 mb-1">From</div>
+              <input
+                type="text"
+                maxLength={3}
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value.toUpperCase())}
+                className={inputCls}
               />
-
-              {selectedDate !== currentFlight.scheduledDeparture.split('T')[0] && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
-                      <p className="font-medium mb-1">
-                        We'll search for {currentFlight.flightNumber} on the new date
-                      </p>
-                      <p>
-                        If the flight doesn't operate that day, we'll let you know.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-navy-600">
-                Pick a different flight on the same route
-              </p>
+            <div>
+              <div className="block text-sm font-medium text-navy-700 mb-1">To</div>
+              <input
+                type="text"
+                maxLength={3}
+                value={destination}
+                onChange={(e) => setDestination(e.target.value.toUpperCase())}
+                className={inputCls}
+              />
+            </div>
+          </div>
 
-              {/* Search */}
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Search flight number"
-                  leftIcon={<Search className="h-5 w-5" />}
-                  className="flex-1"
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              leftIcon={<Calendar className="w-5 h-5" />}
+            />
+            <div>
+              <div className="block text-sm font-medium text-navy-700 mb-1">Departure time</div>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
+                  className={`${inputCls} pl-10`}
                 />
-                <Button onClick={handleSearch} loading={isSearching}>
-                  Search
-                </Button>
-              </div>
-
-              {/* Available flights on same route */}
-              <div>
-                <p className="text-sm font-medium text-navy-700 mb-3">
-                  Same route on {formatDate(currentFlight.scheduledDeparture)}
-                </p>
-
-                <div className="space-y-2">
-                  {altFlights.map((flight) => (
-                    <button
-                      key={flight.id}
-                      onClick={() => setSelectedFlight(flight.id)}
-                      className={cn(
-                        'w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all',
-                        selectedFlight === flight.id
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-navy-200 hover:border-navy-300'
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
-                          <Plane className="w-5 h-5 text-navy-600" />
-                        </div>
-                        <div className="text-left">
-                          <p className="font-semibold text-navy-900">
-                            {flight.flightNumber}
-                          </p>
-                          <p className="text-sm text-navy-500">
-                            {flight.airline} · Departs {flight.departureTime}
-                          </p>
-                        </div>
-                      </div>
-
-                      {selectedFlight === flight.id && (
-                        <div className="w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
               </div>
             </div>
+          </div>
+
+          {predictionInputsChanged && (
+            <p className="text-sm text-navy-500">
+              Changing the route, date, time or flight number gets a new delay prediction when you save.
+            </p>
           )}
+
+          {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>}
         </div>
 
-        {/* Bottom Action */}
-        {hasChanges && (
-          <div className="sticky bottom-0 p-4 bg-white border-t border-navy-100">
-            <Button fullWidth size="lg" onClick={() => setShowConfirmModal(true)}>
-              Save Changes
-            </Button>
-          </div>
-        )}
-
-        {/* Confirm Modal */}
-        <Modal
-          isOpen={showConfirmModal}
-          onClose={() => setShowConfirmModal(false)}
-          title="Update flight?"
-        >
-          <div className="space-y-4">
-            <p className="text-navy-600">
-              {editMode === 'date'
-                ? `Change ${currentFlight.flightNumber} from ${formatDate(currentFlight.scheduledDeparture)} to ${formatDate(selectedDate + 'T00:00:00')}?`
-                : `Replace ${currentFlight.flightNumber} with ${altFlights.find((f) => f.id === selectedFlight)?.flightNumber}?`}
-            </p>
-
-            <p className="text-sm text-navy-500">
-              Your alerts and predictions will update to reflect this change.
-            </p>
-
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                fullWidth
-                onClick={() => setShowConfirmModal(false)}
-              >
-                Cancel
-              </Button>
-              <Button fullWidth onClick={handleSave} loading={isSaving}>
-                Confirm
-              </Button>
-            </div>
-          </div>
-        </Modal>
+        <div className="sticky bottom-0 p-4 bg-white border-t border-navy-100 flex gap-3">
+          <Button variant="outline" fullWidth onClick={goBack}>
+            Cancel
+          </Button>
+          <Button fullWidth onClick={handleSave} loading={isSaving}>
+            Save changes
+          </Button>
+        </div>
       </div>
     </div>
   );

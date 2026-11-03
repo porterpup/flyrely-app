@@ -18,14 +18,12 @@ import { Route as AccountIndexImport } from './routes/account/index'
 import { Route as FlightsHistoryImport } from './routes/flights/history'
 import { Route as FlightsAddImport } from './routes/flights/add'
 import { Route as AuthSignupImport } from './routes/auth/signup'
+import { Route as AuthResetPasswordImport } from './routes/auth/reset-password'
 import { Route as AuthLoginImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
 import { Route as AccountUsageImport } from './routes/account/usage'
-import { Route as AccountSettingsImport } from './routes/account/settings'
-import { Route as AccountBillingImport } from './routes/account/billing'
 import { Route as FlightsFlightIdIndexImport } from './routes/flights/$flightId/index'
 import { Route as FlightsFlightIdEditImport } from './routes/flights/$flightId/edit'
-import { Route as FlightsFlightIdAlternativesImport } from './routes/flights/$flightId/alternatives'
 
 // Create/Update Routes
 
@@ -71,6 +69,12 @@ const AuthSignupRoute = AuthSignupImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AuthResetPasswordRoute = AuthResetPasswordImport.update({
+  id: '/auth/reset-password',
+  path: '/auth/reset-password',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const AuthLoginRoute = AuthLoginImport.update({
   id: '/auth/login',
   path: '/auth/login',
@@ -89,18 +93,6 @@ const AccountUsageRoute = AccountUsageImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AccountSettingsRoute = AccountSettingsImport.update({
-  id: '/account/settings',
-  path: '/account/settings',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const AccountBillingRoute = AccountBillingImport.update({
-  id: '/account/billing',
-  path: '/account/billing',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const FlightsFlightIdIndexRoute = FlightsFlightIdIndexImport.update({
   id: '/flights/$flightId/',
   path: '/flights/$flightId/',
@@ -113,13 +105,6 @@ const FlightsFlightIdEditRoute = FlightsFlightIdEditImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const FlightsFlightIdAlternativesRoute =
-  FlightsFlightIdAlternativesImport.update({
-    id: '/flights/$flightId/alternatives',
-    path: '/flights/$flightId/alternatives',
-    getParentRoute: () => rootRoute,
-  } as any)
-
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -129,20 +114,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/account/billing': {
-      id: '/account/billing'
-      path: '/account/billing'
-      fullPath: '/account/billing'
-      preLoaderRoute: typeof AccountBillingImport
-      parentRoute: typeof rootRoute
-    }
-    '/account/settings': {
-      id: '/account/settings'
-      path: '/account/settings'
-      fullPath: '/account/settings'
-      preLoaderRoute: typeof AccountSettingsImport
       parentRoute: typeof rootRoute
     }
     '/account/usage': {
@@ -164,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/login'
       fullPath: '/auth/login'
       preLoaderRoute: typeof AuthLoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/reset-password': {
+      id: '/auth/reset-password'
+      path: '/auth/reset-password'
+      fullPath: '/auth/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordImport
       parentRoute: typeof rootRoute
     }
     '/auth/signup': {
@@ -208,13 +186,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TripsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/flights/$flightId/alternatives': {
-      id: '/flights/$flightId/alternatives'
-      path: '/flights/$flightId/alternatives'
-      fullPath: '/flights/$flightId/alternatives'
-      preLoaderRoute: typeof FlightsFlightIdAlternativesImport
-      parentRoute: typeof rootRoute
-    }
     '/flights/$flightId/edit': {
       id: '/flights/$flightId/edit'
       path: '/flights/$flightId/edit'
@@ -236,36 +207,32 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account/billing': typeof AccountBillingRoute
-  '/account/settings': typeof AccountSettingsRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
   '/account': typeof AccountIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/trips': typeof TripsIndexRoute
-  '/flights/$flightId/alternatives': typeof FlightsFlightIdAlternativesRoute
   '/flights/$flightId/edit': typeof FlightsFlightIdEditRoute
   '/flights/$flightId': typeof FlightsFlightIdIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account/billing': typeof AccountBillingRoute
-  '/account/settings': typeof AccountSettingsRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
   '/account': typeof AccountIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/trips': typeof TripsIndexRoute
-  '/flights/$flightId/alternatives': typeof FlightsFlightIdAlternativesRoute
   '/flights/$flightId/edit': typeof FlightsFlightIdEditRoute
   '/flights/$flightId': typeof FlightsFlightIdIndexRoute
 }
@@ -273,18 +240,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/account/billing': typeof AccountBillingRoute
-  '/account/settings': typeof AccountSettingsRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
+  '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
   '/account/': typeof AccountIndexRoute
   '/explore/': typeof ExploreIndexRoute
   '/trips/': typeof TripsIndexRoute
-  '/flights/$flightId/alternatives': typeof FlightsFlightIdAlternativesRoute
   '/flights/$flightId/edit': typeof FlightsFlightIdEditRoute
   '/flights/$flightId/': typeof FlightsFlightIdIndexRoute
 }
@@ -293,52 +258,46 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/account/billing'
-    | '/account/settings'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
+    | '/auth/reset-password'
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
     | '/account'
     | '/explore'
     | '/trips'
-    | '/flights/$flightId/alternatives'
     | '/flights/$flightId/edit'
     | '/flights/$flightId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account/billing'
-    | '/account/settings'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
+    | '/auth/reset-password'
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
     | '/account'
     | '/explore'
     | '/trips'
-    | '/flights/$flightId/alternatives'
     | '/flights/$flightId/edit'
     | '/flights/$flightId'
   id:
     | '__root__'
     | '/'
-    | '/account/billing'
-    | '/account/settings'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
+    | '/auth/reset-password'
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
     | '/account/'
     | '/explore/'
     | '/trips/'
-    | '/flights/$flightId/alternatives'
     | '/flights/$flightId/edit'
     | '/flights/$flightId/'
   fileRoutesById: FileRoutesById
@@ -346,36 +305,32 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountBillingRoute: typeof AccountBillingRoute
-  AccountSettingsRoute: typeof AccountSettingsRoute
   AccountUsageRoute: typeof AccountUsageRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignupRoute: typeof AuthSignupRoute
   FlightsAddRoute: typeof FlightsAddRoute
   FlightsHistoryRoute: typeof FlightsHistoryRoute
   AccountIndexRoute: typeof AccountIndexRoute
   ExploreIndexRoute: typeof ExploreIndexRoute
   TripsIndexRoute: typeof TripsIndexRoute
-  FlightsFlightIdAlternativesRoute: typeof FlightsFlightIdAlternativesRoute
   FlightsFlightIdEditRoute: typeof FlightsFlightIdEditRoute
   FlightsFlightIdIndexRoute: typeof FlightsFlightIdIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountBillingRoute: AccountBillingRoute,
-  AccountSettingsRoute: AccountSettingsRoute,
   AccountUsageRoute: AccountUsageRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignupRoute: AuthSignupRoute,
   FlightsAddRoute: FlightsAddRoute,
   FlightsHistoryRoute: FlightsHistoryRoute,
   AccountIndexRoute: AccountIndexRoute,
   ExploreIndexRoute: ExploreIndexRoute,
   TripsIndexRoute: TripsIndexRoute,
-  FlightsFlightIdAlternativesRoute: FlightsFlightIdAlternativesRoute,
   FlightsFlightIdEditRoute: FlightsFlightIdEditRoute,
   FlightsFlightIdIndexRoute: FlightsFlightIdIndexRoute,
 }
@@ -391,30 +346,22 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/account/billing",
-        "/account/settings",
         "/account/usage",
         "/auth/forgot-password",
         "/auth/login",
+        "/auth/reset-password",
         "/auth/signup",
         "/flights/add",
         "/flights/history",
         "/account/",
         "/explore/",
         "/trips/",
-        "/flights/$flightId/alternatives",
         "/flights/$flightId/edit",
         "/flights/$flightId/"
       ]
     },
     "/": {
       "filePath": "index.tsx"
-    },
-    "/account/billing": {
-      "filePath": "account/billing.tsx"
-    },
-    "/account/settings": {
-      "filePath": "account/settings.tsx"
     },
     "/account/usage": {
       "filePath": "account/usage.tsx"
@@ -424,6 +371,9 @@ export const routeTree = rootRoute
     },
     "/auth/login": {
       "filePath": "auth/login.tsx"
+    },
+    "/auth/reset-password": {
+      "filePath": "auth/reset-password.tsx"
     },
     "/auth/signup": {
       "filePath": "auth/signup.tsx"
@@ -442,9 +392,6 @@ export const routeTree = rootRoute
     },
     "/trips/": {
       "filePath": "trips/index.tsx"
-    },
-    "/flights/$flightId/alternatives": {
-      "filePath": "flights/$flightId/alternatives.tsx"
     },
     "/flights/$flightId/edit": {
       "filePath": "flights/$flightId/edit.tsx"

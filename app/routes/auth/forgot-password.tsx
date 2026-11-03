@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button, Input, Header } from '~/components/ui';
+import { useAuth } from '~/context/AuthContext';
 
 export const Route = createFileRoute('/auth/forgot-password')({
   component: ForgotPasswordScreen,
@@ -9,6 +10,7 @@ export const Route = createFileRoute('/auth/forgot-password')({
 
 function ForgotPasswordScreen() {
   const navigate = useNavigate();
+  const { resetPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,8 +33,12 @@ function ForgotPasswordScreen() {
     if (!validate()) return;
 
     setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const { error: resetError } = await resetPassword(email);
     setIsLoading(false);
+    if (resetError) {
+      setError(resetError);
+      return;
+    }
     setIsSubmitted(true);
   };
 
@@ -104,7 +110,7 @@ function ForgotPasswordScreen() {
             <Input
               label="Email"
               type="email"
-              placeholder="you@example.com"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={error}

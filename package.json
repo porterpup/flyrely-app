@@ -2,6 +2,9 @@
   "name": "flyrely-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
@@ -9,6 +12,7 @@
     "start": "vinxi start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/smoke-test.mjs",
     "postinstall": "node scripts/fix-nested-deps.mjs"
   },
   "dependencies": {

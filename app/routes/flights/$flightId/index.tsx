@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { Header, Button } from '~/components/ui';
 import { RemoveFlightModal, DelaySeverityBar, NoPredictionBanner } from '~/components/flight';
-import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel } from '~/lib/utils';
+import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance } from '~/lib/utils';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
@@ -46,30 +46,13 @@ function FlightDetailsScreen() {
               f.flightNumber
             );
             const prediction = await flyrelyApi.predict(payload);
-            const estimatedDelay = prediction.delay_severity
-              ? Math.round(
-                  prediction.delay_probability *
-                  (prediction.delay_severity.expected_delay_label === 'severe' ? 150
-                   : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
-                   : 25)
-                )
-              : prediction.risk_level === 'high'
-              ? Math.round(prediction.delay_probability * 90)
-              : prediction.risk_level === 'medium'
-              ? Math.round(prediction.delay_probability * 45)
-              : 0;
             const updated: Flight = {
               ...f,
               riskLevel: prediction.risk_level,
-              delayMinutes: estimatedDelay,
-              delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || f.delayReason,
+              delayProbability: prediction.delay_probability,
+              delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+              warnings: prediction.warnings,
               delaySeverity: prediction.delay_severity ?? undefined,
-              predictedDeparture: estimatedDelay > 0
-                ? new Date(new Date(f.scheduledDeparture).getTime() + estimatedDelay * 60000).toISOString()
-                : undefined,
-              predictedArrival: estimatedDelay > 0
-                ? new Date(new Date(f.scheduledArrival).getTime() + estimatedDelay * 60000).toISOString()
-                : undefined,
             };
             const stamped = stampFlightChecked(updated);
             setFlight(stamped);
@@ -98,31 +81,13 @@ function FlightDetailsScreen() {
         flight.flightNumber
       );
       const prediction = await flyrelyApi.predict(payload);
-      const estimatedDelay = prediction.delay_severity
-        ? Math.round(
-            prediction.delay_probability *
-            (prediction.delay_severity.expected_delay_label === 'severe' ? 150
-             : prediction.delay_severity.expected_delay_label === 'moderate' ? 75
-             : 25)
-          )
-        : prediction.risk_level === 'high'
-        ? Math.round(prediction.delay_probability * 90)
-        : prediction.risk_level === 'medium'
-        ? Math.round(prediction.delay_probability * 45)
-        : 0;
       const updated: Flight = {
         ...flight,
         riskLevel: prediction.risk_level,
-        delayMinutes: estimatedDelay,
-        delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || flight.delayReason,
+        delayProbability: prediction.delay_probability,
+        delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+        warnings: prediction.warnings,
         delaySeverity: prediction.delay_severity ?? undefined,
-        predictedDeparture:
-          estimatedDelay > 0
-            ? new Date(
-                new Date(flight.scheduledDeparture).getTime() +
-                  estimatedDelay * 60000
-              ).toISOString()
-            : undefined,
       };
       saveFlight(updated);
       setFlight(updated);
@@ -168,8 +133,6 @@ function FlightDetailsScreen() {
       </div>
     );
   }
-
-  const showAlternatives = flight.riskLevel === 'high' || flight.riskLevel === 'medium';
 
   return (
     <div className="app-container">
@@ -249,9 +212,9 @@ function FlightDetailsScreen() {
                     )}
                   >
                     {getRiskLabel(flight.riskLevel)}
-                    {(flight.delayMinutes ?? 0) > 0 &&
-                      flight.riskLevel !== 'low' &&
-                      ` · ${flight.delayMinutes}-${(flight.delayMinutes ?? 0) + 30} min delay expected`}
+                    {flight.riskLevel !== 'low' && formatDelayChance(flight.delayProbability)
+                      ? ` · ${formatDelayChance(flight.delayProbability)}`
+                      : ''}
                   </p>
                   {flight.delayReason && flight.riskLevel !== 'low' && (
                     <p
@@ -284,9 +247,8 @@ function FlightDetailsScreen() {
               <div className="bg-white border border-navy-200 rounded-xl divide-y divide-navy-100">
                 <div className="p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-navy-500">Airline status</span>
+                    <span className="text-sm text-navy-500">Scheduled departure</span>
                     <span className="font-medium text-navy-900">
-                      {flight.airlineStatus ?? 'On time'} · Departs{' '}
                       {formatTime(flight.scheduledDeparture)}
                     </span>
                   </div>
@@ -296,23 +258,17 @@ function FlightDetailsScreen() {
                     <span className="text-sm text-navy-500">FlyRely prediction</span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-navy-900">
-                        {flight.riskLevel !== 'low'
-                          ? `${flight.delayMinutes}-${(flight.delayMinutes ?? 0) + 30} min delay`
-                          : 'No delay expected'}
+                        {formatDelayChance(flight.delayProbability) ?? 'Delay risk'}
                       </span>
                       <span className={getRiskBadgeClass(flight.riskLevel)}>
                         {getRiskLabel(flight.riskLevel)}
                       </span>
                     </div>
                   </div>
-                  {flight.predictedDeparture && (
+                  {flight.delaySeverity && flight.riskLevel !== 'low' && (
                     <p className="text-sm text-navy-500 mt-1">
-                      We expect {formatTime(flight.predictedDeparture)} -{' '}
-                      {formatTime(
-                        new Date(
-                          new Date(flight.predictedDeparture).getTime() + 30 * 60000
-                        ).toISOString()
-                      )}
+                      If delayed, most likely {flight.delaySeverity.expected_delay_label} (
+                      {flight.delaySeverity.expected_delay_range})
                     </p>
                   )}
                 </div>
@@ -325,11 +281,22 @@ function FlightDetailsScreen() {
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-navy-400 mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-navy-500">
-                      Predictions are based on historical performance and current conditions. Tap
-                      refresh to update.
+                      Predictions are based on historical delay patterns for this route, airline and
+                      time of day. Tap refresh to update.
                     </p>
                   </div>
                 </div>
+                {flight.warnings && flight.warnings.length > 0 && (
+                  <div className="p-4 border-t border-navy-100">
+                    <ul className="space-y-1">
+                      {flight.warnings.map((w) => (
+                        <li key={w} className="text-xs text-navy-400">
+                          {w}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </section>
 
@@ -339,84 +306,30 @@ function FlightDetailsScreen() {
                 Schedule
               </h3>
               <div className="bg-white border border-navy-200 rounded-xl">
-                <div className="grid grid-cols-2 divide-x divide-navy-100">
-                  <div className="p-4">
-                    <p className="text-sm text-navy-500 mb-1">Scheduled departure</p>
-                    <p className="font-semibold text-navy-900">
-                      {formatTime(flight.scheduledDeparture)}
-                    </p>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-sm text-navy-500 mb-1">Expected departure</p>
-                    <p
-                      className={cn(
-                        'font-semibold',
-                        flight.riskLevel === 'low' ? 'text-navy-900' : 'text-amber-600'
-                      )}
-                    >
-                      {flight.predictedDeparture
-                        ? `${formatTime(flight.predictedDeparture)} - ${formatTime(
-                            new Date(
-                              new Date(flight.predictedDeparture).getTime() + 30 * 60000
-                            ).toISOString()
-                          )}`
-                        : formatTime(flight.scheduledDeparture)}
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 divide-x divide-navy-100 border-t border-navy-100">
-                  <div className="p-4">
-                    <p className="text-sm text-navy-500 mb-1">Scheduled arrival</p>
-                    <p className="font-semibold text-navy-900">
-                      {formatTime(flight.scheduledArrival)}
-                    </p>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-sm text-navy-500 mb-1">Expected arrival</p>
-                    <p
-                      className={cn(
-                        'font-semibold',
-                        flight.riskLevel === 'low' ? 'text-navy-900' : 'text-amber-600'
-                      )}
-                    >
-                      {flight.predictedArrival
-                        ? `${formatTime(flight.predictedArrival)} - ${formatTime(
-                            new Date(
-                              new Date(flight.predictedArrival).getTime() + 30 * 60000
-                            ).toISOString()
-                          )}`
-                        : formatTime(flight.scheduledArrival)}
-                    </p>
-                  </div>
+                <div className="p-4">
+                  <p className="text-sm text-navy-500 mb-1">Scheduled departure</p>
+                  <p className="font-semibold text-navy-900">
+                    {formatTime(flight.scheduledDeparture)}
+                  </p>
                 </div>
               </div>
             </section>
-
-            {showAlternatives && (
-              <Link
-                to="/flights/$flightId/alternatives"
-                params={{ flightId }}
-                className="flex items-center justify-between p-4 bg-primary-50 border border-primary-200 rounded-xl hover:bg-primary-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <RefreshCw className="w-5 h-5 text-primary-600" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-primary-900">View alternative flights</p>
-                    <p className="text-sm text-primary-700">
-                      Find lower-risk options on the same route
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-primary-600" />
-              </Link>
-            )}
 
             <section>
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Manage Flight
               </h3>
+              <Link
+                to="/flights/$flightId/edit"
+                params={{ flightId }}
+                className="w-full flex items-center justify-between p-4 mb-3 bg-white border border-navy-200 rounded-xl hover:border-navy-300 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-lg">✏️</span>
+                  <span className="font-medium text-navy-900">Edit flight</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-navy-400" />
+              </Link>
               <button
                 onClick={() => setShowRemoveModal(true)}
                 className="w-full flex items-center justify-between p-4 bg-white border border-navy-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-colors group"
