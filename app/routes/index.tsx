@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Plus, History } from 'lucide-react';
+import { Plus, History, Search } from 'lucide-react';
 import { AppShell } from '~/components/layout';
-import { Button } from '~/components/ui';
+import { Button, SectionHeader, FieldBox, Alert, OptionTile } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
 import { getUpcomingFlights, autoCompleteOldFlights } from '~/lib/flightStore';
+import { formatDate, formatDelayChance, getRiskLabel } from '~/lib/utils';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/')({
@@ -14,32 +15,35 @@ export const Route = createFileRoute('/')({
 function HomeScreen() {
   const navigate = useNavigate();
   const [flights, setFlights] = useState<Flight[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     autoCompleteOldFlights(); // migrate departed flights to history
     setFlights(getUpcomingFlights());
+    setLoaded(true);
   }, []);
 
   const hasFlights = flights.length > 0;
   const nextFlight = flights[0];
+  // Alerts come from stored real predictions of upcoming flights at elevated risk.
+  const alerts = flights.filter((f) => f.riskLevel !== 'low');
+
+  if (!loaded) return <AppShell><div className="flex-1" /></AppShell>;
 
   if (!hasFlights) {
     return (
       <AppShell>
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
-          <div className="text-6xl mb-6">✈️</div>
-          <h1 className="text-2xl font-bold text-navy-900 mb-2">
-            No upcoming flights
-          </h1>
-          <p className="text-navy-500 mb-8 max-w-xs">
+          <h1 className="text-title-lg text-ink mb-2">No upcoming flights</h1>
+          <p className="text-body-lg text-ink-caption mb-8 max-w-xs">
             Add your first flight to start tracking delays and stay informed.
           </p>
           <Button
-            size="lg"
             fullWidth
+            icon={<Plus className="w-4 h-4" />}
             onClick={() => navigate({ to: '/flights/add' })}
           >
-            Add your first flight
+            Add your flight
           </Button>
         </div>
       </AppShell>
@@ -48,28 +52,20 @@ function HomeScreen() {
 
   return (
     <AppShell>
-      <div className="px-4 pt-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-navy-900">Home</h1>
-          <button
-            onClick={() => navigate({ to: '/flights/history' })}
-            className="p-2 text-navy-500 hover:text-navy-700 rounded-lg hover:bg-navy-50"
-          >
-            <History className="w-5 h-5" />
-          </button>
-        </div>
-
-        <section className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-navy-900">Next flight</h2>
-            <Link
-              to="/flights/add"
-              className="flex items-center gap-1 text-primary-600 font-medium text-sm hover:text-primary-700"
-            >
-              <Plus className="w-4 h-4" />
-              Add
-            </Link>
-          </div>
+      <div className="px-6 pt-10 pb-6">
+        <section className="mb-4">
+          <SectionHeader
+            as="h1"
+            kind="no-space"
+            className="mb-3"
+            title="Next Flight"
+            action={
+              <Link to="/flights/add" className="flex items-center gap-1 px-3.5 py-3 text-action-md text-ink rounded-btn-sm hover:bg-surface-muted">
+                <Plus className="w-4 h-4" />
+                Add Flight
+              </Link>
+            }
+          />
 
           {nextFlight && (
             <FlightCard
@@ -81,9 +77,15 @@ function HomeScreen() {
           )}
         </section>
 
+        <Link to="/flights/add" className="block mb-4 rounded-field focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent">
+          <FieldBox interactive={false} leading={<Search />}>
+            <span className="flex-1 px-2 py-3.5 text-body-lg text-ink-caption">Search to add flights</span>
+          </FieldBox>
+        </Link>
+
         {flights.length > 1 && (
           <section className="mb-8">
-            <h2 className="text-lg font-semibold text-navy-900 mb-4">Upcoming flights</h2>
+            <SectionHeader title="Upcoming flights" />
             <div className="space-y-3">
               {flights.slice(1).map((flight) => (
                 <FlightCard
@@ -99,32 +101,45 @@ function HomeScreen() {
           </section>
         )}
 
-        <section>
-          <div className="grid grid-cols-2 gap-3">
-            <Link
-              to="/flights/history"
-              className="flex items-center gap-3 p-4 bg-white border border-navy-200 rounded-xl hover:border-navy-300 transition-colors"
-            >
-              <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
-                <History className="w-5 h-5 text-navy-600" />
-              </div>
-              <div>
-                <p className="font-medium text-navy-900">View all flights</p>
-                <p className="text-xs text-navy-500">See your full schedule</p>
-              </div>
-            </Link>
+        {alerts.length > 0 && (
+          <section className="mb-8">
+            <SectionHeader title="Recent Alerts" />
+            <div className="space-y-3">
+              {alerts.map((f) => (
+                <Link
+                  key={f.id}
+                  to="/flights/$flightId"
+                  params={{ flightId: f.id }}
+                  className="block rounded-alert focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
+                >
+                  <Alert
+                    status={f.riskLevel === 'high' ? 'error' : 'warning'}
+                    showIcon={false}
+                    showRightIcon
+                    lineOne={
+                      <>
+                        {getRiskLabel(f.riskLevel)}:{' '}
+                        <span className="font-semibold">
+                          {formatDelayChance(f.delayProbability) ?? 'delay possible'}
+                        </span>
+                      </>
+                    }
+                    lineTwo={`${f.flightNumber} · ${f.origin.code} to ${f.destination.code} · ${formatDate(f.scheduledDeparture)}`}
+                  />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
-            <Link
-              to="/flights/add"
-              className="flex items-center gap-3 p-4 bg-white border border-navy-200 rounded-xl hover:border-navy-300 transition-colors"
-            >
-              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
-                <Plus className="w-5 h-5 text-primary-600" />
-              </div>
-              <div>
-                <p className="font-medium text-navy-900">Add flight</p>
-                <p className="text-xs text-navy-500">Track another trip</p>
-              </div>
+        <section>
+          <SectionHeader title="More Options" />
+          <div className="grid grid-cols-2 gap-3">
+            <Link to="/flights/history" className="block rounded-tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent">
+              <OptionTile icon={<History />} title="View all flights" description="See your full schedule" className="h-full" />
+            </Link>
+            <Link to="/flights/add" className="block rounded-tile focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent">
+              <OptionTile icon={<Plus />} title="Add flight" description="Track another trip" className="h-full" />
             </Link>
           </div>
         </section>

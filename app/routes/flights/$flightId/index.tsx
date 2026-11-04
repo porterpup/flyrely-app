@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import {
-  ChevronRight,
-  AlertTriangle,
-  Plane,
-  RefreshCw,
-  Info,
-  CheckCircle,
-} from 'lucide-react';
-import { Header, Button } from '~/components/ui';
-import { RemoveFlightModal, DelaySeverityBar, NoPredictionBanner } from '~/components/flight';
-import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance } from '~/lib/utils';
+import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw, Check } from 'lucide-react';
+import { Header, Button, IconButton, Card, Duration, Pill, SectionHeader } from '~/components/ui';
+import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
+import { cn, formatLongDate, formatTime, formatDelayChance } from '~/lib/utils';
+import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
@@ -112,8 +106,8 @@ function FlightDetailsScreen() {
           <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
             <div className="text-5xl mb-4">🔍</div>
-            <h2 className="text-xl font-bold text-navy-900 mb-2">Flight not found</h2>
-            <p className="text-navy-500 mb-6">This flight may have been removed.</p>
+            <h2 className="text-xl font-bold text-ink mb-2">Flight not found</h2>
+            <p className="text-ink-caption mb-6">This flight may have been removed.</p>
             <Button onClick={() => navigate({ to: '/' })}>Go home</Button>
           </div>
         </div>
@@ -142,96 +136,20 @@ function FlightDetailsScreen() {
           showBack
           onBackClick={() => navigate({ to: '/' })}
           rightAction={
-            <button
-              onClick={handleRefresh}
-              className={cn(
-                'p-2 text-navy-500 hover:text-navy-700 rounded-lg hover:bg-navy-50',
-                isRefreshing && 'animate-spin'
-              )}
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
+            <IconButton kind="text" size="sm" aria-label="Refresh prediction" onClick={handleRefresh}>
+              <RefreshCw className={cn('w-5 h-5', isRefreshing && 'animate-spin')} />
+            </IconButton>
           }
         />
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-6 bg-gradient-to-br from-navy-800 to-navy-900">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">✈️</div>
-                <div>
-                  <p className="font-bold text-xl text-white">{flight.flightNumber}</p>
-                  <p className="text-white/70">{flight.airline.name}</p>
-                </div>
-              </div>
-              <p className="text-sm text-white/60">{formatDate(flight.scheduledDeparture)}</p>
-            </div>
-
-            <div className="flex items-center gap-4 mb-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">{flight.origin.code}</p>
-                <p className="text-sm text-white/60">{flight.origin.city}</p>
-              </div>
-              <div className="flex-1 flex items-center gap-2">
-                <div className="flex-1 border-t border-dashed border-white/30" />
-                <Plane className="w-5 h-5 text-white/60 rotate-90" />
-                <div className="flex-1 border-t border-dashed border-white/30" />
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white">{flight.destination.code}</p>
-                <p className="text-sm text-white/60">{flight.destination.city}</p>
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                'rounded-xl p-4',
-                flight.riskLevel === 'low' && 'bg-green-500/20',
-                flight.riskLevel === 'medium' && 'bg-amber-500/20',
-                flight.riskLevel === 'high' && 'bg-red-500/20'
-              )}
-            >
-              <div className="flex items-start gap-3">
-                {flight.riskLevel === 'low' ? (
-                  <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
-                ) : (
-                  <AlertTriangle
-                    className={cn(
-                      'w-5 h-5 mt-0.5',
-                      flight.riskLevel === 'medium' ? 'text-amber-400' : 'text-red-400'
-                    )}
-                  />
-                )}
-                <div>
-                  <p
-                    className={cn(
-                      'font-semibold',
-                      flight.riskLevel === 'low' && 'text-green-100',
-                      flight.riskLevel === 'medium' && 'text-amber-100',
-                      flight.riskLevel === 'high' && 'text-red-100'
-                    )}
-                  >
-                    {getRiskLabel(flight.riskLevel)}
-                    {flight.riskLevel !== 'low' && formatDelayChance(flight.delayProbability)
-                      ? ` · ${formatDelayChance(flight.delayProbability)}`
-                      : ''}
-                  </p>
-                  {flight.delayReason && flight.riskLevel !== 'low' && (
-                    <p
-                      className={cn(
-                        'text-sm mt-1 opacity-80',
-                        flight.riskLevel === 'medium' ? 'text-amber-100' : 'text-red-100'
-                      )}
-                    >
-                      {flight.delayReason}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
+        <div className="flex-1 overflow-y-auto bg-surface-card rounded-t-4xl text-white pb-24">
+          <div className="px-4 pt-8 pb-4 text-center">
+            <p className="text-title-sm underline underline-offset-4">{flight.flightNumber}</p>
+            <h2 className="text-title-lg mt-3">Your trip to {getCityLabel(flight.destination.code)}</h2>
+            <p className="text-body-sm text-ink-on-dark-muted mt-2">{formatLongDate(flight.scheduledDeparture)}</p>
           </div>
 
-          <div className="px-4 py-6 space-y-6">
+          <div className="px-2 space-y-2">
             {predictionUnavailable && (
               <NoPredictionBanner
                 type="temporary"
@@ -240,113 +158,77 @@ function FlightDetailsScreen() {
               />
             )}
 
-            <section>
-              <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
-                Status Overview
-              </h3>
-              <div className="bg-white border border-navy-200 rounded-xl divide-y divide-navy-100">
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-navy-500">Scheduled departure</span>
-                    <span className="font-medium text-navy-900">
-                      {formatTime(flight.scheduledDeparture)}
-                    </span>
+            <Card tone="dark" padded={false} className="overflow-hidden">
+              <div className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <PlaneTakeoff className="w-6 h-6 flex-shrink-0" />
+                    <p className="text-heading-sm">{flight.origin.code}</p>
                   </div>
+                  <p className="text-heading-sm">{formatTime(flight.scheduledDeparture)}</p>
                 </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-navy-500">FlyRely prediction</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-navy-900">
-                        {formatDelayChance(flight.delayProbability) ?? 'Delay risk'}
-                      </span>
-                      <span className={getRiskBadgeClass(flight.riskLevel)}>
-                        {getRiskLabel(flight.riskLevel)}
-                      </span>
-                    </div>
-                  </div>
-                  {flight.delaySeverity && flight.riskLevel !== 'low' && (
-                    <p className="text-sm text-navy-500 mt-1">
-                      If delayed, most likely {flight.delaySeverity.expected_delay_label} (
-                      {flight.delaySeverity.expected_delay_range})
-                    </p>
-                  )}
+                <p className="text-body-sm text-ink-on-dark-muted mt-1 ml-9">{getAirportName(flight.origin.code)}</p>
+
+                <Duration onDark className="my-5" />
+
+                <div className="flex items-center gap-3">
+                  <PlaneLanding className="w-6 h-6 flex-shrink-0" />
+                  <p className="text-heading-sm">{flight.destination.code}</p>
                 </div>
-                {flight.delaySeverity && flight.riskLevel !== 'low' && (
-                  <div className="p-4 border-t border-navy-100">
-                    <DelaySeverityBar severity={flight.delaySeverity} />
-                  </div>
-                )}
-                <div className="p-4 bg-navy-50">
-                  <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 text-navy-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-navy-500">
-                      Predictions are based on historical delay patterns for this route, airline and
-                      time of day. Tap refresh to update.
-                    </p>
-                  </div>
-                </div>
+                <p className="text-body-sm text-ink-on-dark-muted mt-1 ml-9">
+                  {getAirportName(flight.destination.code)}
+                </p>
+              </div>
+
+              <PredictionPanel
+                risk={flight.riskLevel}
+                chancePercent={formatDelayChance(flight.delayProbability) ? Math.round((flight.delayProbability ?? 0) * 100) : null}
+                reason={
+                  flight.delayReason ??
+                  'Based on historical performance for this route, airline and time of day.'
+                }
+              >
                 {flight.warnings && flight.warnings.length > 0 && (
-                  <div className="p-4 border-t border-navy-100">
-                    <ul className="space-y-1">
-                      {flight.warnings.map((w) => (
-                        <li key={w} className="text-xs text-navy-400">
-                          {w}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <ul className="mt-4 space-y-1">
+                    {flight.warnings.map((w, i) => (
+                      <li key={`${i}-${w}`} className="text-body-sm opacity-80">
+                        {w}
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </div>
-            </section>
+              </PredictionPanel>
+            </Card>
 
+            <Card tone="dark">
+              <SectionHeader as="h3" kind="no-space" onDark title="Schedule" className="mb-3" />
+              <p className="text-body-sm font-semibold">Scheduled departure</p>
+              <p className="mt-2 text-body-lg">{formatTime(flight.scheduledDeparture)}</p>
+            </Card>
 
-            <section>
-              <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
-                Schedule
-              </h3>
-              <div className="bg-white border border-navy-200 rounded-xl">
-                <div className="p-4">
-                  <p className="text-sm text-navy-500 mb-1">Scheduled departure</p>
-                  <p className="font-semibold text-navy-900">
-                    {formatTime(flight.scheduledDeparture)}
-                  </p>
-                </div>
-              </div>
-            </section>
+            <Link
+              to="/flights/$flightId/edit"
+              params={{ flightId }}
+              className="flex items-center justify-between rounded-tile bg-surface-panel px-5 py-4 text-body-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <span>Edit flight</span>
+              <ChevronRight className="w-5 h-5 text-ink-on-dark-muted" />
+            </Link>
 
-            <section>
-              <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
-                Manage Flight
-              </h3>
-              <Link
-                to="/flights/$flightId/edit"
-                params={{ flightId }}
-                className="w-full flex items-center justify-between p-4 mb-3 bg-white border border-navy-200 rounded-xl hover:border-navy-300 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">✏️</span>
-                  <span className="font-medium text-navy-900">Edit flight</span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-navy-400" />
-              </Link>
-              <button
-                onClick={() => setShowRemoveModal(true)}
-                className="w-full flex items-center justify-between p-4 bg-white border border-navy-200 rounded-xl hover:border-red-300 hover:bg-red-50 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">🗑️</span>
-                  <span className="font-medium text-navy-900 group-hover:text-red-700">
-                    Remove flight
-                  </span>
-                </div>
-                <ChevronRight className="w-5 h-5 text-navy-400 group-hover:text-red-400" />
-              </button>
-            </section>
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => setShowRemoveModal(true)}
+              className="border-white/80 text-white hover:bg-white/10 active:bg-white/20"
+            >
+              Remove this trip
+            </Button>
 
-            <div className="flex items-center justify-center gap-2 py-4 text-green-600">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">Tracking this flight</span>
+            <div className="flex justify-center pt-2">
+              <Pill tone="success" emphasis="solid" className="gap-1.5 px-3">
+                <Check className="w-3.5 h-3.5" />
+                Already tracking this flight
+              </Pill>
             </div>
           </div>
         </div>

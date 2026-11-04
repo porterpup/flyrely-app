@@ -59,7 +59,7 @@ function TripsScreen() {
             <p className="text-navy-500 mb-8 max-w-xs">
               Flights you add will show up here, grouped by departure date.
             </p>
-            <Button size="lg" onClick={() => navigate({ to: '/flights/add' })}>
+            <Button onClick={() => navigate({ to: '/flights/add' })}>
               Add flight
             </Button>
           </div>

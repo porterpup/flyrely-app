@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as DesignSystemImport } from './routes/design-system'
 import { Route as IndexImport } from './routes/index'
 import { Route as TripsIndexImport } from './routes/trips/index'
 import { Route as ExploreIndexImport } from './routes/explore/index'
@@ -26,6 +27,12 @@ import { Route as FlightsFlightIdIndexImport } from './routes/flights/$flightId/
 import { Route as FlightsFlightIdEditImport } from './routes/flights/$flightId/edit'
 
 // Create/Update Routes
+
+const DesignSystemRoute = DesignSystemImport.update({
+  id: '/design-system',
+  path: '/design-system',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
@@ -114,6 +121,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/design-system': {
+      id: '/design-system'
+      path: '/design-system'
+      fullPath: '/design-system'
+      preLoaderRoute: typeof DesignSystemImport
       parentRoute: typeof rootRoute
     }
     '/account/usage': {
@@ -207,6 +221,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/design-system': typeof DesignSystemRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -223,6 +238,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/design-system': typeof DesignSystemRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -240,6 +256,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/design-system': typeof DesignSystemRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -258,6 +275,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/design-system'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -273,6 +291,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/design-system'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -288,6 +307,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/design-system'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -305,6 +325,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DesignSystemRoute: typeof DesignSystemRoute
   AccountUsageRoute: typeof AccountUsageRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -321,6 +342,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DesignSystemRoute: DesignSystemRoute,
   AccountUsageRoute: AccountUsageRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
@@ -346,6 +368,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/design-system",
         "/account/usage",
         "/auth/forgot-password",
         "/auth/login",
@@ -362,6 +385,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/design-system": {
+      "filePath": "design-system.tsx"
     },
     "/account/usage": {
       "filePath": "account/usage.tsx"

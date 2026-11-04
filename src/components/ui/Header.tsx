@@ -1,15 +1,18 @@
 import { ChevronLeft } from 'lucide-react';
 import { cn } from '~/lib/utils';
+import { IconButton } from './IconButton';
 
 interface HeaderProps {
   title: string;
   showBack?: boolean;
   onBackClick?: () => void;
+  /** Sits to the left of the title (e.g. a refresh icon button). */
   rightAction?: React.ReactNode;
   subtitle?: string;
   transparent?: boolean;
 }
 
+/** Figma "Secondary Navigation": small back icon button on the left, screen title on the right. */
 export function Header({
   title,
   showBack = false,
@@ -21,30 +24,20 @@ export function Header({
   return (
     <header
       className={cn(
-        'sticky top-0 z-10 px-4 py-3',
-        transparent ? 'bg-transparent' : 'bg-white border-b border-navy-100'
+        'sticky top-0 z-10 flex min-h-[68px] items-center gap-3 px-6 py-4',
+        transparent ? 'bg-transparent' : 'bg-white'
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="w-12">
-          {showBack && (
-            <button
-              onClick={onBackClick}
-              className="p-2 -ml-2 text-navy-600 hover:text-navy-900 rounded-lg hover:bg-navy-50"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex-1 text-center">
-          <h1 className="text-lg font-semibold text-navy-900">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-navy-500 mt-0.5">{subtitle}</p>
-          )}
-        </div>
-
-        <div className="w-12 flex justify-end">{rightAction}</div>
+      {showBack && (
+        <IconButton kind="text" size="sm" aria-label="Back" onClick={onBackClick} className="-ml-2">
+          <ChevronLeft className="h-5 w-5" />
+        </IconButton>
+      )}
+      <div className="flex-1" />
+      {rightAction && <div className="flex shrink-0 items-center">{rightAction}</div>}
+      <div className="min-w-0 text-right">
+        <h1 className="truncate text-title-sm text-ink">{title}</h1>
+        {subtitle && <p className="mt-0.5 text-body-sm text-ink-caption">{subtitle}</p>}
       </div>
     </header>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
+import { Button } from '~/components/ui'
 
 export const Route = createFileRoute('/auth/signup')({
   component: SignupRoute,
@@ -81,9 +82,9 @@ function SignupRoute() {
             required
           />
         </label>
-        <button className="btn-primary w-full" type="submit" disabled={busy || !configured}>
+        <Button fullWidth type="submit" disabled={busy || !configured}>
           {busy ? 'Creating account...' : 'Create account'}
-        </button>
+        </Button>
       </form>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       <p className="mt-4 text-sm">

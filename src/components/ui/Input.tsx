@@ -1,71 +1,54 @@
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 import { cn } from '~/lib/utils';
+import { FieldBox, FieldLabel, FieldMessage, fieldControlClass } from './Field';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   hint?: string;
+  /** Figma "Leading Icon". */
   leftIcon?: React.ReactNode;
+  /** Figma "Trailing Icon" (clickable when onRightIconClick is given). */
   rightIcon?: React.ReactNode;
   onRightIconClick?: () => void;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      label,
-      error,
-      hint,
-      leftIcon,
-      rightIcon,
-      onRightIconClick,
-      className,
-      ...props
-    },
-    ref
-  ) => {
+  ({ label, error, hint, leftIcon, rightIcon, onRightIconClick, className, id, ...props }, ref) => {
+    const autoId = useId();
+    const inputId = id ?? autoId;
     return (
-      <div className="w-full">
-        {label && (
-          <label className="block text-sm font-medium text-navy-700 mb-2">
-            {label}
-          </label>
-        )}
-
-        <div className="relative">
-          {leftIcon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-navy-400">
-              {leftIcon}
-            </div>
-          )}
-
+      <div className="flex w-full flex-col gap-1.5">
+        {label && <FieldLabel htmlFor={inputId}>{label}</FieldLabel>}
+        <FieldBox
+          invalid={!!error}
+          leading={leftIcon}
+          trailing={
+            rightIcon &&
+            (onRightIconClick ? (
+              <button type="button" onClick={onRightIconClick} className="text-ink-caption hover:text-ink">
+                {rightIcon}
+              </button>
+            ) : (
+              rightIcon
+            ))
+          }
+        >
           <input
             ref={ref}
+            id={inputId}
+            aria-invalid={error ? true : undefined}
             className={cn(
-              'input-base',
-              leftIcon && 'pl-12',
-              rightIcon && 'pr-12',
-              error && 'input-error',
+              fieldControlClass,
+              leftIcon && 'pl-2',
+              rightIcon && 'pr-2',
+              (props.type === 'date' || props.type === 'time') && 'pr-2 text-body-md',
               className
             )}
             {...props}
           />
-
-          {rightIcon && (
-            <button
-              type="button"
-              onClick={onRightIconClick}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-navy-400 hover:text-navy-600"
-            >
-              {rightIcon}
-            </button>
-          )}
-        </div>
-
-        {error && <p className="mt-1.5 text-sm text-red-600">{error}</p>}
-        {hint && !error && (
-          <p className="mt-1.5 text-sm text-navy-500">{hint}</p>
-        )}
+        </FieldBox>
+        <FieldMessage error={error} hint={hint} />
       </div>
     );
   }

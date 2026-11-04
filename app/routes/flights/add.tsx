@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
-import { Header, Button, Input, Modal } from '~/components/ui';
-import { DelaySeverityBar } from '~/components/flight';
-import { cn, formatDate, formatTime, getRiskBadgeClass, getRiskLabel, formatDelayChance, parseFlightNumber } from '~/lib/utils';
+import { fieldControlClass } from '~/components/ui/Field';
+import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
+import { RiskPill } from '~/components/flight';
+import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
-import { saveFlight } from '~/lib/flightStore';
-import { searchAirports, searchAirlines } from '~/lib/airports';
-import type { AirportInfo, AirlineInfo } from '~/lib/airports';
+import { saveFlight, getFlights } from '~/lib/flightStore';
+import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
+import type { AirportInfo } from '~/lib/airports';
+import { getAirportRef } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/add')({
@@ -74,132 +76,30 @@ function AirportAutocomplete({
   };
 
   return (
-    <div ref={containerRef} className="relative">
-      <div className="block text-sm font-medium text-navy-700 mb-1">{label}</div>
-      <div className="relative">
-        {leftIcon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-            {leftIcon}
-          </div>
-        )}
+    <div ref={containerRef} className="relative flex flex-col gap-1.5">
+      <FieldLabel>{label}</FieldLabel>
+      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-status-success-text bg-status-success-bg')}>
         <input
           type="text"
           value={query}
           onChange={handleInput}
           onFocus={() => query.length >= 1 && suggestions.length > 0 && setOpen(true)}
           placeholder={placeholder}
-          className={cn(
-            'w-full rounded-xl border bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all',
-            'border-navy-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
-            leftIcon && 'pl-10',
-            confirmed && 'border-green-400 bg-green-50'
-          )}
+          aria-label={label}
+          className={cn(fieldControlClass, leftIcon && 'pl-2')}
         />
-      </div>
+      </FieldBox>
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-navy-200 rounded-xl shadow-lg overflow-hidden">
+        <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-field border border-surface-divider bg-white shadow-lg">
           {suggestions.map((ap) => (
             <li key={ap.code}>
               <button
                 type="button"
                 onMouseDown={() => select(ap)}
-                className="w-full text-left px-4 py-3 hover:bg-navy-50 flex items-center justify-between"
+                className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-muted"
               >
-                <span className="font-semibold text-navy-900">{ap.code}</span>
-                <span className="text-sm text-navy-500 truncate ml-3">{ap.city}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function AirlineAutocomplete({
-  label,
-  placeholder,
-  value,
-  onChange,
-}: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (name: string, info?: AirlineInfo) => void;
-}) {
-  const [query, setQuery] = useState(value);
-  const [suggestions, setSuggestions] = useState<AirlineInfo[]>([]);
-  const [open, setOpen] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!value) { setQuery(''); setConfirmed(false); }
-  }, [value]);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const q = e.target.value;
-    setQuery(q);
-    setConfirmed(false);
-    if (q.length >= 1) {
-      setSuggestions(searchAirlines(q));
-      setOpen(true);
-    } else {
-      setSuggestions([]);
-      setOpen(false);
-    }
-    onChange(q);
-  };
-
-  const select = (airline: AirlineInfo) => {
-    setQuery(airline.name);
-    setConfirmed(true);
-    setOpen(false);
-    setSuggestions([]);
-    onChange(airline.name, airline);
-  };
-
-  return (
-    <div ref={containerRef} className="relative">
-      <div className="block text-sm font-medium text-navy-700 mb-1">{label}</div>
-      <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-          <Plane className="w-5 h-5" />
-        </div>
-        <input
-          type="text"
-          value={query}
-          onChange={handleInput}
-          onFocus={() => query.length >= 1 && suggestions.length > 0 && setOpen(true)}
-          placeholder={placeholder}
-          className={cn(
-            'w-full rounded-xl border bg-white px-4 py-3 pl-10 text-sm text-navy-900 outline-none transition-all',
-            'border-navy-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20',
-            confirmed && 'border-green-400 bg-green-50'
-          )}
-        />
-      </div>
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-navy-200 rounded-xl shadow-lg overflow-hidden">
-          {suggestions.map((al) => (
-            <li key={al.code}>
-              <button
-                type="button"
-                onMouseDown={() => select(al)}
-                className="w-full text-left px-4 py-3 hover:bg-navy-50 flex items-center justify-between"
-              >
-                <span className="font-semibold text-navy-900">{al.name}</span>
-                <span className="text-xs text-navy-400 ml-2">{al.code}</span>
+                <span className="font-semibold text-ink">{ap.code}</span>
+                <span className="ml-3 truncate text-body-md text-ink-caption">{ap.city}</span>
               </button>
             </li>
           ))}
@@ -211,6 +111,22 @@ function AirlineAutocomplete({
 
 // ── Main screen ────────────────────────────────────────────────────────────
 
+/** Previously added flights, newest first, one per flight number + route. */
+function dedupeRecent(flights: Flight[]): Flight[] {
+  const seen = new Set<string>();
+  return [...flights]
+    .sort((a, b) => b.scheduledDeparture.localeCompare(a.scheduledDeparture))
+    .filter((f) => {
+      const key = `${f.flightNumber}-${f.origin.code}-${f.destination.code}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 10);
+}
+
+const OTHER_AIRLINE = '__other';
+
 function AddFlightScreen() {
   const navigate = useNavigate();
 
@@ -218,10 +134,13 @@ function AddFlightScreen() {
   const [airlineName, setAirlineName] = useState('');
   const [airlineCode, setAirlineCodeState] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
+  const [otherAirline, setOtherAirline] = useState(false);
   const [originCode, setOriginCode] = useState('');
   const [originInfo, setOriginInfo] = useState<AirportInfo | undefined>();
   const [destCode, setDestCode] = useState('');
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
+  const [tab, setTab] = useState<'number' | 'recent'>('number');
+  const [recent] = useState<Flight[]>(() => dedupeRecent(getFlights()));
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
 
@@ -230,6 +149,20 @@ function AddFlightScreen() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
+
+  // Typing a full flight number like "B6123" picks (or fills in) the airline.
+  const handleFlightNumberChange = (value: string) => {
+    const parsed = parseFlightNumber(value);
+    if (!parsed) {
+      setFlightNumber(value);
+      return;
+    }
+    const known = AIRLINES.find((x) => x.code === parsed.airlineCode);
+    setAirlineCodeState(parsed.airlineCode);
+    setAirlineName(known?.name ?? parsed.airlineCode);
+    setOtherAirline(!known);
+    setFlightNumber(parsed.number);
+  };
 
   const handleSearch = async () => {
     setError('');
@@ -242,8 +175,17 @@ function AddFlightScreen() {
         setIsSearching(false);
         return;
       }
-      if (new Date(date) < new Date(new Date().toDateString())) {
+      const [y, m, d] = date.split('-').map(Number);
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      if (new Date(y, m - 1, d) < startOfToday) {
         setError('Cannot track flights in the past');
+        setIsSearching(false);
+        return;
+      }
+
+      if (otherAirline && !/^[A-Z0-9]{2}$/.test(airlineCode)) {
+        setError('Enter the 2-character airline code, e.g. HA');
         setIsSearching(false);
         return;
       }
@@ -276,13 +218,13 @@ function AddFlightScreen() {
           airline: { code: derivedCode, name: airlineName },
           origin: {
             code: originCode,
-            name: originInfo?.name ?? originCode,
-            city: originInfo?.city ?? originCode,
+            name: originInfo?.name ?? getAirportRef(originCode)?.name ?? originCode,
+            city: originInfo?.city ?? getAirportRef(originCode)?.city ?? originCode,
           },
           destination: {
             code: destCode,
-            name: destInfo?.name ?? destCode,
-            city: destInfo?.city ?? destCode,
+            name: destInfo?.name ?? getAirportRef(destCode)?.name ?? destCode,
+            city: destInfo?.city ?? getAirportRef(destCode)?.city ?? destCode,
           },
           scheduledDeparture: depISO,
           status: 'scheduled',
@@ -328,30 +270,117 @@ function AddFlightScreen() {
         <div className="pt-4" />
 
         <div className="flex-1 px-4">
-          {(
+          <SegmentedTabs
+            aria-label="Add flight method"
+            className="mb-6"
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: 'number', label: 'Flight number' },
+              { value: 'recent', label: 'Recent' },
+            ]}
+          />
+
+          {tab === 'recent' && (
+            <div className="space-y-3">
+              {recent.length === 0 ? (
+                <p className="text-center text-navy-caption py-10">
+                  Flights you add will show up here.
+                </p>
+              ) : (
+                recent.map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => {
+                      setAirlineName(f.airline.name);
+                      setAirlineCodeState(f.airline.code);
+                      setOtherAirline(!AIRLINES.some((x) => x.code === f.airline.code));
+                      setFlightNumber(f.flightNumber.replace(/^[A-Z0-9]{2}/, ''));
+                      setOriginCode(f.origin.code);
+                      setOriginInfo(getAirport(f.origin.code));
+                      setDestCode(f.destination.code);
+                      setDestInfo(getAirport(f.destination.code));
+                      setDepartureTime(f.scheduledDeparture.split('T')[1]?.slice(0, 5) ?? '');
+                      setDate('');
+                      setTab('number');
+                    }}
+                    className="w-full text-left rounded-2xl border border-navy-stroke p-4 hover:border-navy-300"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-navy-ink">{f.flightNumber}</span>
+                      <span className="text-sm text-navy-caption">{f.airline.name}</span>
+                    </div>
+                    <p className="text-sm text-navy-caption mt-1">
+                      {f.origin.code} to {f.destination.code} · {formatTime(f.scheduledDeparture)}
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+
+          {tab === 'number' && (
             <div className="space-y-4">
-              <AirlineAutocomplete
+              <Select
                 label="Airline"
-                placeholder="e.g., United Airlines"
-                value={airlineName}
-                onChange={(name, info) => {
-                  setAirlineName(name);
-                  if (info) setAirlineCodeState(info.code);
+                id="airline"
+                value={otherAirline ? OTHER_AIRLINE : airlineCode}
+                placeholderSelected={!airlineCode && !otherAirline}
+                onChange={(e) => {
+                  if (e.target.value === OTHER_AIRLINE) {
+                    setOtherAirline(true);
+                    setAirlineCodeState('');
+                    setAirlineName('');
+                    return;
+                  }
+                  const al = AIRLINES.find((x) => x.code === e.target.value);
+                  setOtherAirline(false);
+                  setAirlineCodeState(al?.code ?? '');
+                  setAirlineName(al?.name ?? '');
                 }}
-              />
-              <div>
-                <div className="block text-sm font-medium text-navy-700 mb-1">Flight number</div>
-                <input
+              >
+                <option value="">Select airline</option>
+                {AIRLINES.map((al) => (
+                  <option key={al.code} value={al.code}>
+                    {al.name}
+                  </option>
+                ))}
+                <option value={OTHER_AIRLINE}>Other airline…</option>
+              </Select>
+              {otherAirline && (
+                <Input
+                  id="airline-code"
+                  label="Airline code"
                   type="text"
-                  value={flightNumber}
-                  onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
-                  placeholder="e.g., UA1071"
-                  className="w-full rounded-xl border border-navy-200 bg-white px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
+                  value={airlineCode}
+                  maxLength={2}
+                  autoCapitalize="characters"
+                  placeholder="2-character IATA code, e.g. HA"
+                  onChange={(e) => {
+                    const code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
+                    setAirlineCodeState(code);
+                    setAirlineName(AIRLINES.find((x) => x.code === code)?.name ?? code);
+                  }}
                 />
+              )}
+              <div>
+                <label htmlFor="flight-number" className="block px-1 pb-1.5 text-body-md text-ink-sub">
+                  Flight number
+                </label>
+                <div className="flex items-center gap-3">
+                  <span className="w-10 text-body-lg text-ink-caption">{airlineCode || '--'}</span>
+                  <Input
+                    id="flight-number"
+                    type="text"
+                    value={flightNumber}
+                    onChange={(e) => handleFlightNumberChange(e.target.value.toUpperCase())}
+                    placeholder="123 or B6123"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <AirportAutocomplete
-                  key={originCode}
+                  key={`from-${originCode}`}
                   label="From"
                   placeholder="e.g., SFO"
                   value={originCode}
@@ -359,7 +388,7 @@ function AddFlightScreen() {
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
                 <AirportAutocomplete
-                  key={destCode}
+                  key={`to-${destCode}`}
                   label="To"
                   placeholder="e.g., JFK"
                   value={destCode}
@@ -373,42 +402,32 @@ function AddFlightScreen() {
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  leftIcon={<Calendar className="w-5 h-5" />}
+                  leftIcon={<Calendar />}
                 />
-                <div>
-                  <div className="block text-sm font-medium text-navy-700 mb-1">
-                    Departure time
-                  </div>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none">
-                      <Clock className="w-5 h-5" />
-                    </div>
-                    <input
-                      type="time"
-                      value={departureTime}
-                      onChange={(e) => setDepartureTime(e.target.value)}
-                      className="w-full rounded-xl border border-navy-200 bg-white pl-10 pr-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20"
-                    />
-                  </div>
-                </div>
+                <Input
+                  label="Departure time"
+                  type="time"
+                  value={departureTime}
+                  onChange={(e) => setDepartureTime(e.target.value)}
+                  leftIcon={<Clock />}
+                />
               </div>
             </div>
           )}
 
           {error && (
-            <p className="mt-4 text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>
+            <Alert className="mt-4" status="error" showIcon={false} lineOne={error} />
           )}
 
-          <Button
+          {tab === 'number' && <Button
             fullWidth
-            size="lg"
             className="mt-6"
             onClick={handleSearch}
             loading={isSearching}
-            icon={<Search className="w-5 h-5" />}
+            icon={<Search className="w-4 h-4" />}
           >
             Search flight
-          </Button>
+          </Button>}
 
           {searchResult && (
             <div className="mt-6">
@@ -420,7 +439,7 @@ function AddFlightScreen() {
                 selected
                 onSelect={() => setShowConfirmModal(true)}
               />
-              <Button fullWidth size="lg" className="mt-4" onClick={() => setShowConfirmModal(true)}>
+              <Button fullWidth className="mt-4" onClick={() => setShowConfirmModal(true)}>
                 Track this flight
               </Button>
             </div>
@@ -453,20 +472,13 @@ function AddFlightScreen() {
                   <span>{formatTime(flightToAdd.scheduledDeparture)}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-navy-200 flex items-center gap-2">
-                  <span className={getRiskBadgeClass(flightToAdd.riskLevel)}>
-                    {getRiskLabel(flightToAdd.riskLevel)}
-                  </span>
+                  <RiskPill risk={flightToAdd.riskLevel} emphasis="soft" />
                   {formatDelayChance(flightToAdd.delayProbability) && (
                     <span className="text-sm text-navy-600">
                       · {formatDelayChance(flightToAdd.delayProbability)}
                     </span>
                   )}
                 </div>
-                {flightToAdd.delaySeverity && flightToAdd.riskLevel !== 'low' && (
-                  <div className="mt-3 pt-3 border-t border-navy-200">
-                    <DelaySeverityBar severity={flightToAdd.delaySeverity} compact />
-                  </div>
-                )}
               </div>
 
               <p className="text-sm text-navy-500">
@@ -474,7 +486,7 @@ function AddFlightScreen() {
               </p>
 
               <div className="flex gap-3">
-                <Button variant="outline" fullWidth onClick={() => setShowConfirmModal(false)}>
+                <Button variant="secondary" fullWidth onClick={() => setShowConfirmModal(false)}>
                   Cancel
                 </Button>
                 <Button fullWidth onClick={handleAddFlight} loading={isAdding}>
@@ -503,7 +515,7 @@ function FlightSearchResult({
       onClick={onSelect}
       className={cn(
         'w-full text-left p-4 rounded-xl border-2 transition-all',
-        selected ? 'border-primary-500 bg-primary-50' : 'border-navy-200 bg-white hover:border-navy-300'
+        selected ? 'border-navy-card bg-navy-50' : 'border-navy-200 bg-white hover:border-navy-300'
       )}
     >
       <div className="flex items-center justify-between mb-2">
@@ -512,9 +524,7 @@ function FlightSearchResult({
           <span className="font-semibold text-navy-900">{flight.flightNumber}</span>
           <span className="text-sm text-navy-500">{flight.airline.name}</span>
         </div>
-        <span className={getRiskBadgeClass(flight.riskLevel)}>
-          {getRiskLabel(flight.riskLevel)}
-        </span>
+        <RiskPill risk={flight.riskLevel} emphasis="soft" />
       </div>
 
       <div className="flex items-center gap-3">
@@ -534,7 +544,7 @@ function FlightSearchResult({
       </div>
 
       {selected && (
-        <div className="mt-3 pt-3 border-t border-primary-200 flex items-center justify-center gap-2 text-primary-600 font-medium">
+        <div className="mt-3 pt-3 border-t border-navy-200 flex items-center justify-center gap-2 text-navy-card font-medium">
           <Check className="w-4 h-4" />
           <span>Selected — tap to confirm</span>
         </div>

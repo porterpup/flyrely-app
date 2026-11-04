@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
+import { Button } from '~/components/ui'
 
 export const Route = createFileRoute('/auth/login')({
   component: LoginRoute,
@@ -59,9 +60,9 @@ function LoginRoute() {
             required
           />
         </label>
-        <button className="btn-primary w-full" type="submit" disabled={busy || !configured}>
+        <Button fullWidth type="submit" disabled={busy || !configured}>
           {busy ? 'Signing in...' : 'Sign in'}
-        </button>
+        </Button>
       </form>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       <div className="mt-4 flex justify-between text-sm">

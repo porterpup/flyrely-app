@@ -65,7 +65,7 @@ function ForgotPasswordScreen() {
             </p>
 
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => navigate({ to: '/auth/login' })}
             >
               Back to Sign In
@@ -118,7 +118,7 @@ function ForgotPasswordScreen() {
               autoComplete="email"
             />
 
-            <Button fullWidth size="lg" onClick={handleSubmit} loading={isLoading}>
+            <Button fullWidth onClick={handleSubmit} loading={isLoading}>
               Send Reset Link
             </Button>
           </div>

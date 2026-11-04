@@ -102,8 +102,8 @@ export function ErrorState({
       <div className="flex gap-3">
         {onRetry && (
           <Button
-            variant="outline"
-            size={compact ? 'sm' : 'md'}
+            variant="secondary"
+            size={compact ? 'sm' : 'default'}
             onClick={onRetry}
             icon={<RefreshCw className="w-4 h-4" />}
           >
@@ -112,7 +112,7 @@ export function ErrorState({
         )}
 
         {onAction && actionLabel && (
-          <Button size={compact ? 'sm' : 'md'} onClick={onAction}>
+          <Button size={compact ? 'sm' : 'default'} onClick={onAction}>
             {actionLabel}
           </Button>
         )}
