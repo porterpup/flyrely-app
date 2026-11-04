@@ -6,6 +6,8 @@ import type { RiskLevel } from '~/types';
 // is treated as a font size (not a colour) and `rounded-btn` as a radius.
 const twMerge = extendTailwindMerge({
   extend: {
+    // Spacing tokens from tailwind.config (p-inset, px-gutter, gap-inset...) merge like p-2.
+    theme: { spacing: ['inset', 'gutter'] },
     classGroups: {
       'font-size': [
         {

@@ -1,5 +1,5 @@
 import { Plane } from 'lucide-react';
-import { formatDate, formatTime, getRiskLabel, formatDelayChance, cn } from '~/lib/utils';
+import { formatDate, formatTime, formatDelayChance, cn } from '~/lib/utils';
 import { getCityLabel, getAirportRef } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 import { RiskPill } from './RiskPill';
@@ -56,7 +56,6 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
     <Ticket
       as="button"
       onClick={onClick}
-      aria-label={`${flight.flightNumber}, ${getRiskLabel(flight.riskLevel)}`}
       className={cn('active:scale-[0.99] transition-transform')}
       title={`Your trip to ${tripCity(flight)}`}
       flightNumber={flight.flightNumber}

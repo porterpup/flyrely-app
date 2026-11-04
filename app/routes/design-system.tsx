@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { Calendar, CreditCard, Plus, Search, History, ChevronRight, Home, Plane } from 'lucide-react';
 import {
   Alert,
@@ -22,6 +22,10 @@ import { BottomNav } from '~/components/layout';
 import { PredictionPanel, RiskPill, Ticket } from '~/components/flight';
 
 export const Route = createFileRoute('/design-system')({
+  // Dev-only gallery: send production visitors home.
+  beforeLoad: () => {
+    if (!import.meta.env.DEV) throw redirect({ to: '/' });
+  },
   component: DesignSystemGallery,
 });
 

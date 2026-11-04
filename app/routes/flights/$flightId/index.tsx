@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw, Check } from 'lucide-react';
 import { Header, Button, IconButton, Card, Duration, Pill, SectionHeader } from '~/components/ui';
-import { RemoveFlightModal, DelaySeverityBar, NoPredictionBanner, PredictionPanel } from '~/components/flight';
+import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
 import { cn, formatLongDate, formatTime, formatDelayChance } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
@@ -188,12 +188,6 @@ function FlightDetailsScreen() {
                   'Based on historical performance for this route, airline and time of day.'
                 }
               >
-                {flight.delaySeverity && flight.riskLevel !== 'low' && (
-                  <div className="mt-5 pt-4 border-t border-black/10 text-ink">
-                    <DelaySeverityBar severity={flight.delaySeverity} compact />
-                  </div>
-                )}
-
                 {flight.warnings && flight.warnings.length > 0 && (
                   <ul className="mt-4 space-y-1">
                     {flight.warnings.map((w, i) => (

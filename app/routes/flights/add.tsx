@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
 import { fieldControlClass } from '~/components/ui/Field';
 import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
-import { DelaySeverityBar, RiskPill } from '~/components/flight';
+import { RiskPill } from '~/components/flight';
 import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber } from '~/lib/utils';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlights } from '~/lib/flightStore';
@@ -125,6 +125,8 @@ function dedupeRecent(flights: Flight[]): Flight[] {
     .slice(0, 10);
 }
 
+const OTHER_AIRLINE = '__other';
+
 function AddFlightScreen() {
   const navigate = useNavigate();
 
@@ -132,6 +134,7 @@ function AddFlightScreen() {
   const [airlineName, setAirlineName] = useState('');
   const [airlineCode, setAirlineCodeState] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
+  const [otherAirline, setOtherAirline] = useState(false);
   const [originCode, setOriginCode] = useState('');
   const [originInfo, setOriginInfo] = useState<AirportInfo | undefined>();
   const [destCode, setDestCode] = useState('');
@@ -147,6 +150,20 @@ function AddFlightScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
 
+  // Typing a full flight number like "B6123" picks (or fills in) the airline.
+  const handleFlightNumberChange = (value: string) => {
+    const parsed = parseFlightNumber(value);
+    if (!parsed) {
+      setFlightNumber(value);
+      return;
+    }
+    const known = AIRLINES.find((x) => x.code === parsed.airlineCode);
+    setAirlineCodeState(parsed.airlineCode);
+    setAirlineName(known?.name ?? parsed.airlineCode);
+    setOtherAirline(!known);
+    setFlightNumber(parsed.number);
+  };
+
   const handleSearch = async () => {
     setError('');
     setIsSearching(true);
@@ -158,8 +175,17 @@ function AddFlightScreen() {
         setIsSearching(false);
         return;
       }
-      if (new Date(date) < new Date(new Date().toDateString())) {
+      const [y, m, d] = date.split('-').map(Number);
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      if (new Date(y, m - 1, d) < startOfToday) {
         setError('Cannot track flights in the past');
+        setIsSearching(false);
+        return;
+      }
+
+      if (otherAirline && !/^[A-Z0-9]{2}$/.test(airlineCode)) {
+        setError('Enter the 2-character airline code, e.g. HA');
         setIsSearching(false);
         return;
       }
@@ -268,6 +294,7 @@ function AddFlightScreen() {
                     onClick={() => {
                       setAirlineName(f.airline.name);
                       setAirlineCodeState(f.airline.code);
+                      setOtherAirline(!AIRLINES.some((x) => x.code === f.airline.code));
                       setFlightNumber(f.flightNumber.replace(/^[A-Z0-9]{2}/, ''));
                       setOriginCode(f.origin.code);
                       setOriginInfo(getAirport(f.origin.code));
@@ -297,10 +324,17 @@ function AddFlightScreen() {
               <Select
                 label="Airline"
                 id="airline"
-                value={airlineCode}
-                placeholderSelected={!airlineCode}
+                value={otherAirline ? OTHER_AIRLINE : airlineCode}
+                placeholderSelected={!airlineCode && !otherAirline}
                 onChange={(e) => {
+                  if (e.target.value === OTHER_AIRLINE) {
+                    setOtherAirline(true);
+                    setAirlineCodeState('');
+                    setAirlineName('');
+                    return;
+                  }
                   const al = AIRLINES.find((x) => x.code === e.target.value);
+                  setOtherAirline(false);
                   setAirlineCodeState(al?.code ?? '');
                   setAirlineName(al?.name ?? '');
                 }}
@@ -311,7 +345,24 @@ function AddFlightScreen() {
                     {al.name}
                   </option>
                 ))}
+                <option value={OTHER_AIRLINE}>Other airline…</option>
               </Select>
+              {otherAirline && (
+                <Input
+                  id="airline-code"
+                  label="Airline code"
+                  type="text"
+                  value={airlineCode}
+                  maxLength={2}
+                  autoCapitalize="characters"
+                  placeholder="2-character IATA code, e.g. HA"
+                  onChange={(e) => {
+                    const code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
+                    setAirlineCodeState(code);
+                    setAirlineName(AIRLINES.find((x) => x.code === code)?.name ?? code);
+                  }}
+                />
+              )}
               <div>
                 <label htmlFor="flight-number" className="block px-1 pb-1.5 text-body-md text-ink-sub">
                   Flight number
@@ -321,10 +372,9 @@ function AddFlightScreen() {
                   <Input
                     id="flight-number"
                     type="text"
-                    inputMode="numeric"
                     value={flightNumber}
-                    onChange={(e) => setFlightNumber(e.target.value.toUpperCase())}
-                    placeholder="123"
+                    onChange={(e) => handleFlightNumberChange(e.target.value.toUpperCase())}
+                    placeholder="123 or B6123"
                   />
                 </div>
               </div>
@@ -429,11 +479,6 @@ function AddFlightScreen() {
                     </span>
                   )}
                 </div>
-                {flightToAdd.delaySeverity && flightToAdd.riskLevel !== 'low' && (
-                  <div className="mt-3 pt-3 border-t border-navy-200">
-                    <DelaySeverityBar severity={flightToAdd.delaySeverity} compact />
-                  </div>
-                )}
               </div>
 
               <p className="text-sm text-navy-500">
