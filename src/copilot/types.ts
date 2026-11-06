@@ -15,9 +15,9 @@ export interface FlightRef {
 export interface CopilotConfig {
   enabled: boolean;
   push: { enabled: boolean; vapid_public_key: string | null };
-  status_source: 'none' | 'swim';
+  status_source: 'none' | 'swim'; // anything else is treated as "none" (see statusSourceOrNone)
   affiliate_partners_configured: string[];
-  schedule_as_of: string;
+  schedule_as_of: string | null;
 }
 
 // ---- 4.2 POST /copilot/options ----
@@ -48,7 +48,17 @@ export interface AirlineInfo {
   manage_booking_url: string;
   phone: string;
   phone_display: string;
-  verified_on: string;
+  verified_on?: string | null;
+  verification?: 'verified' | 'official_source_unconfirmed';
+  other_channels?: Record<string, string>;
+}
+
+/** Shown instead of contact details when `airline` is null but the carrier has a note or status page. */
+export interface AirlineNotice {
+  code: string;
+  name: string;
+  note: string | null;
+  status_url: string | null;
 }
 
 /** A hand-off link. Built by the API (links.py) except hotel-address ride links, which are built on the device. */
@@ -66,12 +76,12 @@ export interface RideLink extends Handoff {
 export interface AlternativeItem {
   marketing_airline: string;
   flight_number: string;
-  operating_airline: string;
-  operating_airline_name: string;
+  operating_airline: string | null;
+  operating_airline_name: string | null;
   origin: string;
   destination: string;
   dep_local: string;
-  arr_local: string;
+  arr_local: string | null;
   /** null when the scorer was unavailable. */
   delay_probability: number | null;
   risk_level: 'low' | 'medium' | 'high' | null;
@@ -81,7 +91,7 @@ export interface AlternativeItem {
 
 export interface Alternatives {
   source: string;
-  schedule_as_of: string;
+  schedule_as_of: string | null;
   date: string;
   items: AlternativeItem[];
   search_handoffs: Handoff[];
@@ -110,6 +120,7 @@ export interface OptionsResponse {
   state: CopilotState;
   context: CopilotContext;
   airline: AirlineInfo | null;
+  airline_notice?: AirlineNotice | null;
   refund_rights: RefundRights;
   alternatives: Alternatives;
   hotel: HotelBlock | null;

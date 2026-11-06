@@ -48,6 +48,17 @@ async function request<T>(method: 'GET' | 'POST', path: string, body?: unknown):
   return (await res.json()) as T;
 }
 
+/**
+ * The app stores departures as airport-local ISO without an offset ("2026-11-15T14:30:00",
+ * built in add.tsx and edit.tsx). The API wants exactly that. Normalise older shapes: pad
+ * "YYYY-MM-DDTHH:MM" with seconds, and drop fractional seconds and any Z/offset suffix.
+ */
+export function toLocalIso(value: string): string {
+  const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/.exec(value);
+  if (!m) return value;
+  return `${m[1]}T${m[2]}:${m[3]}:${m[4] ?? '00'}`;
+}
+
 /** Map the app's Flight to the API's FlightRef. */
 export function toFlightRef(flight: Flight): FlightRef {
   return {
@@ -55,7 +66,7 @@ export function toFlightRef(flight: Flight): FlightRef {
     flight_number: flight.flightNumber,
     origin: flight.origin.code.toUpperCase(),
     destination: flight.destination.code.toUpperCase(),
-    departure_time: flight.scheduledDeparture,
+    departure_time: toLocalIso(flight.scheduledDeparture),
   };
 }
 
