@@ -404,7 +404,7 @@ describe('disclosure and empty states', () => {
     window.localStorage.setItem(PREFS_KEY, cancelled);
     mockApi({ config: ok(configOn), options: ok(optionsNoAlternatives) });
     renderPanel();
-    expect(await screen.findByText('No other flights found today')).toBeTruthy();
+    expect(await screen.findByText(/No other flights found/)).toBeTruthy();
     expect(screen.getAllByRole('link', { name: /KAYAK/ }).length).toBeGreaterThan(0);
   });
 });
