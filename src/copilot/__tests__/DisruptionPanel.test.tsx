@@ -458,6 +458,54 @@ describe('S-A6 response shapes', () => {
   });
 });
 
+describe('alternatives heading follows alternatives.date', () => {
+  const cancelled = JSON.stringify({ homeAirport: 'BOS', flights: { 'flight-1': 'cancelled' } });
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const withDate = (date: string): OptionsResponse => ({
+    ...optionsAway,
+    alternatives: { ...optionsAway.alternatives, date },
+  });
+
+  it('today', async () => {
+    window.localStorage.setItem(PREFS_KEY, cancelled);
+    mockApi({ config: ok(configOn), options: ok(withDate(iso(new Date()))) });
+    renderPanel();
+    expect(await screen.findByText('Other flights today, JFK to LAX')).toBeTruthy();
+  });
+
+  it('tomorrow', async () => {
+    window.localStorage.setItem(PREFS_KEY, cancelled);
+    const t = new Date();
+    t.setDate(t.getDate() + 1);
+    mockApi({ config: ok(configOn), options: ok(withDate(iso(t))) });
+    renderPanel();
+    expect(await screen.findByText('Other flights tomorrow, JFK to LAX')).toBeTruthy();
+  });
+
+  it('a later date shows the weekday and date, also in the empty state', async () => {
+    window.localStorage.setItem(PREFS_KEY, cancelled);
+    const o = withDate('2099-11-21'); // a Saturday
+    mockApi({ config: ok(configOn), options: ok({ ...o, alternatives: { ...o.alternatives, items: [] } }) });
+    renderPanel();
+    expect(await screen.findByText('Other flights on Sat, Nov 21, JFK to LAX')).toBeTruthy();
+    expect(screen.getByText('No other flights found on Sat, Nov 21')).toBeTruthy();
+  });
+});
+
+describe('status_source narrowing', () => {
+  it('treats an unexpected status_source as none (no status polling)', async () => {
+    mockApi({ config: ok({ ...configOn, status_source: 'carrier_pigeon' }), status: ok(statusUnknown) });
+    const soon = new Date(Date.now() + 3 * 3600 * 1000);
+    const local = `${soon.getFullYear()}-${pad2(soon.getMonth() + 1)}-${pad2(soon.getDate())}T${pad2(soon.getHours())}:${pad2(soon.getMinutes())}:00`;
+    renderPanel({ ...lowRiskFlight, scheduledDeparture: local });
+    await waitFor(() => expect(calls.some((c) => c.path === '/config')).toBe(true));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(calls.some((c) => c.path === '/status')).toBe(false);
+  });
+});
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
 describe('typing', () => {
   it('fixtures satisfy OptionsResponse', () => {
     const all: OptionsResponse[] = [optionsAway, optionsHome, optionsUnknown];

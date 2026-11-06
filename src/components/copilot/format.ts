@@ -31,3 +31,26 @@ export function formatShortDate(iso: string): string {
 export function formatChance(probability: number): string {
   return `${Math.round(probability * 100)}% chance of a 15+ min delay`;
 }
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function localDateString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/**
+ * Where the alternatives list sits in time: "today", "tomorrow", or "on Sat, Nov 15".
+ * `dateIso` is `alternatives.date` (the origin's local date). The app has no airport time
+ * zones, so "today" is the device's date, which matches the origin for someone at the airport.
+ */
+export function formatAlternativesWhen(dateIso: string, now: Date = new Date()): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateIso);
+  if (!m) return 'today';
+  const date = `${m[1]}-${m[2]}-${m[3]}`;
+  if (date === localDateString(now)) return 'today';
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  if (date === localDateString(next)) return 'tomorrow';
+  const weekday = WEEKDAYS[new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay()];
+  return `on ${weekday}, ${formatShortDate(date)}`;
+}

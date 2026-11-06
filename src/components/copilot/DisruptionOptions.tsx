@@ -11,7 +11,7 @@ import { RideOffer } from './RideButton';
 import { HomeAirportPrompt } from './HomeAirportPrompt';
 import { AffiliateDisclosure } from './AffiliateDisclosure';
 import { NoAlternatives } from './CopilotStates';
-import { formatMonthYear } from './format';
+import { formatAlternativesWhen, formatMonthYear } from './format';
 
 export interface DisruptionOptionsProps {
   /** The /copilot/options response. */
@@ -50,9 +50,9 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
 
       <Divider tone="dark" />
 
-      <section aria-label="Other flights today">
+      <section aria-label="Other flights">
         <SectionHeader
-          title={`Other flights today, ${flight.origin} to ${flight.destination}`}
+          title={`Other flights ${formatAlternativesWhen(alternatives.date)}, ${flight.origin} to ${flight.destination}`}
           as="h3"
           kind="no-space"
           onDark
@@ -61,6 +61,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
           <NoAlternatives
             origin={flight.origin}
             destination={flight.destination}
+            when={formatAlternativesWhen(alternatives.date)}
             searchHandoffs={alternatives.search_handoffs}
             className="mt-3"
           />

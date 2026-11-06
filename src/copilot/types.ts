@@ -15,7 +15,7 @@ export interface FlightRef {
 export interface CopilotConfig {
   enabled: boolean;
   push: { enabled: boolean; vapid_public_key: string | null };
-  status_source: string; // "none" | "swim" today
+  status_source: 'none' | 'swim'; // anything else is treated as "none" (see statusSourceOrNone)
   affiliate_partners_configured: string[];
   schedule_as_of: string | null;
 }

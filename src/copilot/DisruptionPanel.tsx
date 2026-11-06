@@ -12,7 +12,7 @@ import { getFlightState, getHomeAirport, setFlightState, setHomeAirport } from '
 import type { UserFlightState } from './prefs';
 import { rideUrlWithDropoff } from './rides';
 import { CopilotApiError } from './api';
-import { isNotFound, useCopilotConfig, useCopilotOptions, useCopilotStatus } from './useCopilot';
+import { isNotFound, statusSourceOrNone, useCopilotConfig, useCopilotOptions, useCopilotStatus } from './useCopilot';
 import type { CopilotState, OptionsResponse } from './types';
 
 export interface DisruptionPanelProps {
@@ -81,7 +81,7 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
     const ms = new Date(flight.scheduledDeparture).getTime() - Date.now();
     return Number.isFinite(ms) && ms <= DAY_MS;
   }, [flight.scheduledDeparture]);
-  const status = useCopilotStatus(flight, apiOn && config.data?.status_source !== 'none' && departsSoon);
+  const status = useCopilotStatus(flight, apiOn && statusSourceOrNone(config.data?.status_source) !== 'none' && departsSoon);
 
   const panelState = derivePanelState(userState, flight.riskLevel, status.data?.status === 'cancelled');
   const rebooked = userState === 'rebooked_today' ? 'today' : userState === 'rebooked_later' ? 'later' : null;

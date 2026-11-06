@@ -5,6 +5,11 @@ import type { Flight } from '~/types';
 import { CopilotApiError, getCopilotConfig, getCopilotOptions, getCopilotStatus, toFlightRef } from './api';
 import type { CopilotState, OptionsRequest } from './types';
 
+/** Narrow the API's status_source: anything unexpected means "no live status". */
+export function statusSourceOrNone(value: unknown): 'none' | 'swim' {
+  return value === 'swim' ? 'swim' : 'none';
+}
+
 export function isNotFound(error: unknown): boolean {
   return error instanceof CopilotApiError && error.status === 404;
 }
