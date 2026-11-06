@@ -19,6 +19,7 @@ import {
   RefundRightsNote,
   RideButton,
   RideOffer,
+  FlightCancelledLink,
 } from './index';
 
 // DEV-ONLY. Everything here is a SAMPLE. Nothing in this file is real flight, airline, partner or price data,
@@ -162,6 +163,45 @@ export default function CopilotGallery() {
           >
             <DisruptionOptions options={base} flight={SAMPLE_FLIGHT} onChangeHomeAirport={noop} />
           </DisruptionCard>
+        </Frame>
+
+        <Frame label="Rebooked (today)">
+          <DisruptionCard state="rebooked">
+            <DisruptionOptions options={{ ...base, state: 'rebooked' }} flight={SAMPLE_FLIGHT} onChangeHomeAirport={noop} />
+          </DisruptionCard>
+        </Frame>
+
+        <Frame label="Cancelled, airline with its own notice (refund handling may differ)">
+          <DisruptionCard state="cancelled">
+            <DisruptionOptions
+              options={{
+                ...base,
+                airline: null,
+                airline_notice: {
+                  code: 'ZZ',
+                  name: 'Sample Notice Air',
+                  note: 'This carrier handles rebooking through its own help page.',
+                  status_url: 'https://example.com/sample-status',
+                },
+              }}
+              flight={SAMPLE_FLIGHT}
+              onChangeHomeAirport={noop}
+            />
+          </DisruptionCard>
+        </Frame>
+
+        <Frame label="Cancelled, international route">
+          <DisruptionCard state="cancelled">
+            <DisruptionOptions
+              options={{ ...base, refund_rights: { ...base.refund_rights, international: true, eu_possible: true } }}
+              flight={SAMPLE_FLIGHT}
+              onChangeHomeAirport={noop}
+            />
+          </DisruptionCard>
+        </Frame>
+
+        <Frame label="Low-risk flight: quiet 'Flight cancelled?' link" light>
+          <FlightCancelledLink onClick={noop} />
         </Frame>
 
         <Frame label="Cancelled, away from home, 'Need help tonight?' expanded">

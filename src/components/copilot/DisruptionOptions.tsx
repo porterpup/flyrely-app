@@ -45,7 +45,13 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
 
       <section aria-label="Your refund rights">
         <SectionHeader title="Your refund rights" as="h3" kind="no-space" onDark />
-        <RefundRightsNote refund={refund_rights} conditional={conditional} className="mt-2" />
+        <RefundRightsNote
+          refund={refund_rights}
+          conditional={conditional}
+          rebooked={options.state === 'rebooked'}
+          airlineNotice={!airline && !!airline_notice && !!(airline_notice.note || airline_notice.status_url)}
+          className="mt-2"
+        />
       </section>
 
       <Divider tone="dark" />
@@ -92,6 +98,11 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
         <>
           <Divider tone="dark" />
           <NeedHelpTonight defaultOpen={helpDefaultOpen}>
+            {hotel && (
+              <p className="text-body-md text-white">
+                Ask your airline for a hotel and meal voucher first. Many airlines provide them when they cancel.
+              </p>
+            )}
             {hotel && <HotelOffer hotel={hotel} />}
             {hotel && stayExtra}
             <RideOffer ride={ride} />

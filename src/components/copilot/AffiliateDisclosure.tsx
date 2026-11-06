@@ -16,8 +16,7 @@ export function HowWeChooseBody({ required }: { required: boolean }) {
       <p>Flights are ranked by FlyRely&apos;s delay risk, never by commission.</p>
       {required && (
         <p>
-          FlyRely may earn a commission from some of these links. It doesn&apos;t change the order or the price you
-          pay. Links that may earn a commission are marked as sponsored for your browser.
+          FlyRely may earn a commission from some of these links. It doesn&apos;t change how we rank flights or the price you pay. Links that may earn a commission are marked as sponsored for your browser.
         </p>
       )}
       <p className="text-ink-caption">
@@ -35,7 +34,7 @@ export function AffiliateDisclosure({ required, onDark = true, className }: Affi
     <div className={cn('space-y-1', className)}>
       {required && (
         <p className={cn('text-body-sm', muted)}>
-          FlyRely may earn a commission from some of these links. It doesn&apos;t change the order or the price you pay.
+          FlyRely may earn a commission from some of these links. It doesn&apos;t change how we rank flights or the price you pay.
         </p>
       )}
       <p className={cn('text-body-sm', muted)}>
