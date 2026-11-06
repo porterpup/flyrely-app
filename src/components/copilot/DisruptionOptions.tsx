@@ -1,3 +1,5 @@
+import { useId, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { SectionHeader, Divider } from '~/components/ui';
 import type { FlightRef, OptionsResponse } from '~/copilot/types';
 import { AirlineContact } from './AirlineContact';
@@ -21,10 +23,12 @@ export interface DisruptionOptionsProps {
   onChangeHomeAirport: () => void;
   /** Optional slot, e.g. the push prompt. Rendered first. */
   header?: React.ReactNode;
+  /** Start with "Need help tonight?" open (gallery/testing). Default collapsed. */
+  helpDefaultOpen?: boolean;
 }
 
 /** The body of the card: airline, refund rights, alternatives, stay/ride, disclosure. Presentational. */
-export function DisruptionOptions({ options, flight, conditional = false, onChangeHomeAirport, header }: DisruptionOptionsProps) {
+export function DisruptionOptions({ options, flight, conditional = false, onChangeHomeAirport, header, helpDefaultOpen = false }: DisruptionOptionsProps) {
   const { airline, refund_rights, alternatives, hotel, ride, context, disclosure } = options;
   return (
     <div className="space-y-5">
@@ -81,9 +85,15 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
 
       {context.location === 'unknown' && <HomeAirportPrompt homeAirport={null} onChange={onChangeHomeAirport} />}
 
-      {(hotel || ride.purpose) && <Divider tone="dark" />}
-      {hotel && <HotelOffer hotel={hotel} />}
-      <RideOffer ride={ride} />
+      {(hotel || (ride.purpose && ride.links.length > 0)) && (
+        <>
+          <Divider tone="dark" />
+          <NeedHelpTonight defaultOpen={helpDefaultOpen}>
+            {hotel && <HotelOffer hotel={hotel} />}
+            <RideOffer ride={ride} />
+          </NeedHelpTonight>
+        </>
+      )}
       {context.location !== 'unknown' && (
         <HomeAirportPrompt homeAirport={context.home_airport} onChange={onChangeHomeAirport} />
       )}
@@ -91,5 +101,30 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
       <Divider tone="dark" />
       <AffiliateDisclosure required={disclosure.required} />
     </div>
+  );
+}
+
+/** "Need help tonight?" disclosure for hotel and ride. Collapsed by default; keyboard accessible. */
+export function NeedHelpTonight({ children, defaultOpen = false }: { children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const id = useId();
+  return (
+    <section aria-label="Need help tonight?">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={id}
+        className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between rounded-btn px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+      >
+        <span className="text-title-md text-white">Need help tonight?</span>
+        <ChevronDown className={`h-6 w-6 shrink-0 text-white transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+      </button>
+      {open && (
+        <div id={id} className="mt-3 space-y-5">
+          {children}
+        </div>
+      )}
+    </section>
   );
 }

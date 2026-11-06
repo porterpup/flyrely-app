@@ -162,6 +162,12 @@ export default function CopilotGallery() {
           </DisruptionCard>
         </Frame>
 
+        <Frame label="Cancelled, away from home, 'Need help tonight?' expanded">
+          <DisruptionCard state="cancelled">
+            <DisruptionOptions options={base} flight={SAMPLE_FLIGHT} onChangeHomeAirport={noop} helpDefaultOpen />
+          </DisruptionCard>
+        </Frame>
+
         <Frame label="Cancelled, at home (ride home)">
           <DisruptionCard state="cancelled">
             <DisruptionOptions options={atHome} flight={SAMPLE_FLIGHT} onChangeHomeAirport={noop} />

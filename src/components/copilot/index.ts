@@ -11,4 +11,5 @@ export { RideButton, RideOffer } from './RideButton';
 export { HomeAirportPrompt } from './HomeAirportPrompt';
 export { AffiliateDisclosure, HowWeChooseBody } from './AffiliateDisclosure';
 export { PushPermissionPrompt } from './PushPermissionPrompt';
+export { NeedHelpTonight } from "./DisruptionOptions";
 export { NoAlternatives, CopilotError } from './CopilotStates';
