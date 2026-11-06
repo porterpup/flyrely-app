@@ -7,7 +7,9 @@ import {
   DisruptionOptions,
   HomeAirportModal,
   HotelAddressField,
+  PushToggle,
 } from '~/components/copilot';
+import { COPILOT_PUSH_ENABLED } from './flags';
 import { getFlightState, getHomeAirport, setFlightState, setHomeAirport } from './prefs';
 import type { UserFlightState } from './prefs';
 import { rideUrlWithDropoff } from './rides';
@@ -148,6 +150,7 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
           flight={{ origin: flight.origin.code, destination: flight.destination.code }}
           conditional={panelState === 'at_risk'}
           onChangeHomeAirport={() => setHomeModalOpen(true)}
+          header={COPILOT_PUSH_ENABLED && panelState === 'at_risk' ? <PushToggle flight={flight} /> : undefined}
           stayExtra={addressField}
         />
       );

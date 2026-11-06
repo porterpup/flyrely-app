@@ -2,6 +2,7 @@ import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Meta, Scripts } from '@tanstack/start';
 import { AuthProvider } from '~/context/AuthContext';
+import { CopilotBootstrap, copilotHeadLinks } from '~/copilot/CopilotHead';
 import globalsCss from '~/styles/globals.css?url';
 
 const queryClient = new QueryClient({
@@ -33,6 +34,7 @@ export const Route = createRootRoute({
         href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
       },
       { rel: 'stylesheet', href: globalsCss },
+      ...copilotHeadLinks(),
     ],
   }),
 });
@@ -51,6 +53,7 @@ function RootComponent() {
             </div>
           </AuthProvider>
         </QueryClientProvider>
+        <CopilotBootstrap />
         <Scripts />
       </body>
     </html>
