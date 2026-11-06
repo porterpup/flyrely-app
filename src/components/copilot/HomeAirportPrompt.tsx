@@ -37,7 +37,7 @@ export function HomeAirportPrompt({ homeAirport, onChange, onDark = true, classN
         <div className="space-y-1">
           <p className="text-body-md font-medium">What&apos;s your home airport?</p>
           <p className={cn('text-body-sm', onDark ? 'text-white/80' : 'text-ink-caption')}>
-            We use it to tell if you&apos;re away from home. It stays on this device.
+            We use it to tell if you&apos;re away from home. Saved on this device and used to tailor your options.
           </p>
           <button type="button" onClick={onChange} className={cn(link, 'text-body-md')}>
             Set home airport

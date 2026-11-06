@@ -88,7 +88,7 @@ describe('DisruptionPanel visibility', () => {
     const { container } = renderPanel(lowRiskFlight);
     await waitFor(() => expect(calls.some((c) => c.path === '/config')).toBe(true));
     await new Promise((r) => setTimeout(r, 30));
-    expect(container.innerHTML).toBe('');
+    expect(container.textContent).toBe('Flight cancelled?'); // only the quiet link, no card
     expect(optionsCalls()).toHaveLength(0);
   });
 
@@ -265,7 +265,7 @@ describe('user states', () => {
     mockApi({ config: ok(configOn), options: ok(optionsAway) });
     const { container } = renderPanel(lowRiskFlight);
     fireEvent.click(await screen.findByRole('button', { name: 'Not cancelled after all' }));
-    await waitFor(() => expect(container.innerHTML).toBe(''));
+    await waitFor(() => expect(container.textContent).toBe('Flight cancelled?'));
   });
 
   it('works when localStorage is blocked', async () => {
@@ -453,6 +453,24 @@ describe('S-A6 response shapes', () => {
     const local = `${soon.getFullYear()}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}T${pad(soon.getHours())}:${pad(soon.getMinutes())}:00`;
     const { container } = renderPanel({ ...lowRiskFlight, scheduledDeparture: local });
     await waitFor(() => expect(calls.some((c) => c.path === '/status')).toBe(true));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(container.textContent).toBe('Flight cancelled?'); // only the quiet link, no card
+  });
+});
+
+describe('"Flight cancelled?" link', () => {
+  it('shows on a low-risk flight and opens the cancelled flow', async () => {
+    mockApi({ config: ok(configOn), options: ok(optionsAway) });
+    renderPanel(lowRiskFlight);
+    fireEvent.click(await screen.findByRole('button', { name: 'Flight cancelled?' }));
+    expect(await screen.findByText('Your flight was cancelled')).toBeTruthy();
+    expect(savedPrefs().flights[lowRiskFlight.id]).toBe('cancelled');
+  });
+
+  it('is absent when the API copilot flag is off', async () => {
+    mockApi({});
+    const { container } = renderPanel(lowRiskFlight);
+    await waitFor(() => expect(calls.length).toBeGreaterThan(0));
     await new Promise((r) => setTimeout(r, 30));
     expect(container.innerHTML).toBe('');
   });

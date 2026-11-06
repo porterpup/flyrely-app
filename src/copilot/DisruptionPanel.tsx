@@ -5,6 +5,7 @@ import {
   CopilotError,
   DisruptionCard,
   DisruptionOptions,
+  FlightCancelledLink,
   HomeAirportModal,
   HotelAddressField,
   PushToggle,
@@ -109,7 +110,11 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
   };
 
   // Hidden: API flag off (404) or unreachable config, not enabled, or a normal flight.
-  if (!config.data || !apiOn || panelState === null) return null;
+  if (!config.data || !apiOn) return null;
+  if (panelState === null) {
+    // Quiet entry point on every other flight: opens the cancelled-flight flow.
+    return <FlightCancelledLink onClick={() => changeUserState('cancelled')} />;
+  }
   if (isNotFound(options.error)) return null;
 
   const withDropoff = (data: OptionsResponse): OptionsResponse =>

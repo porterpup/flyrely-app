@@ -114,6 +114,10 @@ export interface RefundRights {
   applies: boolean;
   jurisdiction: string | null;
   content_key: string | null;
+  /** Route leaves or enters the US. Optional: treat missing as false. */
+  international?: boolean;
+  /** EU/UK passenger-rights rules (e.g. EU261) may apply. Optional: treat missing as false. */
+  eu_possible?: boolean;
 }
 
 export interface OptionsResponse {
