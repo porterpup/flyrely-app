@@ -14,6 +14,8 @@ import {
   NoAlternatives,
   PartnerButton,
   PushPermissionPrompt,
+  IosInstallHelp,
+  IosInstallSteps,
   RefundRightsNote,
   RideButton,
   RideOffer,
@@ -250,6 +252,13 @@ export default function CopilotGallery() {
             <PushPermissionPrompt status="enabled" onEnable={noop} onDisable={noop} />
             <PushPermissionPrompt status="denied" onEnable={noop} />
           </div>
+        </Frame>
+
+        <Frame label="IosInstallHelp: shown instead of 'Alert me' in an iPhone Safari tab">
+          <IosInstallHelp />
+        </Frame>
+        <Frame label="IosInstallHelp sheet content (static preview)" light>
+          <IosInstallSteps />
         </Frame>
 
         <Frame label="Empty state: no alternatives">
