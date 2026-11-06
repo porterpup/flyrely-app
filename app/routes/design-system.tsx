@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { Calendar, CreditCard, Plus, Search, History, ChevronRight, Home, Plane } from 'lucide-react';
 import {
@@ -20,6 +20,9 @@ import {
 } from '~/components/ui';
 import { BottomNav } from '~/components/layout';
 import { PredictionPanel, RiskPill, Ticket } from '~/components/flight';
+
+// Dev-only: `import.meta.env.DEV` is a build-time false in production, so the copilot gallery is dropped from the bundle.
+const CopilotGallery = import.meta.env.DEV ? lazy(() => import('~/components/copilot/CopilotGallery')) : null;
 
 export const Route = createFileRoute('/design-system')({
   // Dev-only gallery: send production visitors home.
@@ -397,6 +400,12 @@ function DesignSystemGallery() {
             <PredictionPanel risk="high" chancePercent={60} reason="Sample explanation." />
           </div>
         </Section>
+
+        {CopilotGallery && (
+          <Suspense fallback={null}>
+            <CopilotGallery />
+          </Suspense>
+        )}
       </div>
     </div>
   );
