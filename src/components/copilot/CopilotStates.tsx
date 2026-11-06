@@ -37,20 +37,23 @@ export function NoAlternatives({ origin, destination, searchHandoffs, onDark = t
 }
 
 export interface CopilotErrorProps {
+  /** Override the default heading and text (e.g. a route the copilot does not cover). */
+  title?: string;
+  description?: string;
   onRetry?: () => void;
   onDark?: boolean;
   className?: string;
 }
 
 /** Error state when the options request fails. The flight itself is unaffected. */
-export function CopilotError({ onRetry, onDark = true, className }: CopilotErrorProps) {
+export function CopilotError({ title, description, onRetry, onDark = true, className }: CopilotErrorProps) {
   return (
     <div role="alert" className={cn('space-y-3 text-center', className)}>
       <TriangleAlert className="mx-auto h-8 w-8 opacity-80" aria-hidden />
       <div>
-        <p className="text-body-lg font-medium">We couldn&apos;t load your options</p>
+        <p className="text-body-lg font-medium">{title ?? "We couldn't load your options"}</p>
         <p className={cn('text-body-md', onDark ? 'text-white/80' : 'text-ink-caption')}>
-          Your flight details are fine. Check your connection and try again, or contact your airline directly.
+          {description ?? 'Your flight details are fine. Check your connection and try again, or contact your airline directly.'}
         </p>
       </div>
       {onRetry && (

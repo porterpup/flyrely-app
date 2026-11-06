@@ -25,18 +25,20 @@ export interface DisruptionOptionsProps {
   header?: React.ReactNode;
   /** Start with "Need help tonight?" open (gallery/testing). Default collapsed. */
   helpDefaultOpen?: boolean;
+  /** Optional slot between the hotel offer and the ride offer (the hotel address field). */
+  stayExtra?: React.ReactNode;
 }
 
 /** The body of the card: airline, refund rights, alternatives, stay/ride, disclosure. Presentational. */
-export function DisruptionOptions({ options, flight, conditional = false, onChangeHomeAirport, header, helpDefaultOpen = false }: DisruptionOptionsProps) {
-  const { airline, refund_rights, alternatives, hotel, ride, context, disclosure } = options;
+export function DisruptionOptions({ options, flight, conditional = false, onChangeHomeAirport, header, helpDefaultOpen = false, stayExtra }: DisruptionOptionsProps) {
+  const { airline, airline_notice, refund_rights, alternatives, hotel, ride, context, disclosure } = options;
   return (
     <div className="space-y-5">
       {header}
 
       <section aria-label="Your airline">
         <SectionHeader title="Your airline" as="h3" kind="no-space" onDark />
-        <AirlineContact airline={airline} className="mt-2" />
+        <AirlineContact airline={airline} notice={airline_notice} className="mt-2" />
       </section>
 
       <Divider tone="dark" />
@@ -68,9 +70,9 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
               <AltFlightRow key={`${item.marketing_airline}${item.flight_number}${item.dep_local}`} item={item} />
             ))}
             <p className="pt-1 text-body-sm text-white/80">
-              Usually scheduled on this day of the week. Schedule as of{' '}
-              {formatMonthYear(alternatives.schedule_as_of)} (US DOT data). Check times, seats and prices on the
-              partner site.
+              Usually scheduled on this day of the week.
+              {alternatives.schedule_as_of && <> Schedule as of {formatMonthYear(alternatives.schedule_as_of)} (US DOT data).</>}{' '}
+              Check times, seats and prices on the partner site.
             </p>
             {alternatives.search_handoffs.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
@@ -90,6 +92,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
           <Divider tone="dark" />
           <NeedHelpTonight defaultOpen={helpDefaultOpen}>
             {hotel && <HotelOffer hotel={hotel} />}
+            {hotel && stayExtra}
             <RideOffer ride={ride} />
           </NeedHelpTonight>
         </>

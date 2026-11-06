@@ -188,3 +188,26 @@ describe('toFlightRef', () => {
     expect(toFlightRef(f)).toEqual(flight);
   });
 });
+
+describe('toFlightRef departure_time', () => {
+  const base = {
+    id: 'f',
+    flightNumber: 'DL1234',
+    airline: { code: 'DL', name: 'Delta' },
+    origin: { code: 'JFK', name: 'JFK', city: 'New York' },
+    destination: { code: 'LAX', name: 'LAX', city: 'Los Angeles' },
+    status: 'scheduled',
+    riskLevel: 'low',
+  };
+  const ref = (scheduledDeparture: string) => toFlightRef({ ...base, scheduledDeparture } as unknown as Flight).departure_time;
+
+  it('passes the local ISO the app stores (add.tsx builds `${date}T${time}:00`) through unchanged', () => {
+    expect(ref('2026-11-15T14:30:00')).toBe('2026-11-15T14:30:00');
+  });
+
+  it('pads minute-precision values and drops any offset or fractional seconds', () => {
+    expect(ref('2026-11-15T14:30')).toBe('2026-11-15T14:30:00');
+    expect(ref('2026-11-15T14:30:00Z')).toBe('2026-11-15T14:30:00');
+    expect(ref('2026-11-15T14:30:00.000-05:00')).toBe('2026-11-15T14:30:00');
+  });
+});

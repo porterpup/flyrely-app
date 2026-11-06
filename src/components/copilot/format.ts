@@ -13,7 +13,8 @@ export function formatLocalTime(iso: string): string {
 }
 
 /** "2026-08-31" or "2026-08" -> "Aug 2026". */
-export function formatMonthYear(iso: string): string {
+export function formatMonthYear(iso: string | null | undefined): string {
+  if (!iso) return '';
   const m = /^(\d{4})-(\d{2})/.exec(iso);
   if (!m) return iso;
   return `${MONTHS[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;

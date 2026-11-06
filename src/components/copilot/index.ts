@@ -13,3 +13,5 @@ export { AffiliateDisclosure, HowWeChooseBody } from './AffiliateDisclosure';
 export { PushPermissionPrompt } from './PushPermissionPrompt';
 export { NeedHelpTonight } from "./DisruptionOptions";
 export { NoAlternatives, CopilotError } from './CopilotStates';
+export { HomeAirportModal } from './HomeAirportModal';
+export { HotelAddressField } from './HotelAddressField';

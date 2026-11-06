@@ -1,12 +1,14 @@
 import { Phone } from "lucide-react";
 import { cn } from "~/lib/utils";
-import type { AirlineInfo } from "~/copilot/types";
+import type { AirlineInfo, AirlineNotice } from "~/copilot/types";
 import { PartnerButton } from "./PartnerButton";
 import { formatMonthYear } from "./format";
 
 export interface AirlineContactProps {
   /** null when the airline isn't in our list: the card falls back to "Contact your airline". */
   airline: AirlineInfo | null;
+  /** Carrier note and status page, used instead of the fallback when `airline` is null. */
+  notice?: AirlineNotice | null;
   onDark?: boolean;
   className?: string;
 }
@@ -14,10 +16,33 @@ export interface AirlineContactProps {
 /** Manage-booking link and phone number for the user's airline. */
 export function AirlineContact({
   airline,
+  notice,
   onDark = true,
   className,
 }: AirlineContactProps) {
   const muted = onDark ? "text-white/80" : "text-ink-caption";
+  if (!airline && notice && (notice.note || notice.status_url)) {
+    return (
+      <div className={cn("space-y-3", className)}>
+        <p className="text-body-lg font-medium">{notice.name}</p>
+        {notice.note && <p className={cn("text-body-md", muted)}>{notice.note}</p>}
+        {notice.status_url && (
+          <PartnerButton
+            size="default"
+            variant="primary"
+            fullWidth
+            onDark={onDark}
+            handoff={{
+              partner: notice.code,
+              label: `Check ${notice.name} flight status`,
+              url: notice.status_url,
+              is_affiliate: false,
+            }}
+          />
+        )}
+      </div>
+    );
+  }
   if (!airline) {
     return (
       <div className={cn("space-y-1", className)}>
@@ -64,9 +89,11 @@ export function AirlineContact({
           </span>
         </a>
       )}
-      <p className={cn("text-body-sm", muted)}>
-        Contact details checked {formatMonthYear(airline.verified_on)}.
-      </p>
+      {airline.verified_on && (
+        <p className={cn("text-body-sm", muted)}>
+          Contact details checked {formatMonthYear(airline.verified_on)}.
+        </p>
+      )}
     </div>
   );
 }
