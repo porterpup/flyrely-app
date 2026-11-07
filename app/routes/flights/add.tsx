@@ -4,6 +4,10 @@ import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react'
 import { fieldControlClass } from '~/components/ui/Field';
 import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
 import { RiskPill } from '~/components/flight';
+import { LookupResults } from '~/components/flight/LookupResults';
+import { RouteResults } from '~/components/flight/RouteResults';
+import { lookupFlight, searchFlights, LookupError, legDepartureISO, scheduleWarning } from '~/lib/flightLookup';
+import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
 import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber } from '~/lib/utils';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
@@ -128,6 +132,12 @@ function dedupeRecent(flights: Flight[]): Flight[] {
 
 const OTHER_AIRLINE = '__other';
 
+function predictionErrorMessage(e: unknown): string {
+  return e instanceof PredictionUnavailableError
+    ? 'Predictions are temporarily unavailable. Please try again shortly.'
+    : 'Could not get prediction. Please check your inputs and try again.';
+}
+
 function AddFlightScreen() {
   const navigate = useNavigate();
 
@@ -140,10 +150,22 @@ function AddFlightScreen() {
   const [originInfo, setOriginInfo] = useState<AirportInfo | undefined>();
   const [destCode, setDestCode] = useState('');
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
-  const [tab, setTab] = useState<'number' | 'recent'>('number');
+  const [tab, setTab] = useState<'number' | 'route' | 'recent'>('number');
   const [recent] = useState<Flight[]>(() => dedupeRecent(getFlights()));
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
+
+  // Lookup flow: airline + number + date -> matching legs. `manual` shows the full form instead.
+  const [manual, setManual] = useState(false);
+  const [isFinding, setIsFinding] = useState(false);
+  const [lookup, setLookup] = useState<LookupResponse | null>(null);
+  const [lookupMiss, setLookupMiss] = useState('');
+  // Route search: From/To + date (+ optional time window) -> every flight that day, each with a delay chance.
+  const [after, setAfter] = useState('');
+  const [before, setBefore] = useState('');
+  const [routeResult, setRouteResult] = useState<SearchResponse | null>(null);
+  const [routeMiss, setRouteMiss] = useState('');
+  const [manualLookup, setManualLookup] = useState<LookupResponse | null>(null);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchResult, setSearchResult] = useState<Flight | null>(null);
@@ -207,45 +229,170 @@ function AddFlightScreen() {
           setIsSearching(false);
           return;
         }
-        const fullFlightNumber = `${derivedCode}${numericFlight}`;
         const depISO = `${date}T${departureTime}:00`;
-        const flightId = `flight-${Date.now()}`;
-        const payload = buildPredictPayload(originCode, destCode, depISO, derivedCode, flightId, fullFlightNumber);
-        const prediction = await flyrelyApi.predict(payload);
-
-        const flight: Flight = {
-          id: flightId,
-          flightNumber: fullFlightNumber,
-          airline: { code: derivedCode, name: airlineName },
-          origin: {
-            code: originCode,
-            name: originInfo?.name ?? getAirportRef(originCode)?.name ?? originCode,
-            city: originInfo?.city ?? getAirportRef(originCode)?.city ?? originCode,
-          },
-          destination: {
-            code: destCode,
-            name: destInfo?.name ?? getAirportRef(destCode)?.name ?? destCode,
-            city: destInfo?.city ?? getAirportRef(destCode)?.city ?? destCode,
-          },
-          scheduledDeparture: depISO,
-          status: 'scheduled',
-          riskLevel: prediction.risk_level,
-          delayProbability: prediction.delay_probability,
-          delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
-          delaySeverity: prediction.delay_severity ?? undefined,
-          warnings: prediction.warnings,
-          weather: weatherFromPrediction(prediction),
-        };
+        const flight = await predictFlight(derivedCode, numericFlight, depISO, originCode, destCode, originInfo, destInfo);
         setSearchResult(flight);
       } catch (e) {
-        setError(e instanceof PredictionUnavailableError
-          ? 'Predictions are temporarily unavailable. Please try again shortly.'
-          : 'Could not get prediction. Please check your inputs and try again.');
+        setError(predictionErrorMessage(e));
       }
     }
 
     setIsSearching(false);
   };
+
+  const validateDate = (): string | null => {
+    if (!date) return 'Pick the flight date';
+    const [y, m, d] = date.split('-').map(Number);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return new Date(y, m - 1, d) < startOfToday ? 'Cannot track flights in the past' : null;
+  };
+
+  /** Step 1: airline + flight number + date -> the leg(s) that flight flies. */
+  const handleFind = async () => {
+    setError('');
+    setLookupMiss('');
+    setLookup(null);
+    setSearchResult(null);
+    const parsed = parseFlightNumber(flightNumber) ?? (/^\d{1,4}$/.test(flightNumber.trim()) && airlineCode
+      ? { airlineCode, number: flightNumber.trim() } : null);
+    if (!parsed) {
+      setError(airlineCode ? 'Enter a valid flight number, e.g. 648' : 'Choose the airline and enter the flight number');
+      return;
+    }
+    const dateError = validateDate();
+    if (dateError) {
+      setError(dateError);
+      return;
+    }
+    setIsFinding(true);
+    try {
+      setLookup(await lookupFlight(parsed.airlineCode, parsed.number, date));
+    } catch (e) {
+      setLookupMiss(e instanceof LookupError ? e.message : "We couldn't look that flight up right now.");
+    }
+    setIsFinding(false);
+  };
+
+  const handleRouteSearch = async () => {
+    setError('');
+    setRouteMiss('');
+    setRouteResult(null);
+    if (originCode.length !== 3 || destCode.length !== 3) {
+      setError('Choose the From and To airports');
+      return;
+    }
+    if (originCode === destCode) {
+      setError('From and To must be different airports');
+      return;
+    }
+    const dateError = validateDate();
+    if (dateError) {
+      setError(dateError);
+      return;
+    }
+    setIsFinding(true);
+    try {
+      setRouteResult(await searchFlights(originCode, destCode, date, { after, before }));
+    } catch (e) {
+      setRouteMiss(e instanceof LookupError ? e.message : "We couldn't search flights right now.");
+    }
+    setIsFinding(false);
+  };
+
+  /** A flight was picked from the route list: the stored time is the scheduled one. */
+  const handlePickRouteFlight = async (f: SearchFlight) => {
+    setError('');
+    setIsFinding(true);
+    try {
+      const flight = await predictFlight(
+        f.airline, f.flight_number, legDepartureISO(date, f), f.origin, f.dest,
+        getAirport(f.origin), getAirport(f.dest));
+      setSearchResult(flight);
+      setShowConfirmModal(true);
+    } catch (e) {
+      setError(predictionErrorMessage(e));
+    }
+    setIsFinding(false);
+  };
+
+  const goManual = () => {
+    setManual(true);
+    setTab('number');
+    setError('');
+    setLookup(null);
+    setLookupMiss('');
+    setRouteResult(null);
+    setRouteMiss('');
+  };
+
+  /** Step 2: a leg was picked; score it and open the "Track this flight?" confirmation. */
+  const handlePickLeg = async (leg: LookupLeg) => {
+    if (!lookup) return;
+    setError('');
+    setIsFinding(true);
+    try {
+      const flight = await predictFlight(
+        lookup.airline, lookup.flight_number, legDepartureISO(date, leg),
+        leg.origin, leg.dest, getAirport(leg.origin), getAirport(leg.dest));
+      setSearchResult(flight);
+      setShowConfirmModal(true);
+    } catch (e) {
+      setError(predictionErrorMessage(e));
+    }
+    setIsFinding(false);
+  };
+
+  const predictFlight = async (
+    code: string, number: string, depISO: string, oCode: string, dCode: string,
+    oInfo?: AirportInfo, dInfo?: AirportInfo
+  ): Promise<Flight> => {
+    const fullFlightNumber = `${code}${number}`;
+    const flightId = `flight-${Date.now()}`;
+    const payload = buildPredictPayload(oCode, dCode, depISO, code, flightId, fullFlightNumber);
+    const prediction = await flyrelyApi.predict(payload);
+    return {
+      id: flightId,
+      flightNumber: fullFlightNumber,
+      airline: { code, name: AIRLINES.find((x) => x.code === code)?.name ?? (airlineName || code) },
+      origin: {
+        code: oCode,
+        name: oInfo?.name ?? getAirportRef(oCode)?.name ?? oCode,
+        city: oInfo?.city ?? getAirportRef(oCode)?.city ?? oCode,
+      },
+      destination: {
+        code: dCode,
+        name: dInfo?.name ?? getAirportRef(dCode)?.name ?? dCode,
+        city: dInfo?.city ?? getAirportRef(dCode)?.city ?? dCode,
+      },
+      scheduledDeparture: depISO,
+      status: 'scheduled',
+      riskLevel: prediction.risk_level,
+      delayProbability: prediction.delay_probability,
+      delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+      delaySeverity: prediction.delay_severity ?? undefined,
+      warnings: prediction.warnings,
+      weather: weatherFromPrediction(prediction),
+    };
+  };
+
+  // Manual mode: check the typed flight against the schedule so a wrong time is flagged (a warning, never a block).
+  const manualParsed = parseFlightNumber(flightNumber) ?? (/^\d{1,4}$/.test(flightNumber.trim()) && airlineCode
+    ? { airlineCode, number: flightNumber.trim() } : null);
+  const manualKey = manual && manualParsed && date ? `${manualParsed.airlineCode}${manualParsed.number}|${date}` : '';
+  useEffect(() => {
+    setManualLookup(null);
+    if (!manualKey) return;
+    const [flightKey, day] = manualKey.split('|');
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      lookupFlight(flightKey.slice(0, 2), flightKey.slice(2), day)
+        .then((r) => { if (!cancelled) setManualLookup(r); })
+        .catch(() => {});
+    }, 400);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [manualKey]);
+  const timeWarning = manualLookup && manual ? scheduleWarning(manualLookup, originCode, destCode, departureTime) : null;
 
   const handleAddFlight = async () => {
     const flightToSave = searchResult;
@@ -279,6 +426,7 @@ function AddFlightScreen() {
             onChange={setTab}
             options={[
               { value: 'number', label: 'Flight number' },
+              { value: 'route', label: 'Route' },
               { value: 'recent', label: 'Recent' },
             ]}
           />
@@ -304,6 +452,7 @@ function AddFlightScreen() {
                       setDestInfo(getAirport(f.destination.code));
                       setDepartureTime(f.scheduledDeparture.split('T')[1]?.slice(0, 5) ?? '');
                       setDate('');
+                      setManual(true);
                       setTab('number');
                     }}
                     className="w-full text-left rounded-2xl border border-navy-stroke p-4 hover:border-navy-300"
@@ -318,6 +467,42 @@ function AddFlightScreen() {
                   </button>
                 ))
               )}
+            </div>
+          )}
+
+          {tab === 'route' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <AirportAutocomplete
+                  key={`rfrom-${originCode}`}
+                  label="From"
+                  placeholder="e.g., EWR"
+                  value={originCode}
+                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setRouteResult(null); }}
+                  leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
+                />
+                <AirportAutocomplete
+                  key={`rto-${destCode}`}
+                  label="To"
+                  placeholder="e.g., SFO"
+                  value={destCode}
+                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setRouteResult(null); }}
+                  leftIcon={<Plane className="w-5 h-5 rotate-45" />}
+                />
+              </div>
+              <Input
+                label="Date"
+                type="date"
+                value={date}
+                onChange={(e) => { setDate(e.target.value); setRouteResult(null); setRouteMiss(''); }}
+                leftIcon={<Calendar />}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Earliest (optional)" type="time" value={after}
+                  onChange={(e) => { setAfter(e.target.value); setRouteResult(null); }} leftIcon={<Clock />} />
+                <Input label="Latest (optional)" type="time" value={before}
+                  onChange={(e) => { setBefore(e.target.value); setRouteResult(null); }} leftIcon={<Clock />} />
+              </div>
             </div>
           )}
 
@@ -380,7 +565,7 @@ function AddFlightScreen() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              {manual && <div className="grid grid-cols-2 gap-3">
                 <AirportAutocomplete
                   key={`from-${originCode}`}
                   label="From"
@@ -397,23 +582,24 @@ function AddFlightScreen() {
                   onChange={(code, info) => { setDestCode(code); setDestInfo(info); }}
                   leftIcon={<Plane className="w-5 h-5 rotate-45" />}
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              </div>}
+              <div className={manual ? 'grid grid-cols-2 gap-3' : undefined}>
                 <Input
                   label="Date"
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => { setDate(e.target.value); setLookup(null); setLookupMiss(''); }}
                   leftIcon={<Calendar />}
                 />
-                <Input
+                {manual && <Input
                   label="Departure time"
                   type="time"
                   value={departureTime}
                   onChange={(e) => setDepartureTime(e.target.value)}
                   leftIcon={<Clock />}
-                />
+                />}
               </div>
+              {timeWarning && <Alert status="warning" showIcon={false} lineOne={timeWarning} />}
             </div>
           )}
 
@@ -421,17 +607,98 @@ function AddFlightScreen() {
             <Alert className="mt-4" status="error" showIcon={false} lineOne={error} />
           )}
 
-          {tab === 'number' && <Button
-            fullWidth
-            className="mt-6"
-            onClick={handleSearch}
-            loading={isSearching}
-            icon={<Search className="w-4 h-4" />}
-          >
-            Search flight
-          </Button>}
+          {tab === 'route' && (
+            <>
+              <Button
+                fullWidth
+                className="mt-6"
+                onClick={handleRouteSearch}
+                loading={isFinding && !routeResult}
+                icon={<Search className="w-4 h-4" />}
+              >
+                Find flights
+              </Button>
+              {routeMiss && <Alert className="mt-4" status="warning" showIcon={false} lineOne={routeMiss} />}
+              {routeResult && (
+                <div className="mt-6">
+                  <RouteResults
+                    flights={routeResult.flights}
+                    asOf={routeResult.schedule_as_of}
+                    disabled={isFinding}
+                    onPick={handlePickRouteFlight}
+                  />
+                </div>
+              )}
+              <button
+                type="button"
+                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                onClick={goManual}
+              >
+                Enter details manually
+              </button>
+            </>
+          )}
 
-          {searchResult && (
+          {tab === 'number' && !manual && (
+            <>
+              <Button
+                fullWidth
+                className="mt-6"
+                onClick={handleFind}
+                loading={isFinding && !lookup}
+                icon={<Search className="w-4 h-4" />}
+              >
+                Find flight
+              </Button>
+
+              {lookupMiss && (
+                <Alert className="mt-4" status="warning" showIcon={false} lineOne={lookupMiss} />
+              )}
+
+              {lookup && (
+                <div className="mt-6">
+                  <LookupResults
+                    flight={lookup.flight}
+                    legs={lookup.matches}
+                    note={lookup.note}
+                    disabled={isFinding}
+                    onPick={handlePickLeg}
+                  />
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                onClick={goManual}
+              >
+                Enter details manually
+              </button>
+            </>
+          )}
+
+          {tab === 'number' && manual && (
+            <>
+              <Button
+                fullWidth
+                className="mt-6"
+                onClick={handleSearch}
+                loading={isSearching}
+                icon={<Search className="w-4 h-4" />}
+              >
+                Search flight
+              </Button>
+              <button
+                type="button"
+                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                onClick={() => { setManual(false); setError(''); setSearchResult(null); }}
+              >
+                Look up by flight number instead
+              </button>
+            </>
+          )}
+
+          {searchResult && manual && (
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
                 Your Flight
