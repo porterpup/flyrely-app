@@ -9,9 +9,20 @@ type Hooks = { hook: (name: string, fn: (...args: any[]) => void) => void };
 export default function static404(nitroApp: { hooks: Hooks }) {
   nitroApp.hooks.hook('beforeResponse', (event: { path?: string }, response: { body?: unknown }) => {
     const path = String(event.path || '').split('?')[0];
-    if (!STATIC_PREFIXES.some((p) => path.startsWith(p))) return;
+    const isStatic = STATIC_PREFIXES.some((p) => path.startsWith(p));
     const body = response.body;
     if (!(body instanceof Response)) return;
+    // The HTML shell names this build's hashed chunks, so it must never be reused from a cache
+    // (Safari/PWA shells) after a redeploy.
+    if (!isStatic && (body.headers.get('content-type') || '').includes('text/html')) {
+      try {
+        body.headers.set('cache-control', 'no-store');
+      } catch {
+        // immutable headers: leave as is
+      }
+      return;
+    }
+    if (!isStatic) return;
     if (!(body.headers.get('content-type') || '').includes('text/html')) return;
     response.body = new Response('Not found', {
       status: 404,

@@ -25,16 +25,19 @@ export function isChunkLoadError(err: unknown): boolean {
   return CHUNK_ERROR_RE.test(msg);
 }
 
+/** Reloads once (rate limited) to pick up the new build. Used by window handlers and the router error boundary. */
+export function recoverFromStaleChunk(win: Window = window): void {
+  let storage: Storage | null = null;
+  try {
+    storage = win.sessionStorage;
+  } catch {
+    storage = null;
+  }
+  if (shouldReload(storage, Date.now())) win.location.reload();
+}
+
 export function installChunkReload(win: Window = window): void {
-  const recover = () => {
-    let storage: Storage | null = null;
-    try {
-      storage = win.sessionStorage;
-    } catch {
-      storage = null;
-    }
-    if (shouldReload(storage, Date.now())) win.location.reload();
-  };
+  const recover = () => recoverFromStaleChunk(win);
   win.addEventListener('vite:preloadError', (event) => {
     event.preventDefault();
     recover();

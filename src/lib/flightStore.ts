@@ -97,6 +97,16 @@ export function autoCompleteOldFlights(): void {
   }
 }
 
+/** Removes every tracked flight from this browser (called on sign-out so the next person starts clean). */
+export function clearAllFlights(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // storage unavailable: nothing to clear
+  }
+}
+
 /** Permanently removes all past (completed) flights from storage. */
 export function clearCompletedFlights(): void {
   if (typeof window === 'undefined') return;

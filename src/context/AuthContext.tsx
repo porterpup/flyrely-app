@@ -1,3 +1,4 @@
+import { clearAllFlights } from '~/lib/flightStore'
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
@@ -91,6 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function signOut() {
     if (!configured) return
     await supabaseSignOut()
+    // Flights live in this browser's localStorage; don't leave them for the next person to sign in here.
+    clearAllFlights()
     setUser(null)
   }
 
