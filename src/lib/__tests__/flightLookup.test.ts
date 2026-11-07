@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  clockDiffMinutes, formatClock, legDepartureISO, legLabel, lookupFlight, LookupError, scheduleWarning,
+  clockDiffMinutes, formatClock, mostReliableIndex, searchFlights, sortByDeparture, legDepartureISO, legLabel, lookupFlight, LookupError, scheduleWarning,
 } from '../flightLookup';
 import type { LookupLeg } from '../flightLookup';
 
@@ -68,5 +68,25 @@ describe('lookupFlight', () => {
       .rejects.toBeInstanceOf(LookupError);
     await expect(lookupFlight('UA', '1', '2026-11-10', resp(200, { matches: [] }) as any))
       .rejects.toMatchObject({ status: 404 });
+  });
+});
+
+describe('route search', () => {
+  const resp = (status: number, body: unknown) => vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status }));
+  it('builds the query with the optional window', async () => {
+    const f = resp(200, { flights: [{ flight: 'UA1' }] });
+    await searchFlights('EWR', 'SFO', '2026-11-10', { after: '06:00', before: '12:00' }, f as any, 'http://api');
+    expect(f.mock.calls[0][0]).toBe('http://api/flights/search?origin=EWR&dest=SFO&date=2026-11-10&after=06%3A00&before=12%3A00');
+  });
+  it('maps 404 and empty lists to LookupError', async () => {
+    await expect(searchFlights('AAA', 'BBB', '2026-11-10', {}, resp(404, { detail: { message: 'none' } }) as any))
+      .rejects.toMatchObject({ status: 404, message: 'none' });
+    await expect(searchFlights('A', 'B', 'd', {}, resp(200, { flights: [] }) as any)).rejects.toBeInstanceOf(LookupError);
+  });
+  it('sorts by departure and finds the most reliable flight', () => {
+    const fl = [{ flight: 'B', dep_time: '09:00', delay_probability: 0.3 }, { flight: 'A', dep_time: '07:00', delay_probability: 0.1 }];
+    expect(sortByDeparture(fl).map((x) => x.flight)).toEqual(['A', 'B']);
+    expect(mostReliableIndex(fl)).toBe(1);
+    expect(mostReliableIndex([])).toBe(-1);
   });
 });

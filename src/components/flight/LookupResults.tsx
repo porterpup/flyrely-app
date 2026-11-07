@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { cn } from '~/lib/utils';
+import { ScheduleHonesty } from './RouteResults';
 import { formatClock, legLabel } from '~/lib/flightLookup';
 import type { LookupLeg } from '~/lib/flightLookup';
 
@@ -19,6 +20,7 @@ export function LookupResults({
 }) {
   return (
     <div className="space-y-3" data-testid="lookup-results">
+      <ScheduleHonesty />
       <p className="text-body-md text-ink-sub">
         {legs.length === 1 ? 'We found this flight. Tap it to continue.' : `${flight} flies ${legs.length} legs that day. Which one are you on?`}
       </p>

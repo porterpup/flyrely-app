@@ -119,3 +119,69 @@ export function scheduleWarning(
 export function legDepartureISO(date: string, leg: LookupLeg): string {
   return `${date}T${leg.dep_time}:00`;
 }
+
+/** One scheduled flight on a route, with its delay prediction, from GET /flights/search. */
+export interface SearchFlight extends LookupLeg {
+  flight: string;          // "UA648"
+  airline: string;         // marketing code
+  airline_name: string;
+  flight_number: string;   // "648"
+  delay_probability: number;
+  risk_level: 'low' | 'medium' | 'high';
+}
+
+export interface SearchResponse {
+  origin: string;
+  dest: string;
+  date: string;
+  flights: SearchFlight[];
+  source: string;
+  schedule_as_of: string | null;
+  note: string;
+}
+
+export const SCHEDULE_LABEL = 'Based on recent schedules';
+export const SCHEDULE_TOOLTIP = 'Airlines change times from season to season. Confirm the time on your booking.';
+
+export async function searchFlights(
+  origin: string,
+  dest: string,
+  date: string,
+  window: { after?: string; before?: string } = {},
+  fetchImpl: typeof fetch = fetch,
+  base: string = API_BASE_URL
+): Promise<SearchResponse> {
+  const qs = new URLSearchParams({ origin, dest, date });
+  if (window.after) qs.set('after', window.after);
+  if (window.before) qs.set('before', window.before);
+  let res: Response;
+  try {
+    res = await fetchImpl(`${base}/flights/search?${qs}`);
+  } catch {
+    throw new LookupError(0, 'network', FALLBACK);
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const d = body?.detail;
+    throw new LookupError(res.status, d?.reason ?? 'error', typeof d?.message === 'string' ? d.message : FALLBACK);
+  }
+  const body = (await res.json()) as SearchResponse;
+  if (!Array.isArray(body?.flights) || body.flights.length === 0) {
+    throw new LookupError(404, 'not_found', FALLBACK);
+  }
+  return body;
+}
+
+/** Departure-time order, then flight number: the list order users see. */
+export function sortByDeparture<T extends { dep_time: string; flight: string }>(flights: T[]): T[] {
+  return [...flights].sort((a, b) => a.dep_time.localeCompare(b.dep_time) || a.flight.localeCompare(b.flight));
+}
+
+/** Index of the lowest-delay-chance flight (first on ties), or -1 when empty. */
+export function mostReliableIndex(flights: { delay_probability: number }[]): number {
+  let best = -1;
+  flights.forEach((f, i) => {
+    if (best < 0 || f.delay_probability < flights[best].delay_probability) best = i;
+  });
+  return best;
+}
