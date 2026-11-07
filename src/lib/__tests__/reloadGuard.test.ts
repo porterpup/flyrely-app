@@ -43,3 +43,16 @@ describe('isChunkLoadError', () => {
     expect(isChunkLoadError(undefined)).toBe(false);
   });
 });
+
+describe('isChunkLoadError (Track Flight regression)', () => {
+  it('recognises the Safari wording seen when add-flight navigates to a stale route chunk', () => {
+    expect(isChunkLoadError(new Error("'text/html' is not a valid JavaScript MIME type."))).toBe(true);
+  });
+  it('recognises Chromium and Firefox wording', () => {
+    expect(isChunkLoadError(new TypeError('Failed to fetch dynamically imported module: https://x/_build/assets/a.js'))).toBe(true);
+    expect(isChunkLoadError(new Error('error loading dynamically imported module'))).toBe(true);
+  });
+  it('ignores unrelated errors', () => {
+    expect(isChunkLoadError(new Error('Network down'))).toBe(false);
+  });
+});

@@ -6,3 +6,6 @@ dist
 .env.local
 .DS_Store
 *.log
+
+# retained old hashed chunks (see flyrely-api deploy/macmini/build-web.sh)
+public/_build/
