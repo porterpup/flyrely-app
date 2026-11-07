@@ -2,6 +2,7 @@ import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Meta, Scripts } from '@tanstack/start';
 import { AuthProvider } from '~/context/AuthContext';
+import { AuthGate } from '~/components/AuthGate';
 import { CopilotBootstrap, copilotHeadLinks } from '~/copilot/CopilotHead';
 import globalsCss from '~/styles/globals.css?url';
 
@@ -49,7 +50,9 @@ function RootComponent() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <div className="min-h-screen bg-navy-50">
-              <Outlet />
+              <AuthGate>
+                <Outlet />
+              </AuthGate>
             </div>
           </AuthProvider>
         </QueryClientProvider>
