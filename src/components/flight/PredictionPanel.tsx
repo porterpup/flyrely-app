@@ -8,15 +8,17 @@ export interface PredictionPanelProps {
   risk: RiskLevel;
   /** Whole-number percent chance of a 15+ min delay. Omit when the model gave no probability. */
   chancePercent?: number | null;
-  /** Explanation line (risk factors or generic copy). */
+  /** Fallback explanation line when there are no specific reasons. */
   reason: string;
+  /** Top reasons from the model's risk factors; shown as "Why: ...". */
+  why?: string | null;
   /** Extra content under the reason: severity bar, warnings. */
   children?: React.ReactNode;
   className?: string;
 }
 
 /** Figma "FlyRely prediction" panel: solid risk colour, risk level on the left, chance on the right. */
-export function PredictionPanel({ risk, chancePercent, reason, children, className }: PredictionPanelProps) {
+export function PredictionPanel({ risk, chancePercent, reason, why, children, className }: PredictionPanelProps) {
   const Icon = risk === 'low' ? CheckCircle : AlertTriangle;
   return (
     <div className={cn('rounded-panel p-5', alertSolidClasses[riskTone[risk] as AlertStatus], className)}>
@@ -38,7 +40,7 @@ export function PredictionPanel({ risk, chancePercent, reason, children, classNa
       </div>
       <div className="mt-5 flex items-start gap-2 text-body-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-        <p>{reason}</p>
+        <p>{why ? `Why: ${why}` : reason}</p>
       </div>
       {children}
     </div>

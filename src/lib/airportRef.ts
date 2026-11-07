@@ -396,3 +396,19 @@ export function getCityLabel(code: string): string {
 export function getAirportName(code: string): string {
   return getAirportRef(code)?.name ?? code.toUpperCase();
 }
+
+export interface AirportErrors { origin?: string; dest?: string }
+
+/**
+ * Inline errors for a hand-entered route: both codes must be in the reference list (US airports) and differ.
+ * Empty codes are not flagged here (the form's required-field check covers those).
+ */
+export function validateAirports(origin: string, dest: string): AirportErrors {
+  const o = origin.trim().toUpperCase();
+  const d = dest.trim().toUpperCase();
+  const errors: AirportErrors = {};
+  if (o && !getAirportRef(o)) errors.origin = `We don't recognise "${o}". FlyRely covers US airports only.`;
+  if (d && !getAirportRef(d)) errors.dest = `We don't recognise "${d}". FlyRely covers US airports only.`;
+  if (o && d && o === d && !errors.origin) errors.dest = 'From and To must be different airports.';
+  return errors;
+}

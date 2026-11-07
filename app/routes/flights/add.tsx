@@ -3,18 +3,19 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
 import { fieldControlClass } from '~/components/ui/Field';
 import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
+import { InputError } from '~/components/ui/InputError';
 import { RiskPill } from '~/components/flight';
 import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, legDepartureISO, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
-import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber } from '~/lib/utils';
+import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber, topReasons } from '~/lib/utils';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlights } from '~/lib/flightStore';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
-import { getAirportRef } from '~/lib/airportRef';
+import { getAirportRef, validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/add')({
@@ -29,12 +30,14 @@ function AirportAutocomplete({
   value,
   onChange,
   leftIcon,
+  error,
 }: {
   label: string;
   placeholder: string;
   value: string;
   onChange: (code: string, info?: AirportInfo) => void;
   leftIcon?: React.ReactNode;
+  error?: string;
 }) {
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<AirportInfo[]>([]);
@@ -94,6 +97,7 @@ function AirportAutocomplete({
           className={cn(fieldControlClass, leftIcon && 'pl-2')}
         />
       </FieldBox>
+      {error && <InputError message={error} className="mt-0" />}
       {open && suggestions.length > 0 && (
         <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-field border border-surface-divider bg-white shadow-lg">
           {suggestions.map((ap) => (
@@ -172,6 +176,7 @@ function AddFlightScreen() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
+  const [airportErrors, setAirportErrors] = useState<{ origin?: string; dest?: string }>({});
 
   // Typing a full flight number like "B6123" picks (or fills in) the airline.
   const handleFlightNumberChange = (value: string) => {
@@ -189,12 +194,19 @@ function AddFlightScreen() {
 
   const handleSearch = async () => {
     setError('');
+    setAirportErrors({});
     setIsSearching(true);
     setSearchResult(null);
 
     {
       if (!airlineName || !flightNumber || !date || !departureTime || !originCode || !destCode) {
         setError('Please fill in all fields');
+        setIsSearching(false);
+        return;
+      }
+      const airportProblems = validateAirports(originCode, destCode);
+      setAirportErrors(airportProblems);
+      if (airportProblems.origin || airportProblems.dest) {
         setIsSearching(false);
         return;
       }
@@ -278,12 +290,14 @@ function AddFlightScreen() {
     setError('');
     setRouteMiss('');
     setRouteResult(null);
+    setAirportErrors({});
     if (originCode.length !== 3 || destCode.length !== 3) {
       setError('Choose the From and To airports');
       return;
     }
-    if (originCode === destCode) {
-      setError('From and To must be different airports');
+    const airportProblems = validateAirports(originCode, destCode);
+    if (airportProblems.origin || airportProblems.dest) {
+      setAirportErrors(airportProblems);
       return;
     }
     const dateError = validateDate();
@@ -317,6 +331,7 @@ function AddFlightScreen() {
   };
 
   const goManual = () => {
+    setAirportErrors({});
     setManual(true);
     setTab('number');
     setError('');
@@ -369,7 +384,7 @@ function AddFlightScreen() {
       status: 'scheduled',
       riskLevel: prediction.risk_level,
       delayProbability: prediction.delay_probability,
-      delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+      delayReason: topReasons(prediction.risk_factors),
       delaySeverity: prediction.delay_severity ?? undefined,
       warnings: prediction.warnings,
       weather: weatherFromPrediction(prediction),
@@ -478,7 +493,8 @@ function AddFlightScreen() {
                   label="From"
                   placeholder="e.g., EWR"
                   value={originCode}
-                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setRouteResult(null); }}
+                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setRouteResult(null); setAirportErrors((e) => ({ ...e, origin: undefined })); }}
+                  error={airportErrors.origin}
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
                 <AirportAutocomplete
@@ -486,7 +502,8 @@ function AddFlightScreen() {
                   label="To"
                   placeholder="e.g., SFO"
                   value={destCode}
-                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setRouteResult(null); }}
+                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setRouteResult(null); setAirportErrors((e) => ({ ...e, dest: undefined })); }}
+                  error={airportErrors.dest}
                   leftIcon={<Plane className="w-5 h-5 rotate-45" />}
                 />
               </div>
@@ -571,7 +588,8 @@ function AddFlightScreen() {
                   label="From"
                   placeholder="e.g., SFO"
                   value={originCode}
-                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); }}
+                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setAirportErrors((e) => ({ ...e, origin: undefined })); }}
+                  error={airportErrors.origin}
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
                 <AirportAutocomplete
@@ -579,7 +597,8 @@ function AddFlightScreen() {
                   label="To"
                   placeholder="e.g., JFK"
                   value={destCode}
-                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); }}
+                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setAirportErrors((e) => ({ ...e, dest: undefined })); }}
+                  error={airportErrors.dest}
                   leftIcon={<Plane className="w-5 h-5 rotate-45" />}
                 />
               </div>}
@@ -748,6 +767,9 @@ function AddFlightScreen() {
                     </span>
                   )}
                 </div>
+                {flightToAdd.delayReason && (
+                  <p className="mt-2 text-sm text-navy-600">Why: {flightToAdd.delayReason}</p>
+                )}
               </div>
 
               <p className="text-sm text-navy-500">

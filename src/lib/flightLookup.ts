@@ -34,6 +34,8 @@ export class LookupError extends Error {
 }
 
 const FALLBACK = "We couldn't look that flight up right now.";
+export const NOT_FOUND_COPY =
+  "We couldn't find this flight. FlyRely currently covers US domestic flights only. If it's a domestic flight, you can enter the details manually.";
 
 export async function lookupFlight(
   airline: string,
@@ -56,7 +58,7 @@ export async function lookupFlight(
   }
   const body = (await res.json()) as LookupResponse;
   if (!Array.isArray(body?.matches) || body.matches.length === 0) {
-    throw new LookupError(404, 'not_found', FALLBACK);
+    throw new LookupError(404, 'not_found', NOT_FOUND_COPY);
   }
   return body;
 }
@@ -128,6 +130,8 @@ export interface SearchFlight extends LookupLeg {
   flight_number: string;   // "648"
   delay_probability: number;
   risk_level: 'low' | 'medium' | 'high';
+  /** Plain-language reasons, most important first. Absent on older API versions. */
+  risk_factors?: string[];
 }
 
 export interface SearchResponse {
@@ -167,7 +171,7 @@ export async function searchFlights(
   }
   const body = (await res.json()) as SearchResponse;
   if (!Array.isArray(body?.flights) || body.flights.length === 0) {
-    throw new LookupError(404, 'not_found', FALLBACK);
+    throw new LookupError(404, 'not_found', "We found no flights on that route and date. Check the airports, or enter the details manually.");
   }
   return body;
 }

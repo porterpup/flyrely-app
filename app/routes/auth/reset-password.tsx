@@ -2,23 +2,27 @@ import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 import { Button } from '~/components/ui'
+import { arrivedWithRecoveryLink, hasRecoveryLink } from '~/lib/recoveryLink'
 
 export const Route = createFileRoute('/auth/reset-password')({
   component: ResetPasswordRoute,
 })
 
 function ResetPasswordRoute() {
-  const { updatePassword, configured } = useAuth()
+  const { updatePassword, configured, recoveryReady } = useAuth()
   const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [linkExpired, setLinkExpired] = useState(false)
+  // null until we have looked at the URL (avoids flashing the expired message on first paint)
+  const [linkPresent, setLinkPresent] = useState<boolean | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    setLinkPresent(arrivedWithRecoveryLink() || hasRecoveryLink(window.location.search, window.location.hash))
     const get = (k: string) => hash.get(k) ?? params.get(k)
     if (get('error_code') === 'otp_expired' || get('error') === 'access_denied') {
       setLinkExpired(true)
@@ -43,15 +47,15 @@ function ResetPasswordRoute() {
     else navigate({ to: '/' })
   }
 
-  if (linkExpired) {
+  if (linkPresent === null && !recoveryReady && !linkExpired) return null
+
+  if (linkExpired || (!linkPresent && !recoveryReady)) {
     return (
       <div className="p-4 max-w-md mx-auto">
         <h1 className="text-2xl font-semibold mb-4">Reset link expired</h1>
         <p className="text-sm text-gray-700">
-          This reset link has expired. Request a new one.
-        </p>
-        <p className="mt-4 text-sm">
-          <Link to="/auth/forgot-password" className="text-primary-600">Request a new reset link</Link>
+          This link has expired or is invalid.{' '}
+          <Link to="/auth/forgot-password" className="text-primary-600 underline">Request a new one</Link>
         </p>
       </div>
     )

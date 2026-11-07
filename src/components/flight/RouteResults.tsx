@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import { cn, topReasons } from '~/lib/utils';
 import { RiskPill } from './RiskPill';
 import {
   formatClock, mostReliableIndex, SCHEDULE_LABEL, SCHEDULE_TOOLTIP, sortByDeparture,
@@ -44,7 +44,7 @@ export function RouteResults({
           type="button"
           disabled={disabled}
           onClick={() => onPick(f)}
-          aria-label={`${f.flight} ${f.origin} to ${f.dest}, ${formatClock(f.dep_time)} to ${formatClock(f.arr_time)}, ${Math.round(f.delay_probability * 100)}% delay chance`}
+          aria-label={`${f.flight} ${f.origin} to ${f.dest}, ${formatClock(f.dep_time)} to ${formatClock(f.arr_time)}, ${Math.round(f.delay_probability * 100)}% chance of a 15+ min delay${f.risk_factors?.length ? `. Why: ${topReasons(f.risk_factors)}` : ''}`}
           className={cn(
             'w-full rounded-2xl border border-navy-stroke bg-white p-4 text-left hover:border-navy-300',
             disabled && 'opacity-60'
@@ -61,11 +61,14 @@ export function RouteResults({
           </p>
           <div className="mt-2 flex items-center gap-2">
             <RiskPill risk={f.risk_level} emphasis="soft" size="small" />
-            <span className="text-sm text-navy-caption">{Math.round(f.delay_probability * 100)}% delay chance</span>
+            <span className="text-sm text-navy-caption">{Math.round(f.delay_probability * 100)}% chance of a 15+ min delay</span>
             {i === best && sorted.length > 1 && (
               <span className="text-sm font-semibold text-status-success-text">Most reliable</span>
             )}
           </div>
+          {f.risk_factors && f.risk_factors.length > 0 && (
+            <p className="mt-1.5 text-sm text-navy-caption">Why: {topReasons(f.risk_factors)}</p>
+          )}
         </button>
       ))}
     </div>

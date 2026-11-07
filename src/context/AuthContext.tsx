@@ -28,6 +28,8 @@ type AuthContextValue = {
   user: User | null
   loading: boolean
   configured: boolean
+  /** True once Supabase has accepted a password-recovery link in this tab. */
+  recoveryReady: boolean
   signIn: (email: string, password: string) => Promise<AuthResult>
   signUp: (email: string, password: string) => Promise<SignUpResult>
   signOut: () => Promise<void>
@@ -44,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(configured)
+  const [recoveryReady, setRecoveryReady] = useState(false)
 
   useEffect(() => {
     if (!configured) {
@@ -66,7 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
-      if (event === 'PASSWORD_RECOVERY') navigate({ to: '/auth/reset-password' })
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecoveryReady(true)
+        navigate({ to: '/auth/reset-password' })
+      }
       setUser(session?.user ? { id: session.user.id, email: session.user.email } : null)
     })
 
@@ -110,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, configured, signIn, signUp, signOut, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, configured, recoveryReady, signIn, signUp, signOut, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )
