@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { MessageSquare } from 'lucide-react';
 import { useRouterState } from '@tanstack/react-router';
 import { Button, Modal, Select } from '~/components/ui';
 import { useAuth } from '~/context/AuthContext';
@@ -8,12 +7,11 @@ import {
   FEEDBACK_MAX_LENGTH,
   OPEN_FEEDBACK_EVENT,
   buildFeedbackContext,
-  openFeedback,
   sendFeedback,
   type FeedbackCategory,
 } from '~/lib/feedback';
 
-/** Small "Feedback" link plus the modal it (and the account page) opens. Renders nothing when signed out. */
+/** The feedback modal that FeedbackLink and the account page open. No floating button: it covered content on phones. Renders nothing when signed out. */
 export function FeedbackHost() {
   const { user } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -28,16 +26,6 @@ export function FeedbackHost() {
   if (!user) return null;
   return (
     <>
-      {!open && (
-        <button
-          type="button"
-          onClick={openFeedback}
-          className="fixed bottom-24 right-3 z-30 flex items-center gap-1 rounded-full border border-surface-stroke bg-white/90 px-3 py-1.5 text-xs text-ink-caption shadow-elevation-1 hover:text-ink"
-        >
-          <MessageSquare className="h-3.5 w-3.5" aria-hidden />
-          Feedback
-        </button>
-      )}
       <FeedbackModal isOpen={open} onClose={() => setOpen(false)} pathname={pathname} />
     </>
   );

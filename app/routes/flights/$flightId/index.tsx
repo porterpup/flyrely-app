@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw, Check } from 'lucide-react';
-import { Header, Button, IconButton, Card, Duration, Pill, SectionHeader } from '~/components/ui';
+import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw } from 'lucide-react';
+import { Header, Button, IconButton, Card, Duration, SectionHeader } from '~/components/ui';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
-import { cn, formatLongDate, formatTime, formatDelayChance } from '~/lib/utils';
+import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
-import { weatherFromPrediction, weatherLine } from '~/lib/weather';
+import { weatherFromPrediction, weatherCard } from '~/lib/weather';
+import { FeedbackLink } from '~/components/feedback';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
 import { DisruptionSlot } from '~/copilot/DisruptionSlot';
@@ -48,7 +49,7 @@ function FlightDetailsScreen() {
               ...f,
               riskLevel: prediction.risk_level,
               delayProbability: prediction.delay_probability,
-              delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+              delayReason: topReasons(prediction.risk_factors),
               warnings: prediction.warnings,
               delaySeverity: prediction.delay_severity ?? undefined,
               weather: weatherFromPrediction(prediction),
@@ -84,7 +85,7 @@ function FlightDetailsScreen() {
         ...flight,
         riskLevel: prediction.risk_level,
         delayProbability: prediction.delay_probability,
-        delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
+        delayReason: topReasons(prediction.risk_factors),
         warnings: prediction.warnings,
         delaySeverity: prediction.delay_severity ?? undefined,
         weather: weatherFromPrediction(prediction),
@@ -134,6 +135,8 @@ function FlightDetailsScreen() {
       </div>
     );
   }
+
+  const weather = weatherCard(flight);
 
   return (
     <div className="app-container">
@@ -190,10 +193,8 @@ function FlightDetailsScreen() {
               <PredictionPanel
                 risk={flight.riskLevel}
                 chancePercent={formatDelayChance(flight.delayProbability) ? Math.round((flight.delayProbability ?? 0) * 100) : null}
-                reason={
-                  flight.delayReason ??
-                  'Based on historical performance for this route, airline and time of day.'
-                }
+                why={flight.delayReason}
+                reason="Based on historical performance for this route, airline and time of day."
               >
                 {flight.warnings && flight.warnings.length > 0 && (
                   <ul className="mt-4 space-y-1">
@@ -209,17 +210,16 @@ function FlightDetailsScreen() {
 
             <DisruptionSlot flight={flight} onFlightChange={setFlight} />
 
-            {(flight.weather?.origin || flight.weather?.destination) && (
+            {weather.kind !== 'none' && (
               <Card tone="dark">
                 <SectionHeader as="h3" kind="no-space" onDark title="Weather" className="mb-3" />
-                <ul className="space-y-2 text-body-sm">
-                  {flight.weather.origin && (
-                    <li>{weatherLine(flight.origin.code, flight.weather.origin, 'origin')}</li>
-                  )}
-                  {flight.weather.destination && (
-                    <li>{weatherLine(flight.destination.code, flight.weather.destination, 'destination')}</li>
-                  )}
-                </ul>
+                {weather.kind === 'lines' ? (
+                  <ul className="space-y-2 text-body-sm">
+                    {weather.lines.map((l) => <li key={l}>{l}</li>)}
+                  </ul>
+                ) : (
+                  <p className="text-body-sm text-ink-on-dark-muted">{weather.message}</p>
+                )}
               </Card>
             )}
 
@@ -244,14 +244,11 @@ function FlightDetailsScreen() {
               onClick={() => setShowRemoveModal(true)}
               className="border-white/80 text-white hover:bg-white/10 active:bg-white/20"
             >
-              Remove this trip
+              Remove this flight
             </Button>
 
             <div className="flex justify-center pt-2">
-              <Pill tone="success" emphasis="solid" className="gap-1.5 px-3">
-                <Check className="w-3.5 h-3.5" />
-                Already tracking this flight
-              </Pill>
+              <FeedbackLink onDark />
             </div>
           </div>
         </div>

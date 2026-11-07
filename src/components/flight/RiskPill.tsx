@@ -8,7 +8,7 @@ export const riskTone: Record<RiskLevel, PillTone> = {
   high: 'error',
 };
 
-/** "On track" / "At risk" / "High risk" pill. Label comes from getRiskLabel. */
+/** "Low risk" / "Some risk" / "High risk" pill. Label comes from getRiskLabel. */
 export function RiskPill({
   risk,
   detail,

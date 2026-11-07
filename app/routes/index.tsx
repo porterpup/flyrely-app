@@ -4,6 +4,7 @@ import { Plus, History, Search } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button, SectionHeader, FieldBox, Alert, OptionTile } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
+import { FeedbackLink } from '~/components/feedback';
 import { getUpcomingFlights, autoCompleteOldFlights } from '~/lib/flightStore';
 import { formatDate, formatDelayChance, getRiskLabel } from '~/lib/utils';
 import type { Flight } from '~/types';
@@ -103,7 +104,7 @@ function HomeScreen() {
 
         {alerts.length > 0 && (
           <section className="mb-8">
-            <SectionHeader title="Recent Alerts" />
+            <SectionHeader title="Latest predictions" />
             <div className="space-y-3">
               {alerts.map((f) => (
                 <Link
@@ -143,6 +144,10 @@ function HomeScreen() {
             </Link>
           </div>
         </section>
+
+        <div className="mt-6 flex justify-center">
+          <FeedbackLink />
+        </div>
       </div>
     </AppShell>
   );

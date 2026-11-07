@@ -53,12 +53,18 @@ export function formatDateTime(isoDate: string): string {
 export function getRiskLabel(risk: RiskLevel): string {
   switch (risk) {
     case 'low':
-      return 'On track';
+      return 'Low risk';
     case 'medium':
-      return 'At risk';
+      return 'Some risk';
     case 'high':
       return 'High risk';
   }
+}
+
+/** Top two reasons from the API's risk_factors, joined for storage on a flight. */
+export function topReasons(factors: string[] | undefined | null, n = 2): string | undefined {
+  const picked = (factors ?? []).filter(Boolean).slice(0, n);
+  return picked.length ? picked.join(' • ') : undefined;
 }
 
 export function formatDelayRange(minDelay: number, maxDelay: number): string {

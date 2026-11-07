@@ -6,7 +6,8 @@ import { getFlightById, saveFlight } from '~/lib/flightStore';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { getAirport, getAirline } from '~/lib/airports';
-import { parseFlightNumber } from '~/lib/utils';
+import { parseFlightNumber, topReasons } from '~/lib/utils';
+import { validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 import { COPILOT_ENABLED } from '~/copilot/flags';
 import { releaseFlightCopilot } from '~/copilot/cleanup';
@@ -99,8 +100,9 @@ function EditFlightScreen() {
       setError('Use 3-letter airport codes, e.g. SFO');
       return;
     }
-    if (newOrigin === newDestination) {
-      setError('Origin and destination cannot be the same');
+    const airportErrors = validateAirports(newOrigin, newDestination);
+    if (airportErrors.origin || airportErrors.dest) {
+      setError(airportErrors.origin ?? airportErrors.dest ?? '');
       return;
     }
 
@@ -145,7 +147,7 @@ function EditFlightScreen() {
         );
         edited.riskLevel = prediction.risk_level;
         edited.delayProbability = prediction.delay_probability;
-        edited.delayReason = prediction.risk_factors.slice(0, 2).join(' • ') || undefined;
+        edited.delayReason = topReasons(prediction.risk_factors);
         edited.warnings = prediction.warnings;
         edited.delaySeverity = prediction.delay_severity ?? undefined;
         edited.weather = weatherFromPrediction(prediction);
