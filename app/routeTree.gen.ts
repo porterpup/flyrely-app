@@ -23,6 +23,7 @@ import { Route as AuthResetPasswordImport } from './routes/auth/reset-password'
 import { Route as AuthLoginImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordImport } from './routes/auth/forgot-password'
 import { Route as AccountUsageImport } from './routes/account/usage'
+import { Route as AccountFeedbackImport } from './routes/account/feedback'
 import { Route as FlightsFlightIdIndexImport } from './routes/flights/$flightId/index'
 import { Route as FlightsFlightIdEditImport } from './routes/flights/$flightId/edit'
 
@@ -100,6 +101,12 @@ const AccountUsageRoute = AccountUsageImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const AccountFeedbackRoute = AccountFeedbackImport.update({
+  id: '/account/feedback',
+  path: '/account/feedback',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const FlightsFlightIdIndexRoute = FlightsFlightIdIndexImport.update({
   id: '/flights/$flightId/',
   path: '/flights/$flightId/',
@@ -128,6 +135,13 @@ declare module '@tanstack/react-router' {
       path: '/design-system'
       fullPath: '/design-system'
       preLoaderRoute: typeof DesignSystemImport
+      parentRoute: typeof rootRoute
+    }
+    '/account/feedback': {
+      id: '/account/feedback'
+      path: '/account/feedback'
+      fullPath: '/account/feedback'
+      preLoaderRoute: typeof AccountFeedbackImport
       parentRoute: typeof rootRoute
     }
     '/account/usage': {
@@ -222,6 +236,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRoute
+  '/account/feedback': typeof AccountFeedbackRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -239,6 +254,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRoute
+  '/account/feedback': typeof AccountFeedbackRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -257,6 +273,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/design-system': typeof DesignSystemRoute
+  '/account/feedback': typeof AccountFeedbackRoute
   '/account/usage': typeof AccountUsageRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
@@ -276,6 +293,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/design-system'
+    | '/account/feedback'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -292,6 +310,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/design-system'
+    | '/account/feedback'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -308,6 +327,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/design-system'
+    | '/account/feedback'
     | '/account/usage'
     | '/auth/forgot-password'
     | '/auth/login'
@@ -326,6 +346,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DesignSystemRoute: typeof DesignSystemRoute
+  AccountFeedbackRoute: typeof AccountFeedbackRoute
   AccountUsageRoute: typeof AccountUsageRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
@@ -343,6 +364,7 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DesignSystemRoute: DesignSystemRoute,
+  AccountFeedbackRoute: AccountFeedbackRoute,
   AccountUsageRoute: AccountUsageRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
@@ -369,6 +391,7 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/design-system",
+        "/account/feedback",
         "/account/usage",
         "/auth/forgot-password",
         "/auth/login",
@@ -388,6 +411,9 @@ export const routeTree = rootRoute
     },
     "/design-system": {
       "filePath": "design-system.tsx"
+    },
+    "/account/feedback": {
+      "filePath": "account/feedback.tsx"
     },
     "/account/usage": {
       "filePath": "account/usage.tsx"

@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { LogOut } from 'lucide-react';
+import { LogOut, MessageSquare } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { useAuth } from '~/context/AuthContext';
+import { openFeedback } from '~/lib/feedback';
 
 export const Route = createFileRoute('/account/')({
   component: AccountScreen,
@@ -38,6 +39,16 @@ function AccountScreen() {
             )}
           </div>
         </div>
+
+        {user && (
+          <button
+            onClick={openFeedback}
+            className="w-full flex items-center gap-3 p-4 text-navy-800 hover:bg-navy-50 rounded-xl transition-colors"
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="font-medium">Send feedback</span>
+          </button>
+        )}
 
         {/* Sign Out */}
         {user && (

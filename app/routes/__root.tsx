@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Meta, Scripts } from '@tanstack/start';
 import { AuthProvider } from '~/context/AuthContext';
 import { AuthGate } from '~/components/AuthGate';
+import { FeedbackHost } from '~/components/feedback';
 import { CopilotBootstrap, copilotHeadLinks } from '~/copilot/CopilotHead';
 import globalsCss from '~/styles/globals.css?url';
 
@@ -52,6 +53,7 @@ function RootComponent() {
             <div className="min-h-screen bg-navy-50">
               <AuthGate>
                 <Outlet />
+                <FeedbackHost />
               </AuthGate>
             </div>
           </AuthProvider>
