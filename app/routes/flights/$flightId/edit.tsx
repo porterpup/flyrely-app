@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock } from 'lucide-react';
 import { Alert, Button, Header, Input } from '~/components/ui';
 import { getFlightById, saveFlight } from '~/lib/flightStore';
+import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { getAirport, getAirline } from '~/lib/airports';
 import { parseFlightNumber } from '~/lib/utils';
@@ -147,6 +148,7 @@ function EditFlightScreen() {
         edited.delayReason = prediction.risk_factors.slice(0, 2).join(' • ') || undefined;
         edited.warnings = prediction.warnings;
         edited.delaySeverity = prediction.delay_severity ?? undefined;
+        edited.weather = weatherFromPrediction(prediction);
         edited.lastCheckedAt = Date.now();
       } catch (e) {
         setError(

@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { BarChart3, TrendingUp, DollarSign, Zap, Download } from 'lucide-react';
 import { Header } from '~/components/ui';
 import { API_BASE_URL } from '~/lib/api';
+import { getSupabase, isSupabaseConfigured } from '~/lib/supabaseAuth';
 
 export const Route = createFileRoute('/account/usage')({
   component: UsageDashboardScreen,
@@ -21,6 +22,25 @@ interface UsageData {
   message?: string;
 }
 
+/** The signed-in user's Supabase access token, or null. The API only serves /usage to admin emails. */
+async function accessToken(): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data } = await getSupabase().auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
+async function usageFetch(path: string): Promise<Response> {
+  const token = await accessToken();
+  return fetch(`${API_BASE_URL}${path}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
+}
+
+/** Map a failed /usage response to the message shown on the page. */
+function usageErrorMessage(status: number): string {
+  if (status === 403) return 'Admin only';
+  if (status === 401) return 'Sign in as an admin to view usage';
+  return 'Could not load usage data';
+}
+
 function UsageDashboardScreen() {
   const navigate = useNavigate();
   const [data, setData] = useState<UsageData | null>(null);
@@ -31,17 +51,36 @@ function UsageDashboardScreen() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    fetch(`${API_BASE_URL}/usage?days=${period}`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`usage ${r.status}`);
-        return r.json();
+    setData(null);
+    usageFetch(`/usage?days=${period}`)
+      .then(async (r) => {
+        if (!r.ok) {
+          setError(usageErrorMessage(r.status));
+          return;
+        }
+        setData(await r.json());
       })
-      .then((d) => { setData(d); setLoading(false); })
-      .catch(() => { setError('Could not load usage data'); setLoading(false); });
+      .catch(() => setError('Could not load usage data'))
+      .finally(() => setLoading(false));
   }, [period]);
 
-  const handleExport = () => {
-    window.open(`${API_BASE_URL}/usage/export`, '_blank');
+  // The export needs the Authorization header, so a plain link or window.open won't work: download as a blob.
+  const handleExport = async () => {
+    try {
+      const r = await usageFetch('/usage/export');
+      if (!r.ok) {
+        setError(r.status === 404 ? 'No usage data to export yet' : usageErrorMessage(r.status));
+        return;
+      }
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'flyrely_usage.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError('Could not export usage data');
+    }
   };
 
   const maxDailyPredictions = data

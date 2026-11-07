@@ -6,6 +6,7 @@ import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/compon
 import { cn, formatLongDate, formatTime, formatDelayChance } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
+import { weatherFromPrediction, weatherLine } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
 import { DisruptionSlot } from '~/copilot/DisruptionSlot';
@@ -50,6 +51,7 @@ function FlightDetailsScreen() {
               delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
               warnings: prediction.warnings,
               delaySeverity: prediction.delay_severity ?? undefined,
+              weather: weatherFromPrediction(prediction),
             };
             const stamped = stampFlightChecked(updated);
             setFlight(stamped);
@@ -85,6 +87,7 @@ function FlightDetailsScreen() {
         delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
         warnings: prediction.warnings,
         delaySeverity: prediction.delay_severity ?? undefined,
+        weather: weatherFromPrediction(prediction),
       };
       saveFlight(updated);
       setFlight(updated);
@@ -205,6 +208,20 @@ function FlightDetailsScreen() {
             </Card>
 
             <DisruptionSlot flight={flight} onFlightChange={setFlight} />
+
+            {(flight.weather?.origin || flight.weather?.destination) && (
+              <Card tone="dark">
+                <SectionHeader as="h3" kind="no-space" onDark title="Weather" className="mb-3" />
+                <ul className="space-y-2 text-body-sm">
+                  {flight.weather.origin && (
+                    <li>{weatherLine(flight.origin.code, flight.weather.origin, 'origin')}</li>
+                  )}
+                  {flight.weather.destination && (
+                    <li>{weatherLine(flight.destination.code, flight.weather.destination, 'destination')}</li>
+                  )}
+                </ul>
+              </Card>
+            )}
 
             <Card tone="dark">
               <SectionHeader as="h3" kind="no-space" onDark title="Schedule" className="mb-3" />
