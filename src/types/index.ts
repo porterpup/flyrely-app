@@ -33,6 +33,20 @@ export interface DelaySeverity {
   expected_delay_range: string;
 }
 
+/** Weather at an airport from /predict (origin_weather / destination_weather). Optional fields need API >= weather v2. */
+export interface AirportWeather {
+  temperature_f: number;
+  wind_speed_mph: number;
+  visibility_miles: number;
+  conditions: string;
+  /** 'current' = latest observation, 'forecast' = forecast for the flight's time */
+  source?: 'current' | 'forecast' | null;
+  /** UTC time of the observation / forecast */
+  as_of?: string | null;
+  ceiling_ft?: number | null;
+  wx?: string | null;
+}
+
 export interface Flight {
   id: string;
   flightNumber: string;
@@ -51,4 +65,6 @@ export interface Flight {
   lastCheckedAt?: number;
   /** Data-coverage caveats from /predict, e.g. airport not in historical data. */
   warnings?: string[];
+  /** Weather at both airports from the last /predict; absent when weather was unavailable. */
+  weather?: { origin: AirportWeather | null; destination: AirportWeather | null };
 }

@@ -1,3 +1,5 @@
+import type { AirportWeather } from '~/types';
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 /** Canonical /predict request. See flyrely-api main.py FlightRequest. */
@@ -46,8 +48,8 @@ export interface PredictResponse {
   operating_flight_number: string | null;
   /** Weather is not a model input; false means risk factors exclude weather */
   weather_available: boolean;
-  origin_weather: Record<string, unknown> | null;
-  destination_weather: Record<string, unknown> | null;
+  origin_weather: AirportWeather | null;
+  destination_weather: AirportWeather | null;
   risk_factors: string[];
   recommendations: string[];
   /** Data-coverage caveats, e.g. airport not in historical data */

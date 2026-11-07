@@ -5,6 +5,7 @@ import { fieldControlClass } from '~/components/ui/Field';
 import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
 import { RiskPill } from '~/components/flight';
 import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber } from '~/lib/utils';
+import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlights } from '~/lib/flightStore';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
@@ -233,6 +234,7 @@ function AddFlightScreen() {
           delayReason: prediction.risk_factors.slice(0, 2).join(' • ') || undefined,
           delaySeverity: prediction.delay_severity ?? undefined,
           warnings: prediction.warnings,
+          weather: weatherFromPrediction(prediction),
         };
         setSearchResult(flight);
       } catch (e) {
