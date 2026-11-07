@@ -1,25 +1,30 @@
-import React, { useEffect, useState } from 'react'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import React, { useState } from 'react'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
-import { Button } from '~/components/ui'
+import { Alert, Button, Input } from '~/components/ui'
+import { friendlyAuthError } from '~/lib/authErrors'
+import { sanitizeRedirect } from '~/lib/authGate'
 
 export const Route = createFileRoute('/auth/signup')({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const redirect = sanitizeRedirect(search.redirect)
+    return redirect ? { redirect } : {}
+  },
   component: SignupRoute,
 })
 
 function SignupRoute() {
-  const { signUp, user, configured } = useAuth()
-  const navigate = useNavigate()
+  const { signUp, configured } = useAuth()
+  const { redirect } = Route.useSearch()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [confirmationSent, setConfirmationSent] = useState(false)
   const [busy, setBusy] = useState(false)
 
-  useEffect(() => {
-    if (user) navigate({ to: '/' })
-  }, [user, navigate])
+  const search = redirect ? { redirect } : {}
 
+  // When a session is returned, AuthGate sends the user on to `redirect` (or "/").
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
@@ -30,66 +35,66 @@ function SignupRoute() {
     setBusy(true)
     const { error, signedIn } = await signUp(email, password)
     setBusy(false)
-    if (error) setError(error)
-    else if (signedIn) navigate({ to: '/' })
-    else setConfirmationSent(true)
-  }
-
-  if (confirmationSent) {
-    return (
-      <div className="p-4 max-w-md mx-auto">
-        <h1 className="text-2xl font-semibold mb-4">Check your email</h1>
-        <p className="text-sm text-gray-700">
-          We sent a confirmation link to <span className="font-medium">{email}</span>. Open it to
-          finish creating your account, then sign in.
-        </p>
-        <Link to="/auth/login" className="mt-4 inline-block text-sm text-primary-600">
-          Back to sign in
-        </Link>
-      </div>
-    )
+    if (error) setError(friendlyAuthError(error))
+    else if (!signedIn) setConfirmationSent(true)
   }
 
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Sign up</h1>
+    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 p-4">
+      <div>
+        <h1 className="text-2xl font-bold text-navy-900">FlyRely</h1>
+        <p className="text-sm text-ink-caption">Private beta</p>
+      </div>
+      <h2 className="text-xl font-semibold text-navy-900">Create account</h2>
       {!configured && (
-        <p className="mb-3 rounded bg-amber-50 p-3 text-sm text-amber-800">
-          Sign-in isn't configured
-        </p>
+        <Alert status="warning" lineOne={friendlyAuthError("Sign-in isn't configured")} />
       )}
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <label className="block">
-          <span className="text-sm text-gray-600">Email</span>
-          <input
-            type="email"
-            className="mt-1 block w-full rounded border px-3 py-2"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            required
+      {confirmationSent ? (
+        <>
+          <Alert
+            status="success"
+            lineOne="Check your email to confirm, then sign in."
+            lineTwo={email}
           />
-        </label>
-        <label className="block">
-          <span className="text-sm text-gray-600">Password</span>
-          <input
-            type="password"
-            className="mt-1 block w-full rounded border px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            minLength={6}
-            required
-          />
-        </label>
-        <Button fullWidth type="submit" disabled={busy || !configured}>
-          {busy ? 'Creating account...' : 'Create account'}
-        </Button>
-      </form>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      <p className="mt-4 text-sm">
-        Already have an account? <Link to="/auth/login" className="text-primary-600">Sign in</Link>
-      </p>
+          <Link to="/auth/login" search={search} className="text-sm text-primary-600">
+            Back to sign in
+          </Link>
+        </>
+      ) : (
+        <>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              minLength={6}
+              hint="At least 6 characters"
+              required
+            />
+            {error && <Alert status="error" lineOne={error} />}
+            <Button fullWidth type="submit" loading={busy} disabled={!configured}>
+              {busy ? 'Creating account...' : 'Create account'}
+            </Button>
+          </form>
+          <div className="flex justify-between text-sm">
+            <span>
+              Already have an account?{' '}
+              <Link to="/auth/login" search={search} className="text-primary-600">Sign in</Link>
+            </span>
+            <Link to="/auth/forgot-password" className="text-primary-600">Forgot password?</Link>
+          </div>
+        </>
+      )}
     </div>
   )
 }

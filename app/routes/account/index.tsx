@@ -15,7 +15,7 @@ function AccountScreen() {
 
   async function handleSignOut() {
     await signOut();
-    navigate({ to: '/' });
+    navigate({ to: '/auth/login' });
   }
 
   return (
