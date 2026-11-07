@@ -7,6 +7,8 @@ import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/l
 import { getAirport, getAirline } from '~/lib/airports';
 import { parseFlightNumber } from '~/lib/utils';
 import type { Flight } from '~/types';
+import { COPILOT_ENABLED } from '~/copilot/flags';
+import { releaseFlightCopilot } from '~/copilot/cleanup';
 
 export const Route = createFileRoute('/flights/$flightId/edit')({
   component: EditFlightScreen,
@@ -158,6 +160,7 @@ function EditFlightScreen() {
     }
 
     saveFlight(edited);
+    if (COPILOT_ENABLED && predictionInputsChanged) void releaseFlightCopilot(flight.id);
     setIsSaving(false);
     goBack();
   };

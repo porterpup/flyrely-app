@@ -8,6 +8,9 @@ import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
+import { DisruptionSlot } from '~/copilot/DisruptionSlot';
+import { COPILOT_ENABLED } from '~/copilot/flags';
+import { releaseFlightCopilot } from '~/copilot/cleanup';
 
 export const Route = createFileRoute('/flights/$flightId/')({
   component: FlightDetailsScreen,
@@ -96,6 +99,7 @@ function FlightDetailsScreen() {
   const handleRemove = async () => {
     if (!flight) return;
     removeFlight(flight.id);
+    if (COPILOT_ENABLED) void releaseFlightCopilot(flight.id);
     navigate({ to: '/' });
   };
 
@@ -199,6 +203,8 @@ function FlightDetailsScreen() {
                 )}
               </PredictionPanel>
             </Card>
+
+            <DisruptionSlot flight={flight} onFlightChange={setFlight} />
 
             <Card tone="dark">
               <SectionHeader as="h3" kind="no-space" onDark title="Schedule" className="mb-3" />

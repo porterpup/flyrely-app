@@ -1,5 +1,9 @@
 name: CI
-on: [pull_request]
+on:
+  pull_request:
+  # Phase 1 disruption copilot work lands on a long-lived branch; run CI there too.
+  push:
+    branches: [feat/disruption-copilot]
 
 jobs:
   frontend-ci:
@@ -15,5 +19,15 @@ jobs:
         working-directory: ./
       - name: Typecheck
         run: npm run typecheck
-      - name: Build
+      - name: Test
+        run: npm test
+      - name: Build (copilot flag off)
         run: npm run build
+      - name: Check flag-off build has no copilot code
+        run: sh scripts/check-copilot-sentinel.sh absent
+      - name: Build (copilot flag on)
+        run: npm run build
+        env:
+          VITE_FEATURE_DISRUPTION_COPILOT: "true"
+      - name: Check flag-on build has copilot code
+        run: sh scripts/check-copilot-sentinel.sh present
