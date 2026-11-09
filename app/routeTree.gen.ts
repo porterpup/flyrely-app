@@ -16,6 +16,7 @@ import { Route as IndexImport } from './routes/index'
 import { Route as TripsIndexImport } from './routes/trips/index'
 import { Route as ExploreIndexImport } from './routes/explore/index'
 import { Route as AccountIndexImport } from './routes/account/index'
+import { Route as TripsTripIdImport } from './routes/trips/$tripId'
 import { Route as FlightsHistoryImport } from './routes/flights/history'
 import { Route as FlightsAddImport } from './routes/flights/add'
 import { Route as AuthSignupImport } from './routes/auth/signup'
@@ -56,6 +57,12 @@ const ExploreIndexRoute = ExploreIndexImport.update({
 const AccountIndexRoute = AccountIndexImport.update({
   id: '/account/',
   path: '/account/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const TripsTripIdRoute = TripsTripIdImport.update({
+  id: '/trips/$tripId',
+  path: '/trips/$tripId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -193,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlightsHistoryImport
       parentRoute: typeof rootRoute
     }
+    '/trips/$tripId': {
+      id: '/trips/$tripId'
+      path: '/trips/$tripId'
+      fullPath: '/trips/$tripId'
+      preLoaderRoute: typeof TripsTripIdImport
+      parentRoute: typeof rootRoute
+    }
     '/account/': {
       id: '/account/'
       path: '/account'
@@ -244,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/account': typeof AccountIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/trips': typeof TripsIndexRoute
@@ -262,6 +277,7 @@ export interface FileRoutesByTo {
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/account': typeof AccountIndexRoute
   '/explore': typeof ExploreIndexRoute
   '/trips': typeof TripsIndexRoute
@@ -281,6 +297,7 @@ export interface FileRoutesById {
   '/auth/signup': typeof AuthSignupRoute
   '/flights/add': typeof FlightsAddRoute
   '/flights/history': typeof FlightsHistoryRoute
+  '/trips/$tripId': typeof TripsTripIdRoute
   '/account/': typeof AccountIndexRoute
   '/explore/': typeof ExploreIndexRoute
   '/trips/': typeof TripsIndexRoute
@@ -301,6 +318,7 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
+    | '/trips/$tripId'
     | '/account'
     | '/explore'
     | '/trips'
@@ -318,6 +336,7 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
+    | '/trips/$tripId'
     | '/account'
     | '/explore'
     | '/trips'
@@ -335,6 +354,7 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/flights/add'
     | '/flights/history'
+    | '/trips/$tripId'
     | '/account/'
     | '/explore/'
     | '/trips/'
@@ -354,6 +374,7 @@ export interface RootRouteChildren {
   AuthSignupRoute: typeof AuthSignupRoute
   FlightsAddRoute: typeof FlightsAddRoute
   FlightsHistoryRoute: typeof FlightsHistoryRoute
+  TripsTripIdRoute: typeof TripsTripIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
   ExploreIndexRoute: typeof ExploreIndexRoute
   TripsIndexRoute: typeof TripsIndexRoute
@@ -372,6 +393,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignupRoute: AuthSignupRoute,
   FlightsAddRoute: FlightsAddRoute,
   FlightsHistoryRoute: FlightsHistoryRoute,
+  TripsTripIdRoute: TripsTripIdRoute,
   AccountIndexRoute: AccountIndexRoute,
   ExploreIndexRoute: ExploreIndexRoute,
   TripsIndexRoute: TripsIndexRoute,
@@ -399,6 +421,7 @@ export const routeTree = rootRoute
         "/auth/signup",
         "/flights/add",
         "/flights/history",
+        "/trips/$tripId",
         "/account/",
         "/explore/",
         "/trips/",
@@ -435,6 +458,9 @@ export const routeTree = rootRoute
     },
     "/flights/history": {
       "filePath": "flights/history.tsx"
+    },
+    "/trips/$tripId": {
+      "filePath": "trips/$tripId.tsx"
     },
     "/account/": {
       "filePath": "account/index.tsx"

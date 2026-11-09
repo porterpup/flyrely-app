@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock } from 'lucide-react';
 import { Alert, Button, Header, Input } from '~/components/ui';
 import { getFlightById, saveFlight } from '~/lib/flightStore';
+import { normalizeLocal } from '~/lib/cloudFlights';
 import { useFlights } from '~/hooks/useFlights';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
@@ -28,6 +29,8 @@ function EditFlightScreen() {
   const [destination, setDestination] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [arrDate, setArrDate] = useState('');
+  const [arrTime, setArrTime] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -52,6 +55,11 @@ function EditFlightScreen() {
     const [d, t] = f.scheduledDeparture.split('T');
     setDate(d);
     setTime((t ?? '').slice(0, 5));
+    if (f.scheduledArrivalLocal) {
+      const [ad, at] = f.scheduledArrivalLocal.split('T');
+      setArrDate(ad);
+      setArrTime((at ?? '').slice(0, 5));
+    }
   }, [flightId, ready, inStore]);
 
   const goBack = () => navigate({ to: '/flights/$flightId', params: { flightId } });
@@ -143,9 +151,6 @@ function EditFlightScreen() {
     };
 
     if (predictionInputsChanged) {
-      // The stored arrival belonged to the old flight details.
-      delete edited.scheduledArrivalLocal;
-      delete edited.arrivalSource;
       try {
         const prediction = await flyrelyApi.predict(
           buildPredictPayload(
@@ -173,6 +178,20 @@ function EditFlightScreen() {
         setIsSaving(false);
         return;
       }
+    }
+
+    // Optional arrival time (local time at the destination).
+    const arrivalInput = arrTime ? `${arrDate || date}T${arrTime}:00` : undefined;
+    const arrivalUntouched = arrivalInput !== undefined && arrivalInput === normalizeLocal(flight.scheduledArrivalLocal);
+    if (arrivalInput && !(predictionInputsChanged && arrivalUntouched)) {
+      if (!arrivalUntouched) {
+        edited.scheduledArrivalLocal = arrivalInput;
+        edited.arrivalSource = 'manual';
+      }
+    } else {
+      // Cleared, or it belonged to the old flight details.
+      delete edited.scheduledArrivalLocal;
+      delete edited.arrivalSource;
     }
 
     saveFlight(edited);
@@ -208,6 +227,24 @@ function EditFlightScreen() {
               value={time}
               onChange={(e) => setTime(e.target.value)}
               leftIcon={<Clock />}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Arrival date (optional)"
+              type="date"
+              value={arrDate || date}
+              onChange={(e) => setArrDate(e.target.value)}
+              leftIcon={<Calendar />}
+            />
+            <Input
+              label="Arrival time (optional)"
+              type="time"
+              value={arrTime}
+              onChange={(e) => setArrTime(e.target.value)}
+              leftIcon={<Clock />}
+              hint="Local time at the destination"
             />
           </div>
 

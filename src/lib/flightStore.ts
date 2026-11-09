@@ -1,4 +1,6 @@
 import type { Flight, Trip } from '~/types';
+import { dismissKeysFor, legsOf, tripErrorMessage, validateTripLegs, MAX_LEGS } from '~/lib/tripGrouping';
+import { newUuid } from '~/lib/utils';
 import { stripLegacy, validateFlightForCloud } from '~/lib/cloudFlights';
 import {
   CACHE_PREFIX,
@@ -7,11 +9,12 @@ import {
   OUTBOX_PREFIX,
   allKeys,
   cacheKey,
+  dismissKey,
   readJson,
   removeKey,
   writeJson,
 } from '~/lib/storageKeys';
-import { configureEngine, dropEngineState, enqueue, mergeCloudWithOutbox, setEngineUser } from '~/lib/syncEngine';
+import { applySetTripLegs, configureEngine, dropEngineState, enqueue, mergeCloudWithOutbox, setEngineUser } from '~/lib/syncEngine';
 
 /** Older versions stored invented values (scheduledArrival, delayMinutes, ...). Never show them. */
 export function stripLegacyFields(raw: unknown): Flight | null {
@@ -29,9 +32,11 @@ export interface StoreSnapshot {
   ready: boolean;
   /** The first download succeeded this session. */
   downloaded: boolean;
+  /** Trip suggestions the user dismissed ("Not a trip"), as pair keys. Device-local. */
+  dismissed: string[];
 }
 
-const EMPTY: StoreSnapshot = { flights: [], trips: [], ready: false, downloaded: false };
+const EMPTY: StoreSnapshot = { flights: [], trips: [], ready: false, downloaded: false, dismissed: [] };
 
 let activeUser: string | null = null;
 let snapshot: StoreSnapshot = EMPTY;
@@ -79,7 +84,8 @@ export function setActiveUser(userId: string | null): void {
     ? cached.flights.map(stripLegacyFields).filter((f): f is Flight => f !== null)
     : [];
   const trips = Array.isArray(cached?.trips) ? (cached.trips as Trip[]) : [];
-  snapshot = { flights, trips, ready: false, downloaded: false };
+  const dismissed = readJson<string[]>(dismissKey(userId));
+  snapshot = { flights, trips, ready: false, downloaded: false, dismissed: Array.isArray(dismissed) ? dismissed : [] };
   setEngineUser(userId);
   emit();
 }
@@ -161,6 +167,14 @@ export function saveFlight(flight: Flight): void {
   requireUser();
   const clean = stripLegacyFields(flight) as Flight;
   const i = snapshot.flights.findIndex((f) => f.id === clean.id);
+  // Trip membership changes only through the trip operations below; an edit built from an older copy must not undo it.
+  const prev = i >= 0 ? snapshot.flights[i] : undefined;
+  delete clean.tripId;
+  delete clean.legIndex;
+  delete clean.connectMctOverride;
+  if (prev?.tripId !== undefined) clean.tripId = prev.tripId;
+  if (prev?.legIndex !== undefined) clean.legIndex = prev.legIndex;
+  if (prev?.connectMctOverride !== undefined) clean.connectMctOverride = prev.connectMctOverride;
   const flights = snapshot.flights.slice();
   if (i >= 0) flights[i] = clean;
   else flights.push(clean);
@@ -168,13 +182,16 @@ export function saveFlight(flight: Flight): void {
   enqueue({ type: 'upsertFlight', flight: clean, at: nowIso() });
 }
 
-export function removeFlight(id: string): void {
+export function removeFlight(id: string): TripChange | null {
   requireUser();
+  const gone = snapshot.flights.find((f) => f.id === id);
   setData(
     snapshot.flights.filter((f) => f.id !== id),
     snapshot.trips
   );
   enqueue({ type: 'deleteFlight', id, at: nowIso() });
+  // Deleting a leg re-links the trip, or dissolves it.
+  return gone?.tripId ? relinkTrip(gone.tripId) : null;
 }
 
 /**
@@ -223,6 +240,117 @@ export function clearCompletedFlights(): void {
   const now = new Date();
   const gone = snapshot.flights.filter((f) => new Date(f.scheduledDeparture) < now);
   for (const f of gone) removeFlight(f.id);
+}
+
+// ── Trips ───────────────────────────────────────────────────────────────────
+
+export type TripResult =
+  | { ok: true; tripId: string }
+  | { ok: false; reason: string };
+
+/** What happened to a trip when a leg went away. */
+export type TripChange = 'updated' | 'dissolved' | 'ungrouped_not_connected';
+
+/** Local change + queued upload for a trip's leg list (fewer than 2 legs dissolves the trip). */
+function applyLegs(tripId: string, flightIds: string[]): void {
+  const at = nowIso();
+  const next = applySetTripLegs(snapshot.flights, snapshot.trips, tripId, flightIds);
+  setData(next.flights, next.trips);
+  enqueue({ type: 'setTripLegs', tripId, flightIds, at });
+}
+
+function legIdsOf(tripId: string): string[] {
+  return legsOf({ id: tripId }, snapshot.flights).map((f) => f.id);
+}
+
+/** After a leg is deleted or removed, re-link the remaining legs, or dissolve the trip. */
+function relinkTrip(tripId: string): TripChange {
+  const legs = legsOf({ id: tripId }, snapshot.flights);
+  if (legs.length < 2) {
+    applyLegs(tripId, []);
+    return 'dissolved';
+  }
+  if (!validateTripLegs(legs).ok) {
+    applyLegs(tripId, []);
+    return 'ungrouped_not_connected';
+  }
+  applyLegs(tripId, legs.map((f) => f.id)); // close any gap in the leg numbers
+  return 'updated';
+}
+
+/** Make a new trip from flights in travel order. Refuses flights that already belong to a trip. */
+export function createTrip(flightIds: string[]): TripResult {
+  requireUser();
+  const legs = flightIds.map((id) => getFlightById(id));
+  if (legs.some((f) => !f)) return { ok: false, reason: 'Flight not found.' };
+  const flights = legs as Flight[];
+  if (flights.some((f) => f.tripId)) return { ok: false, reason: 'A flight is already part of a trip.' };
+  const v = validateTripLegs(flights);
+  if (!v.ok) return { ok: false, reason: tripErrorMessage(v.reason, flights, v.index) };
+  const trip: Trip = { id: newUuid(), clientUpdatedAt: nowIso() };
+  setData(snapshot.flights, [...snapshot.trips, trip]);
+  enqueue({ type: 'upsertTrip', trip });
+  applyLegs(trip.id, flightIds);
+  return { ok: true, tripId: trip.id };
+}
+
+/** Add a flight as the next leg of an existing trip. */
+export function appendLeg(tripId: string, flightId: string): TripResult {
+  requireUser();
+  const flight = getFlightById(flightId);
+  if (!flight || !getTripById(tripId)) return { ok: false, reason: 'Trip or flight not found.' };
+  if (flight.tripId) return { ok: false, reason: 'That flight is already part of a trip.' };
+  const legs = [...legsOf({ id: tripId }, snapshot.flights), flight];
+  if (legs.length > MAX_LEGS) return { ok: false, reason: tripErrorMessage('too_many') };
+  const v = validateTripLegs(legs);
+  if (!v.ok) return { ok: false, reason: tripErrorMessage(v.reason, legs, v.index) };
+  applyLegs(tripId, legs.map((f) => f.id));
+  return { ok: true, tripId };
+}
+
+/** Take one flight out of its trip (the flight stays tracked). */
+export function removeLeg(tripId: string, flightId: string): TripChange {
+  requireUser();
+  const rest = legIdsOf(tripId).filter((id) => id !== flightId);
+  const remaining = rest.map((id) => getFlightById(id)).filter((f): f is Flight => Boolean(f));
+  if (remaining.length < 2) {
+    applyLegs(tripId, []);
+    return 'dissolved';
+  }
+  if (!validateTripLegs(remaining).ok) {
+    applyLegs(tripId, []);
+    return 'ungrouped_not_connected';
+  }
+  applyLegs(tripId, rest);
+  return 'updated';
+}
+
+/** Dissolve a trip; its flights stay tracked on their own. */
+export function ungroupTrip(tripId: string): void {
+  requireUser();
+  applyLegs(tripId, []);
+}
+
+/** Rename a trip (1-80 characters; empty clears the name and uses the automatic title). */
+export function renameTrip(tripId: string, name: string): boolean {
+  requireUser();
+  const trimmed = name.trim();
+  if (trimmed.length > 80) return false;
+  const trip = getTripById(tripId);
+  if (!trip) return false;
+  const next: Trip = { id: trip.id, clientUpdatedAt: nowIso(), ...(trimmed ? { name: trimmed } : {}) };
+  setData(snapshot.flights, snapshot.trips.map((t) => (t.id === tripId ? next : t)));
+  enqueue({ type: 'upsertTrip', trip: next });
+  return true;
+}
+
+/** "Not a trip": remember these pairs so they are not suggested again. Stored on this device only. */
+export function dismissSuggestion(legs: Flight[]): void {
+  if (!activeUser) return;
+  const dismissed = [...new Set([...snapshot.dismissed, ...dismissKeysFor(legs)])];
+  snapshot = { ...snapshot, dismissed };
+  writeJson(dismissKey(activeUser), dismissed);
+  emit();
 }
 
 // ── Old on-device flights (pre-account), for the one-time import ────────────

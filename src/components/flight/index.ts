@@ -6,3 +6,5 @@ export { Ticket } from './Ticket';
 export type { TicketEnd, TicketProps } from './Ticket';
 export { PredictionPanel } from './PredictionPanel';
 export * from './RiskPill';
+export { ConnectionRow } from './ConnectionRow';
+export { TripCard } from './TripCard';
