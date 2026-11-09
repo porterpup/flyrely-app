@@ -1,13 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Plus, History, Search } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button, SectionHeader, FieldBox, Alert, OptionTile } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
 import { FeedbackLink } from '~/components/feedback';
-import { getUpcomingFlights, autoCompleteOldFlights } from '~/lib/flightStore';
+import { selectUpcoming, autoCompleteOldFlights } from '~/lib/flightStore';
+import { useFlights } from '~/hooks/useFlights';
 import { formatDate, formatDelayChance, getRiskLabel } from '~/lib/utils';
-import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/')({
   component: HomeScreen,
@@ -15,14 +15,14 @@ export const Route = createFileRoute('/')({
 
 function HomeScreen() {
   const navigate = useNavigate();
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  const { flights: allFlights, ready } = useFlights();
+  const flights = useMemo(() => selectUpcoming(allFlights), [allFlights]);
+  // Show the cached list at once; the "no flights" state only after the first download (never flash it on a fresh device).
+  const loaded = ready || allFlights.length > 0;
 
   useEffect(() => {
     autoCompleteOldFlights(); // migrate departed flights to history
-    setFlights(getUpcomingFlights());
-    setLoaded(true);
-  }, []);
+  }, [ready]);
 
   const hasFlights = flights.length > 0;
   const nextFlight = flights[0];

@@ -122,6 +122,17 @@ export function legDepartureISO(date: string, leg: LookupLeg): string {
   return `${date}T${leg.dep_time}:00`;
 }
 
+/** Local arrival ISO (no offset) for a leg departing on `date`, adding a day when the leg lands the next day. */
+export function legArrivalISO(date: string, leg: Pick<LookupLeg, 'arr_time' | 'arr_next_day'>): string {
+  let day = date;
+  if (leg.arr_next_day) {
+    const d = new Date(`${date}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + 1);
+    day = d.toISOString().slice(0, 10);
+  }
+  return `${day}T${leg.arr_time}:00`;
+}
+
 /** One scheduled flight on a route, with its delay prediction, from GET /flights/search. */
 export interface SearchFlight extends LookupLeg {
   flight: string;          // "UA648"

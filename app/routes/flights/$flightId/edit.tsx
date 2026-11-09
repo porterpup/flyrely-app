@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock } from 'lucide-react';
 import { Alert, Button, Header, Input } from '~/components/ui';
 import { getFlightById, saveFlight } from '~/lib/flightStore';
+import { useFlights } from '~/hooks/useFlights';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { getAirport, getAirline } from '~/lib/airports';
@@ -30,12 +31,20 @@ function EditFlightScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
+  const { flights: storedFlights, ready } = useFlights();
+  const inStore = storedFlights.some((x) => x.id === flightId);
+  const loadedId = useRef<string | null>(null);
+
   useEffect(() => {
+    if (loadedId.current === flightId) return;
     const f = getFlightById(flightId);
     if (!f) {
-      setNotFound(true);
+      // Only after the first download: a fresh device must not say "not found" before the cloud copy arrives.
+      if (ready) setNotFound(true);
       return;
     }
+    loadedId.current = flightId;
+    setNotFound(false);
     setFlight(f);
     setFlightNumber(f.flightNumber);
     setOrigin(f.origin.code);
@@ -43,7 +52,7 @@ function EditFlightScreen() {
     const [d, t] = f.scheduledDeparture.split('T');
     setDate(d);
     setTime((t ?? '').slice(0, 5));
-  }, [flightId]);
+  }, [flightId, ready, inStore]);
 
   const goBack = () => navigate({ to: '/flights/$flightId', params: { flightId } });
 
@@ -134,6 +143,9 @@ function EditFlightScreen() {
     };
 
     if (predictionInputsChanged) {
+      // The stored arrival belonged to the old flight details.
+      delete edited.scheduledArrivalLocal;
+      delete edited.arrivalSource;
       try {
         const prediction = await flyrelyApi.predict(
           buildPredictPayload(

@@ -7,18 +7,21 @@ import { InputError } from '~/components/ui/InputError';
 import { RiskPill } from '~/components/flight';
 import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
-import { lookupFlight, searchFlights, LookupError, legDepartureISO, scheduleWarning } from '~/lib/flightLookup';
+import { lookupFlight, searchFlights, LookupError, legDepartureISO, legArrivalISO, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
-import { cn, formatDate, formatTime, formatDelayChance, parseFlightNumber, topReasons } from '~/lib/utils';
+import { cn, formatDate, formatTime, formatDelayChance, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
-import { saveFlight, getFlights } from '~/lib/flightStore';
+import { saveFlight, getFlightById } from '~/lib/flightStore';
+import { useFlights } from '~/hooks/useFlights';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
 import { getAirportRef, validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/add')({
+  validateSearch: (search: Record<string, unknown>): { after?: string } =>
+    typeof search.after === 'string' && search.after ? { after: search.after } : {},
   component: AddFlightScreen,
 });
 
@@ -144,6 +147,9 @@ function predictionErrorMessage(e: unknown): string {
 
 function AddFlightScreen() {
   const navigate = useNavigate();
+  // "Add connecting flight": ?after=<flightId> pre-fills the route search from that flight's destination and arrival date.
+  const { after: afterFlightId } = Route.useSearch();
+  const { flights: storedFlights } = useFlights();
 
   // Flight number search
   const [airlineName, setAirlineName] = useState('');
@@ -155,7 +161,7 @@ function AddFlightScreen() {
   const [destCode, setDestCode] = useState('');
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
   const [tab, setTab] = useState<'number' | 'route' | 'recent'>('number');
-  const [recent] = useState<Flight[]>(() => dedupeRecent(getFlights()));
+  const [recent] = useState<Flight[]>(() => dedupeRecent(storedFlights));
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
 
@@ -177,6 +183,18 @@ function AddFlightScreen() {
   const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState('');
   const [airportErrors, setAirportErrors] = useState<{ origin?: string; dest?: string }>({});
+
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (!afterFlightId || prefilled.current) return;
+    const prev = getFlightById(afterFlightId);
+    if (!prev) return;
+    prefilled.current = true;
+    setTab('route');
+    setOriginCode(prev.destination.code);
+    setOriginInfo(getAirport(prev.destination.code));
+    setDate((prev.scheduledArrivalLocal ?? prev.scheduledDeparture).slice(0, 10));
+  }, [afterFlightId, storedFlights]);
 
   // Typing a full flight number like "B6123" picks (or fills in) the airline.
   const handleFlightNumberChange = (value: string) => {
@@ -321,7 +339,7 @@ function AddFlightScreen() {
     try {
       const flight = await predictFlight(
         f.airline, f.flight_number, legDepartureISO(date, f), f.origin, f.dest,
-        getAirport(f.origin), getAirport(f.dest));
+        getAirport(f.origin), getAirport(f.dest), legArrivalISO(date, f));
       setSearchResult(flight);
       setShowConfirmModal(true);
     } catch (e) {
@@ -349,7 +367,7 @@ function AddFlightScreen() {
     try {
       const flight = await predictFlight(
         lookup.airline, lookup.flight_number, legDepartureISO(date, leg),
-        leg.origin, leg.dest, getAirport(leg.origin), getAirport(leg.dest));
+        leg.origin, leg.dest, getAirport(leg.origin), getAirport(leg.dest), legArrivalISO(date, leg));
       setSearchResult(flight);
       setShowConfirmModal(true);
     } catch (e) {
@@ -360,10 +378,10 @@ function AddFlightScreen() {
 
   const predictFlight = async (
     code: string, number: string, depISO: string, oCode: string, dCode: string,
-    oInfo?: AirportInfo, dInfo?: AirportInfo
+    oInfo?: AirportInfo, dInfo?: AirportInfo, arrivalISO?: string
   ): Promise<Flight> => {
     const fullFlightNumber = `${code}${number}`;
-    const flightId = `flight-${Date.now()}`;
+    const flightId = `flight-${newUuid()}`;
     const payload = buildPredictPayload(oCode, dCode, depISO, code, flightId, fullFlightNumber);
     const prediction = await flyrelyApi.predict(payload);
     return {
@@ -388,6 +406,7 @@ function AddFlightScreen() {
       delaySeverity: prediction.delay_severity ?? undefined,
       warnings: prediction.warnings,
       weather: weatherFromPrediction(prediction),
+      ...(arrivalISO ? { scheduledArrivalLocal: arrivalISO, arrivalSource: 'lookup' as const } : {}),
     };
   };
 

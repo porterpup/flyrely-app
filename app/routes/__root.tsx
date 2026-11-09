@@ -4,6 +4,7 @@ import { Meta, Scripts } from '@tanstack/start';
 import { AuthProvider } from '~/context/AuthContext';
 import { AuthGate } from '~/components/AuthGate';
 import { FeedbackHost } from '~/components/feedback';
+import { LegacyImportModal, SyncNotices } from '~/components/LegacyImportModal';
 import { CopilotBootstrap, copilotHeadLinks } from '~/copilot/CopilotHead';
 import globalsCss from '~/styles/globals.css?url';
 
@@ -54,6 +55,8 @@ function RootComponent() {
               <AuthGate>
                 <Outlet />
                 <FeedbackHost />
+                <LegacyImportModal />
+                <SyncNotices />
               </AuthGate>
             </div>
           </AuthProvider>
