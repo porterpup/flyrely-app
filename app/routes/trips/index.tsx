@@ -33,7 +33,11 @@ function TripsScreen() {
   const [suggestionError, setSuggestionError] = useState('');
 
   const upcoming = useMemo(() => selectUpcoming(allFlights), [allFlights]);
-  const singles = useMemo(() => upcoming.filter((f) => !f.tripId), [upcoming]);
+  // A flight whose trip header is missing is shown on its own rather than hidden.
+  const singles = useMemo(() => {
+    const tripIds = new Set(trips.map((t) => t.id));
+    return upcoming.filter((f) => !f.tripId || !tripIds.has(f.tripId));
+  }, [upcoming, trips]);
 
   // Trips that still have a flight to come, soonest first.
   const upcomingTrips = useMemo(() => {

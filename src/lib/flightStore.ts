@@ -278,6 +278,17 @@ function relinkTrip(tripId: string): TripChange {
   return 'updated';
 }
 
+/**
+ * After a leg was edited (route or times): if the legs no longer connect, ungroup the trip.
+ * Returns null when the trip is still valid (nothing is queued then).
+ */
+export function revalidateTrip(tripId: string): TripChange | null {
+  requireUser();
+  const legs = legsOf({ id: tripId }, snapshot.flights);
+  if (legs.length >= 2 && validateTripLegs(legs).ok) return null;
+  return relinkTrip(tripId);
+}
+
 /** Make a new trip from flights in travel order. Refuses flights that already belong to a trip. */
 export function createTrip(flightIds: string[]): TripResult {
   requireUser();

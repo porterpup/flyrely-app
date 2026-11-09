@@ -102,6 +102,20 @@ describe('trip operations', () => {
     expect(s.getFlightById('f1')?.tripId).toBeDefined();
   });
 
+  it('editing a leg so it no longer connects ungroups the trip; a valid edit keeps it', () => {
+    s.createTrip(['f1', 'f2']);
+    const tripId = s.getFlightById('f1')!.tripId!;
+    s.saveFlight({ ...s.getFlightById('f2')!, scheduledDeparture: '2030-12-03T12:00:00' });
+    expect(s.revalidateTrip(tripId)).toBeNull();
+    expect(s.getFlightById('f2')!.tripId).toBe(tripId);
+    // departs before the first leg lands
+    s.saveFlight({ ...s.getFlightById('f2')!, scheduledDeparture: '2030-12-03T09:00:00' });
+    expect(s.revalidateTrip(tripId)).toBe('ungrouped_not_connected');
+    expect(s.getFlightById('f1')!.tripId).toBeUndefined();
+    expect(s.getFlightById('f2')!.tripId).toBeUndefined();
+    expect(s.getTrips()).toHaveLength(0);
+  });
+
   it('renames within 80 characters and remembers dismissed suggestions', () => {
     const r = s.createTrip(['f1', 'f2']);
     if (!r.ok) throw new Error('setup');

@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock } from 'lucide-react';
 import { Alert, Button, Header, Input } from '~/components/ui';
-import { getFlightById, saveFlight } from '~/lib/flightStore';
+import { getFlightById, revalidateTrip, saveFlight } from '~/lib/flightStore';
+import { emitNotice } from '~/lib/syncEngine';
 import { normalizeLocal } from '~/lib/cloudFlights';
 import { useFlights } from '~/hooks/useFlights';
 import { weatherFromPrediction } from '~/lib/weather';
@@ -195,6 +196,10 @@ function EditFlightScreen() {
     }
 
     saveFlight(edited);
+    // An edited leg may no longer connect (other airport, or a layover of 0 or more than 24 h): ungroup, as on delete.
+    if (flight.tripId && revalidateTrip(flight.tripId) === 'ungrouped_not_connected') {
+      emitNotice('Trip ungrouped because the flights no longer connect.');
+    }
     if (COPILOT_ENABLED && predictionInputsChanged) void releaseFlightCopilot(flight.id);
     setIsSaving(false);
     goBack();
