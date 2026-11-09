@@ -30,8 +30,20 @@ export type Change =
 type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 export type NewChange = DistributiveOmit<Change, 'seq'>;
 
-/** Adds a change, replacing earlier queued changes for the same record. Pure. */
+/**
+ * Adds a change, replacing earlier queued changes for the same record. Pure.
+ * A newer upsert of a flight or trip takes the place of the queued one (it does not move to the end): later changes,
+ * such as a trip's leg list, may depend on that flight or trip already being uploaded.
+ */
 export function addToOutbox(outbox: Change[], change: Change): Change[] {
+  if (change.type === 'upsertFlight' || change.type === 'upsertTrip') {
+    const same = (c: Change) =>
+      change.type === 'upsertFlight'
+        ? c.type === 'upsertFlight' && c.flight.id === change.flight.id
+        : c.type === 'upsertTrip' && c.trip.id === change.trip.id;
+    const at = outbox.findIndex(same);
+    if (at >= 0) return outbox.flatMap((c, i) => (i === at ? [change] : same(c) ? [] : [c]));
+  }
   const rest = outbox.filter((c) => {
     switch (change.type) {
       case 'upsertFlight':
@@ -375,6 +387,7 @@ export function download(force = false): Promise<boolean> {
       }
       return false;
     } catch {
+      if (userId !== uid) return false; // signed out or switched user meanwhile: not this user's result
       failing = true;
       host?.markReady(false);
       refreshStatus();

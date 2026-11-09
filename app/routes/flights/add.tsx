@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
 import { fieldControlClass } from '~/components/ui/Field';
@@ -161,7 +161,7 @@ function AddFlightScreen() {
   const [destCode, setDestCode] = useState('');
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
   const [tab, setTab] = useState<'number' | 'route' | 'recent'>('number');
-  const [recent] = useState<Flight[]>(() => dedupeRecent(storedFlights));
+  const recent = useMemo(() => dedupeRecent(storedFlights), [storedFlights]);
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
 

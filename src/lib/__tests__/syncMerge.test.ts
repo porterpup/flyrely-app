@@ -59,7 +59,19 @@ describe('addToOutbox (merge per record)', () => {
     q = addToOutbox(q, up(1, makeFlight({ gate: 'A' })));
     q = addToOutbox(q, up(2, makeFlight({ id: 'other' })));
     q = addToOutbox(q, up(3, makeFlight({ gate: 'C' })));
-    expect(q.map((c) => c.seq)).toEqual([2, 3]);
+    // Takes the queued upsert's place, so changes queued after it (e.g. a trip's legs) still upload after the flight.
+    expect(q.map((c) => c.seq)).toEqual([3, 2]);
+    expect((q[0] as Extract<Change, { type: 'upsertFlight' }>).flight.gate).toBe('C');
+  });
+
+  it('a re-saved flight stays ahead of a trip leg list that needs it', () => {
+    let q: Change[] = [];
+    q = addToOutbox(q, up(1, makeFlight({ id: 'b' })));
+    q = addToOutbox(q, { seq: 2, type: 'upsertTrip', trip: { id: 't', clientUpdatedAt: 'a' } });
+    q = addToOutbox(q, { seq: 3, type: 'setTripLegs', tripId: 't', flightIds: ['a', 'b'], at: 'a' });
+    q = addToOutbox(q, up(4, makeFlight({ id: 'b', gate: 'D' })));
+    q = addToOutbox(q, { seq: 5, type: 'upsertTrip', trip: { id: 't', name: 'Home', clientUpdatedAt: 'b' } });
+    expect(q.map((c) => c.seq)).toEqual([4, 5, 3]);
   });
 
   it('a delete replaces queued upserts and earlier deletes', () => {

@@ -38,42 +38,59 @@ function FlightDetailsScreen() {
       loadedId.current = flightId;
       setNotFound(false);
       setFlight(f);
-      // Auto-refresh if due
-      if (shouldRefreshFlight(f)) {
-        // Run in background — don't block render
-        (async () => {
-          try {
-            const payload = buildPredictPayload(
-              f.origin.code,
-              f.destination.code,
-              f.scheduledDeparture,
-              f.airline.code,
-              f.id,
-              f.flightNumber
-            );
-            const prediction = await flyrelyApi.predict(payload);
-            const updated: Flight = {
-              ...f,
-              riskLevel: prediction.risk_level,
-              delayProbability: prediction.delay_probability,
-              delayReason: topReasons(prediction.risk_factors),
-              warnings: prediction.warnings,
-              delaySeverity: prediction.delay_severity ?? undefined,
-              weather: weatherFromPrediction(prediction),
-            };
-            const stamped = stampFlightChecked(updated);
-            setFlight(stamped);
-            setPredictionUnavailable(false);
-          } catch (e) {
-            if (e instanceof PredictionUnavailableError) setPredictionUnavailable(true);
-            stampFlightChecked(f); // still stamp so we don't retry every load
-          }
-        })();
-      }
     } else if (ready) {
       // Only after the first download: a fresh device must not say "not found" before the cloud copy arrives.
       setNotFound(true);
     }
+  }, [flightId, ready, inStore]);
+
+  // Keep the page in step with the store (a download or another screen may have changed this flight).
+  const storedFlight = storedFlights.find((x) => x.id === flightId);
+  useEffect(() => {
+    if (storedFlight && loadedId.current === flightId) setFlight(storedFlight);
+  }, [storedFlight, flightId]);
+
+  // Auto-refresh if due. Wait for the first download, so a stale cached copy is never saved over a newer edit.
+  const refreshedId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ready || refreshedId.current === flightId) return;
+    const f = getFlightById(flightId);
+    if (!f) return;
+    refreshedId.current = flightId;
+    if (!shouldRefreshFlight(f)) return;
+    // Run in background — don't block render
+    (async () => {
+      try {
+        const payload = buildPredictPayload(
+          f.origin.code,
+          f.destination.code,
+          f.scheduledDeparture,
+          f.airline.code,
+          f.id,
+          f.flightNumber
+        );
+        const prediction = await flyrelyApi.predict(payload);
+        // Apply to the current copy; skip if the flight was removed while the prediction loaded.
+        const current = getFlightById(flightId);
+        if (!current) return;
+        const updated: Flight = {
+          ...current,
+          riskLevel: prediction.risk_level,
+          delayProbability: prediction.delay_probability,
+          delayReason: topReasons(prediction.risk_factors),
+          warnings: prediction.warnings,
+          delaySeverity: prediction.delay_severity ?? undefined,
+          weather: weatherFromPrediction(prediction),
+        };
+        const stamped = stampFlightChecked(updated);
+        setFlight(stamped);
+        setPredictionUnavailable(false);
+      } catch (e) {
+        if (e instanceof PredictionUnavailableError) setPredictionUnavailable(true);
+        const current = getFlightById(flightId);
+        if (current) stampFlightChecked(current); // still stamp so we don't retry every load
+      }
+    })();
   }, [flightId, ready, inStore]);
 
   const handleRefresh = async () => {
@@ -89,8 +106,13 @@ function FlightDetailsScreen() {
         flight.flightNumber
       );
       const prediction = await flyrelyApi.predict(payload);
+      const current = getFlightById(flight.id);
+      if (!current) {
+        setIsRefreshing(false);
+        return;
+      }
       const updated: Flight = {
-        ...flight,
+        ...current,
         riskLevel: prediction.risk_level,
         delayProbability: prediction.delay_probability,
         delayReason: topReasons(prediction.risk_factors),

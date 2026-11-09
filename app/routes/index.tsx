@@ -21,7 +21,8 @@ function HomeScreen() {
   const loaded = ready || allFlights.length > 0;
 
   useEffect(() => {
-    autoCompleteOldFlights(); // migrate departed flights to history
+    // After the first download, so a stale cached copy is never saved over a newer edit from another device.
+    if (ready) autoCompleteOldFlights(); // migrate departed flights to history
   }, [ready]);
 
   const hasFlights = flights.length > 0;
