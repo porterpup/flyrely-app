@@ -30,7 +30,7 @@ export function IconButton({
     <button
       type={type}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-full transition-colors',
+        'inline-flex shrink-0 items-center justify-center rounded-full transition duration-150 motion-safe:active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent focus-visible:ring-offset-2',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         size === 'default' ? 'h-11 w-11' : 'h-9 w-9',

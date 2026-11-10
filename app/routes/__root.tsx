@@ -5,7 +5,7 @@ import { AuthProvider } from '~/context/AuthContext';
 import { AuthGate } from '~/components/AuthGate';
 import { FeedbackHost } from '~/components/feedback';
 import { LegacyImportModal, SyncNotices } from '~/components/LegacyImportModal';
-import { CopilotBootstrap, copilotHeadLinks } from '~/copilot/CopilotHead';
+import { CopilotBootstrap, pwaHeadLinks, pwaMeta } from '~/copilot/CopilotHead';
 import globalsCss from '~/styles/globals.css?url';
 
 const queryClient = new QueryClient({
@@ -22,22 +22,24 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { title: 'FlyRely — Know before delays happen' },
+      ...pwaMeta(),
       {
         name: 'description',
         content: 'AI-powered flight delay predictions. Stay ahead of delays before they happen.',
       },
     ],
     links: [
-      { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-      { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
       {
-        rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        rel: 'preload',
+        as: 'font',
+        type: 'font/woff2',
+        href: '/fonts/inter-latin-wght-normal.woff2',
+        crossOrigin: 'anonymous',
       },
       { rel: 'stylesheet', href: globalsCss },
-      ...copilotHeadLinks(),
+      ...pwaHeadLinks(),
     ],
   }),
 });
@@ -51,7 +53,7 @@ function RootComponent() {
       <body>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <div className="min-h-screen bg-navy-50">
+            <div className="min-h-dvh bg-navy-50">
               <AuthGate>
                 <Outlet />
                 <FeedbackHost />

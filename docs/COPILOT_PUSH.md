@@ -2,14 +2,15 @@
 
 Flags (both must be on; the build-time one controls everything in the app):
 `VITE_FEATURE_DISRUPTION_COPILOT=true` and `VITE_FEATURE_COPILOT_PUSH=true`. API side: `FLYRELY_COPILOT_PUSH=1`.
-Flags off: no manifest link, nothing registered, no copilot code in the bundle.
+Flags off: no service worker registered and no copilot code in the bundle. The manifest, apple-touch-icon, theme-color and iOS
+standalone tags are always in the page head (`pwaHeadLinks`, `pwaMeta`), so Add to Home Screen works for everyone.
 
 ## Files
 - `public/sw.js`, `public/manifest.webmanifest`, `public/icons/*`: static. TanStack Start / vinxi copies `public/`
   to `.output/public`, served from the site root (no route, `routeTree.gen.ts` untouched). These files are in every
-  build, but are inert: nothing links the manifest or registers the worker when the flags are off.
+  build. The manifest and icons are always linked; the worker is only registered when the flags are on.
 - `src/copilot/push.ts` (subscribe / unsubscribe / feature detection), `src/copilot/CopilotHead.tsx`
-  (`copilotHeadLinks`, `CopilotBootstrap`), `src/components/copilot/PushToggle.tsx`, `IosInstallHelp.tsx`.
+  (`pwaHeadLinks`, `pwaMeta`, `CopilotBootstrap`), `src/components/copilot/PushToggle.tsx`, `IosInstallHelp.tsx`.
 
 ## Service worker safety
 - Scope `/` (served from `/sw.js`). It handles only `push` and `notificationclick`.

@@ -8,7 +8,7 @@ interface AppShellProps {
 export function AppShell({ children, hideNav = false }: AppShellProps) {
   return (
     <div className="app-container">
-      <div className="screen pb-20">
+      <div className="screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
         {children}
       </div>
       {!hideNav && <BottomNav />}
