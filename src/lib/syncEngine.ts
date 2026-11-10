@@ -218,6 +218,11 @@ export function onNotice(cb: (message: string) => void): () => void {
   return () => noticeListeners.delete(cb);
 }
 
+/** Show a short message to the user (rendered as a Toast by SyncNotices). */
+export function emitNotice(message: string): void {
+  notice(message);
+}
+
 function notice(message: string): void {
   for (const cb of noticeListeners) cb(message);
 }

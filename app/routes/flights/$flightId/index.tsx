@@ -6,6 +6,8 @@ import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/compon
 import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
+import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
+import { emitNotice } from '~/lib/syncEngine';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { weatherFromPrediction, weatherCard } from '~/lib/weather';
 import { FeedbackLink } from '~/components/feedback';
@@ -27,7 +29,7 @@ function FlightDetailsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [predictionUnavailable, setPredictionUnavailable] = useState(false);
-  const { flights: storedFlights, ready } = useFlights();
+  const { flights: storedFlights, trips, ready } = useFlights();
   const inStore = storedFlights.some((x) => x.id === flightId);
   const loadedId = useRef<string | null>(null);
 
@@ -132,7 +134,8 @@ function FlightDetailsScreen() {
 
   const handleRemove = async () => {
     if (!flight) return;
-    removeFlight(flight.id);
+    const tripChange = removeFlight(flight.id);
+    if (tripChange === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.');
     if (COPILOT_ENABLED) void releaseFlightCopilot(flight.id);
     navigate({ to: '/' });
   };
@@ -167,6 +170,11 @@ function FlightDetailsScreen() {
   }
 
   const weather = weatherCard(flight);
+  const trip = flight.tripId ? trips.find((t) => t.id === flight.tripId) : undefined;
+  const tripLegs = trip ? legsOf(trip, storedFlights) : [];
+  const isLastLeg = tripLegs.length > 0 && tripLegs[tripLegs.length - 1].id === flight.id;
+  const canAddConnection =
+    new Date(flight.scheduledDeparture) >= new Date() && (!trip || (isLastLeg && tripLegs.length < MAX_LEGS));
 
   return (
     <div className="app-container">
@@ -259,7 +267,20 @@ function FlightDetailsScreen() {
               <p className="mt-2 text-body-lg">{formatTime(flight.scheduledDeparture)}</p>
             </Card>
 
-            {new Date(flight.scheduledDeparture) >= new Date() && (
+            {trip && tripLegs.length > 0 && (
+              <Link
+                to="/trips/$tripId"
+                params={{ tripId: trip.id }}
+                className="flex items-center justify-between rounded-tile bg-surface-panel px-5 py-4 text-body-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <span>
+                  Part of trip {tripTitle(trip, tripLegs)} (leg {(flight.legIndex ?? 0) + 1} of {tripLegs.length})
+                </span>
+                <ChevronRight className="w-5 h-5 text-ink-on-dark-muted" />
+              </Link>
+            )}
+
+            {canAddConnection && (
               <Button
                 variant="secondary"
                 fullWidth

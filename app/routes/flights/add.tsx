@@ -12,7 +12,8 @@ import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/
 import { cn, formatDate, formatTime, formatDelayChance, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
-import { saveFlight, getFlightById } from '~/lib/flightStore';
+import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
+import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
@@ -431,8 +432,24 @@ function AddFlightScreen() {
   const handleAddFlight = async () => {
     const flightToSave = searchResult;
     if (!flightToSave) return;
+    // "Add connecting flight": check it connects before saving anything.
+    const prev = afterFlightId ? getFlightById(afterFlightId) : undefined;
+    if (prev) {
+      const trip = prev.tripId ? getTripById(prev.tripId) : undefined;
+      const chain = [...(trip ? legsOf(trip, storedFlights) : [prev]), flightToSave];
+      const check = validateTripLegs(chain);
+      if (!check.ok) {
+        setShowConfirmModal(false);
+        setError(tripErrorMessage(check.reason, chain, check.index));
+        return;
+      }
+    }
     setIsAdding(true);
     saveFlight(flightToSave);
+    if (prev) {
+      const result = prev.tripId ? appendLeg(prev.tripId, flightToSave.id) : createTrip([prev.id, flightToSave.id]);
+      if (!result.ok) setError(result.reason);
+    }
     await new Promise((resolve) => setTimeout(resolve, 400));
     setIsAdding(false);
     setShowConfirmModal(false);
