@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 import { Alert, Button, Input } from '~/components/ui'
+import { AuthLayout } from '~/components/auth/AuthLayout'
 import { friendlyAuthError } from '~/lib/authErrors'
 import { sanitizeRedirect } from '~/lib/authGate'
 
@@ -40,12 +41,7 @@ function SignupRoute() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-4">
-      <div>
-        <h1 className="text-2xl font-bold text-navy-900">FlyRely</h1>
-        <p className="text-sm text-ink-caption">Private beta</p>
-      </div>
-      <h2 className="text-xl font-semibold text-navy-900">Create account</h2>
+    <AuthLayout title="Create account" subtitle="Free while we are in private beta.">
       {!configured && (
         <Alert status="warning" lineOne={friendlyAuthError("Sign-in isn't configured")} />
       )}
@@ -56,7 +52,7 @@ function SignupRoute() {
             lineOne="Check your email to confirm, then sign in."
             lineTwo={email}
           />
-          <Link to="/auth/login" search={search} className="text-sm text-primary-600">
+          <Link to="/auth/login" search={search} className="text-body-md font-medium text-surface-accent">
             Back to sign in
           </Link>
         </>
@@ -86,15 +82,15 @@ function SignupRoute() {
               {busy ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-body-md text-ink-caption">
             <span>
-              Already have an account?{' '}
-              <Link to="/auth/login" search={search} className="text-primary-600">Sign in</Link>
+              Have an account?{' '}
+              <Link to="/auth/login" search={search} className="text-body-md font-medium text-surface-accent">Sign in</Link>
             </span>
-            <Link to="/auth/forgot-password" className="text-primary-600">Forgot password?</Link>
+            <Link to="/auth/forgot-password" className="text-body-md font-medium text-surface-accent">Forgot password?</Link>
           </div>
         </>
       )}
-    </div>
+    </AuthLayout>
   )
 }

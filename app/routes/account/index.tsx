@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { LogOut, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { AppShell } from '~/components/layout';
-import { Button, Modal } from '~/components/ui';
+import { Alert, Button, Card, Input, ListGroup, ListRow, Modal, PageTitle, Select } from '~/components/ui';
 import { useAuth } from '~/context/AuthContext';
 import { openFeedback } from '~/lib/feedback';
+import { PROFILE_AIRLINES, airportError, normalizeAirline, normalizeAirport } from '~/lib/profile';
 
 export const Route = createFileRoute('/account/')({
   component: AccountScreen,
@@ -12,10 +13,40 @@ export const Route = createFileRoute('/account/')({
 
 function AccountScreen() {
   const navigate = useNavigate();
-  const { user, loading, signOut, syncStatus } = useAuth();
+  const { user, loading, signOut, syncStatus, updateProfile } = useAuth();
   const [confirmPending, setConfirmPending] = useState<number | null>(null);
   const email = user?.email ?? null;
   const initial = email ? email[0].toUpperCase() : '?';
+
+  const [home, setHome] = useState(user?.profile.homeAirport ?? '');
+  const [airline, setAirline] = useState(user?.profile.preferredAirline ?? '');
+  const [homeErr, setHomeErr] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  // Pick up the saved profile if it arrives after first render.
+  const savedHome = user?.profile.homeAirport ?? '';
+  const savedAirline = user?.profile.preferredAirline ?? '';
+  useEffect(() => {
+    setHome(savedHome);
+    setAirline(savedAirline);
+  }, [savedHome, savedAirline]);
+
+  const dirty = home.trim().toUpperCase() !== savedHome || airline !== savedAirline;
+
+  async function handleSave() {
+    setSaveMsg(null);
+    const err = airportError(home);
+    setHomeErr(err);
+    if (err) return;
+    setSaving(true);
+    const { error } = await updateProfile({
+      homeAirport: normalizeAirport(home),
+      preferredAirline: normalizeAirline(airline),
+    });
+    setSaving(false);
+    setSaveMsg(error ? { ok: false, text: "We couldn't save that. Please try again." } : { ok: true, text: 'Saved' });
+  }
 
   async function handleSignOut(force = false) {
     const result = await signOut({ force });
@@ -37,48 +68,96 @@ function AccountScreen() {
 
   return (
     <AppShell>
-      <div className="px-4 pt-6">
-        {/* Profile Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center">
-            <span className="text-2xl font-bold text-primary-600">{initial}</span>
+      <div className="px-6 pb-6 pt-10">
+        <PageTitle title="Account" />
+
+        <div className="mb-6 flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-card">
+            <span className="text-title-lg text-white">{initial}</span>
           </div>
-          <div>
+          <div className="min-w-0">
             {email ? (
-              <h1 className="text-xl font-bold text-navy-900">{email}</h1>
+              <p className="truncate text-title-sm text-ink">{email}</p>
             ) : (
               !loading && (
-                <Link to="/auth/login" className="text-xl font-bold text-primary-600">
+                <Link to="/auth/login" className="text-title-sm text-surface-accent">
                   Sign in
                 </Link>
               )
             )}
+            {user && (
+              <p className="mt-0.5 text-body-sm text-ink-caption" role="status">
+                {syncLine}
+              </p>
+            )}
           </div>
         </div>
 
-        {user && <p className="mb-4 px-4 text-body-md text-ink-caption" role="status">{syncLine}</p>}
-
         {user && (
-          <button
-            onClick={openFeedback}
-            className="w-full flex items-center gap-3 p-4 text-navy-800 hover:bg-navy-50 rounded-xl transition-colors"
-          >
-            <MessageSquare className="w-5 h-5" />
-            <span className="font-medium">Send feedback</span>
-          </button>
-        )}
+          <div className="space-y-6">
+            <section>
+              <h2 className="mb-2 px-1 text-body-md font-medium text-ink-caption">Your flying</h2>
+              <Card className="space-y-4">
+                <Input
+                  label="Home airport"
+                  placeholder="e.g., JFK"
+                  value={home}
+                  maxLength={3}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  onChange={(e) => {
+                    setHome(e.target.value.toUpperCase());
+                    setHomeErr(null);
+                    setSaveMsg(null);
+                  }}
+                  error={homeErr ?? undefined}
+                  hint="We fill this in when you search a route."
+                />
+                <Select
+                  label="Preferred airline"
+                  value={airline}
+                  placeholderSelected={!airline}
+                  onChange={(e) => {
+                    setAirline(e.target.value);
+                    setSaveMsg(null);
+                  }}
+                  hint="Their flights are listed first in route results."
+                >
+                  <option value="">No preference</option>
+                  {PROFILE_AIRLINES.map((a) => (
+                    <option key={a.code} value={a.code}>
+                      {a.name}
+                    </option>
+                  ))}
+                </Select>
+                {saveMsg && !saveMsg.ok && <Alert status="error" lineOne={saveMsg.text} />}
+                <div className="flex items-center gap-3">
+                  <Button size="sm" onClick={handleSave} loading={saving} disabled={!dirty}>
+                    Save
+                  </Button>
+                  {saveMsg?.ok && !dirty && (
+                    <span className="text-body-md text-status-success-text" role="status">
+                      Saved
+                    </span>
+                  )}
+                </div>
+              </Card>
+            </section>
 
-        {/* Sign Out */}
-        {user && (
-          <button
-            onClick={() => handleSignOut()}
-            className="w-full mt-8 flex items-center justify-center gap-2 p-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Sign out</span>
-          </button>
-        )}
+            <ListGroup title="Support">
+              <ListRow icon={<MessageSquare />} title="Send feedback" chevron onClick={openFeedback} />
+            </ListGroup>
 
+            <div className="flex justify-center pt-2">
+              <button
+                onClick={() => handleSignOut()}
+                className="rounded px-3 py-2 text-body-md text-ink-caption underline underline-offset-4 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Modal isOpen={confirmPending !== null} onClose={() => setConfirmPending(null)} title="Sign out anyway?" size="sm">

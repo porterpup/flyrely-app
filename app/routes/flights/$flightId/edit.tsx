@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Calendar, Clock } from 'lucide-react';
-import { Alert, Button, Header, Input } from '~/components/ui';
+import { Calendar, Clock, SearchX } from 'lucide-react';
+import { Alert, Button, EmptyState, Header, Input, Skeleton } from '~/components/ui';
 import { getFlightById, revalidateTrip, saveFlight } from '~/lib/flightStore';
 import { emitNotice } from '~/lib/syncEngine';
 import { normalizeLocal } from '~/lib/cloudFlights';
@@ -70,12 +70,13 @@ function EditFlightScreen() {
       <div className="app-container">
         <div className="screen">
           <Header title="Edit Flight" showBack onBackClick={() => navigate({ to: '/' })} />
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
-            <div className="text-5xl mb-4">🔍</div>
-            <h2 className="text-xl font-bold text-navy-900 mb-2">Flight not found</h2>
-            <p className="text-navy-500 mb-6">This flight may have been removed.</p>
-            <Button onClick={() => navigate({ to: '/' })}>Go home</Button>
-          </div>
+          <EmptyState
+            className="flex-1 justify-center"
+            icon={<SearchX />}
+            title="Flight not found"
+            description="This flight may have been removed."
+            action={<Button onClick={() => navigate({ to: '/' })}>Go home</Button>}
+          />
         </div>
       </div>
     );
@@ -86,8 +87,11 @@ function EditFlightScreen() {
       <div className="app-container">
         <div className="screen">
           <Header title="Edit Flight" showBack onBackClick={() => navigate({ to: '/' })} />
-          <div className="flex-1 flex items-center justify-center py-20">
-            <div className="text-navy-400">Loading...</div>
+          <div className="space-y-4 px-6 pt-4" role="status" aria-label="Loading flight">
+            <Skeleton className="h-14 rounded-field" />
+            <Skeleton className="h-14 rounded-field" />
+            <Skeleton className="h-14 rounded-field" />
+            <Skeleton className="h-14 rounded-field" />
           </div>
         </div>
       </div>

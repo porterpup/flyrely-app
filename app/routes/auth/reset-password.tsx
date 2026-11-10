@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
-import { Button } from '~/components/ui'
+import { Alert, Button, Input } from '~/components/ui'
+import { AuthLayout } from '~/components/auth/AuthLayout'
 import { arrivedWithRecoveryLink, hasRecoveryLink } from '~/lib/recoveryLink'
 
 export const Route = createFileRoute('/auth/reset-password')({
@@ -51,57 +52,43 @@ function ResetPasswordRoute() {
 
   if (linkExpired || (!linkPresent && !recoveryReady)) {
     return (
-      <div className="p-4 max-w-md mx-auto">
-        <h1 className="text-2xl font-semibold mb-4">Reset link expired</h1>
-        <p className="text-sm text-gray-700">
-          This link has expired or is invalid.{' '}
-          <Link to="/auth/forgot-password" className="text-primary-600 underline">Request a new one</Link>
-        </p>
-      </div>
+      <AuthLayout title="Reset link expired">
+        <p className="text-body-lg text-ink-caption">This link has expired or is invalid.</p>
+        <Link to="/auth/forgot-password" className="text-body-md font-medium text-surface-accent">
+          Request a new one
+        </Link>
+      </AuthLayout>
     )
   }
 
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Set a new password</h1>
-      {!configured && (
-        <p className="mb-3 rounded bg-amber-50 p-3 text-sm text-amber-800">
-          Sign-in isn't configured
-        </p>
-      )}
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <label className="block">
-          <span className="text-sm text-gray-600">New password</span>
-          <input
-            type="password"
-            className="mt-1 block w-full rounded border px-3 py-2"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            minLength={6}
-            required
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm text-gray-600">Confirm new password</span>
-          <input
-            type="password"
-            className="mt-1 block w-full rounded border px-3 py-2"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="new-password"
-            minLength={6}
-            required
-          />
-        </label>
-        <Button fullWidth type="submit" disabled={busy || !configured}>
+    <AuthLayout title="Set a new password">
+      {!configured && <Alert status="warning" lineOne="Sign-in isn't configured" />}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input
+          label="New password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+          minLength={6}
+          required
+        />
+        <Input
+          label="Confirm new password"
+          type="password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          autoComplete="new-password"
+          minLength={6}
+          required
+        />
+        {error && <Alert status="error" lineOne={error} />}
+        <Button fullWidth type="submit" loading={busy} disabled={!configured}>
           {busy ? 'Saving...' : 'Update password'}
         </Button>
       </form>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      <p className="mt-4 text-sm">
-        <Link to="/auth/login" className="text-primary-600">Back to sign in</Link>
-      </p>
-    </div>
+      <Link to="/auth/login" className="text-body-md font-medium text-surface-accent">Back to sign in</Link>
+    </AuthLayout>
   )
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Flight } from '~/types';
-import { Button } from '~/components/ui';
+import { Button, Skeleton } from '~/components/ui';
 import {
   CopilotError,
   DisruptionCard,
@@ -52,10 +52,10 @@ function isUnknownAirport(error: unknown): boolean {
 function OptionsSkeleton() {
   return (
     <div role="status" aria-label="Loading your options" className="space-y-3">
-      <div className="h-5 w-2/3 animate-pulse rounded bg-white/10" />
-      <div className="h-16 animate-pulse rounded-btn bg-white/10" />
-      <div className="h-16 animate-pulse rounded-btn bg-white/10" />
-      <div className="h-16 animate-pulse rounded-btn bg-white/10" />
+      <Skeleton onDark className="h-5 w-2/3 rounded" />
+      <Skeleton onDark className="h-16 rounded-btn" />
+      <Skeleton onDark className="h-16 rounded-btn" />
+      <Skeleton onDark className="h-16 rounded-btn" />
     </div>
   );
 }

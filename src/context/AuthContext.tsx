@@ -13,12 +13,17 @@ import {
   signInWithPassword,
   signOut as supabaseSignOut,
   signUp as supabaseSignUp,
+  updateUserMetadata,
   updateUserPassword,
 } from '~/lib/supabaseAuth'
+import { profileFromMetadata, profileToMetadata } from '~/lib/profile'
+import type { Profile } from '~/lib/profile'
 
 type User = {
   id: string
   email?: string | null
+  /** Home airport and preferred airline, from user metadata. */
+  profile: Profile
 }
 
 type AuthResult = { error: string | null }
@@ -43,6 +48,8 @@ type AuthContextValue = {
   syncStatus: SyncStatus
   resetPassword: (email: string) => Promise<AuthResult>
   updatePassword: (password: string) => Promise<AuthResult>
+  /** Saves home airport / preferred airline to the account. */
+  updateProfile: (profile: Profile) => Promise<AuthResult>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -58,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncStatus = useSyncStatus()
 
   /** Point the flight store at this user (clearing anyone else's data first), then start syncing. */
-  function applyUser(u: { id: string; email?: string | null } | null | undefined) {
+  function applyUser(u: { id: string; email?: string | null; user_metadata?: unknown } | null | undefined) {
     if (u) {
       if (getActiveUser() !== u.id) {
         clearOtherUsersData(u.id)
@@ -66,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         startSyncListeners()
         void download(true)
       }
-      setUser({ id: u.id, email: u.email })
+      setUser({ id: u.id, email: u.email, profile: profileFromMetadata(u.user_metadata) })
     } else {
       setActiveUser(null)
       setUser(null)
@@ -146,8 +153,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
+  async function updateProfile(profile: Profile): Promise<AuthResult> {
+    if (!configured) return notConfigured()
+    const { data, error } = await updateUserMetadata(profileToMetadata(profile))
+    if (error) return { error: error.message }
+    setUser((u) => (u ? { ...u, profile: profileFromMetadata(data.user?.user_metadata ?? profileToMetadata(profile)) } : u))
+    return { error: null }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, configured, recoveryReady, signIn, signUp, signOut, syncStatus, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, configured, recoveryReady, signIn, signUp, signOut, syncStatus, resetPassword, updatePassword, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

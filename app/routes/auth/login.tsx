@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 import { Alert, Button, Input } from '~/components/ui'
+import { AuthLayout } from '~/components/auth/AuthLayout'
 import { friendlyAuthError } from '~/lib/authErrors'
 import { sanitizeRedirect } from '~/lib/authGate'
 
@@ -35,12 +36,7 @@ function LoginRoute() {
   const search = redirect ? { redirect } : {}
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-4">
-      <div>
-        <h1 className="text-2xl font-bold text-navy-900">FlyRely</h1>
-        <p className="text-sm text-ink-caption">Private beta</p>
-      </div>
-      <h2 className="text-xl font-semibold text-navy-900">Sign in</h2>
+    <AuthLayout title="Sign in">
       {!configured && (
         <Alert status="warning" lineOne={friendlyAuthError("Sign-in isn't configured")} />
       )}
@@ -66,10 +62,10 @@ function LoginRoute() {
           {busy ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
-      <div className="flex justify-between text-sm">
-        <Link to="/auth/forgot-password" className="text-primary-600">Forgot password?</Link>
-        <Link to="/auth/signup" search={search} className="text-primary-600">Create account</Link>
+      <div className="flex justify-between">
+        <Link to="/auth/forgot-password" className="text-body-md font-medium text-surface-accent">Forgot password?</Link>
+        <Link to="/auth/signup" search={search} className="text-body-md font-medium text-surface-accent">Create account</Link>
       </div>
-    </div>
+    </AuthLayout>
   )
 }

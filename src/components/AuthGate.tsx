@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useRouter, useRouterState } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 import { decideGate } from '~/lib/authGate'
+import { LogoMark } from '~/components/ui/Logo'
 
 /**
  * Client-side sign-in gate. Supabase keeps the session in browser storage, so the
@@ -25,8 +26,13 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (decision.kind === 'allow') return <>{children}</>
 
   return (
-    <div className="flex min-h-dvh items-center justify-center" role="status" aria-label="Loading">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-navy-200 border-t-primary-600" />
+    <div
+      className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-surface-card text-white"
+      role="status"
+      aria-label="Loading"
+    >
+      <LogoMark size={56} />
+      <span className="text-title-lg">FlyRely</span>
     </div>
   )
 }

@@ -1,67 +1,37 @@
-import { Check, Clock, Plane } from 'lucide-react';
-import { cn, formatDate, formatTime, getRiskLabel } from '~/lib/utils';
+import { Check, Plane } from 'lucide-react';
+import { formatDate, formatTime } from '~/lib/utils';
 import type { Flight } from '~/types';
+import { RiskPill } from './RiskPill';
 
 interface CompletedFlightCardProps {
   flight: Flight;
   onClick?: () => void;
 }
 
+/** A past flight. We don't track actual outcomes, so the pill shows the prediction made for it. */
 export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProps) {
-  // We don't track actual outcomes, so show the prediction made for this flight.
-  const wasLowRisk = flight.riskLevel === 'low';
-
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-white border border-navy-200 rounded-xl p-4 hover:border-navy-300 transition-colors opacity-75 hover:opacity-100"
+      className="w-full rounded-tile border border-surface-stroke bg-white p-4 text-left transition duration-150 hover:border-surface-divider motion-safe:active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-navy-100 rounded-lg flex items-center justify-center">
-            <Plane className="w-5 h-5 text-navy-500" />
-          </div>
-          <div>
-            <p className="font-semibold text-navy-900">{flight.flightNumber}</p>
-            <p className="text-sm text-navy-500">{flight.airline.name}</p>
-          </div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="text-body-lg font-semibold tabular-nums text-ink">{flight.flightNumber}</span>
+          <span className="text-ink-caption">·</span>
+          <span className="truncate text-body-md text-ink-caption">{flight.airline.name}</span>
         </div>
-
-        {/* Status badge */}
-        <div
-          className={cn(
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-            wasLowRisk ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-          )}
-        >
-          {wasLowRisk ? (
-            <Check className="w-3.5 h-3.5" />
-          ) : (
-            <Clock className="w-3.5 h-3.5" />
-          )}
-          <span>Predicted: {getRiskLabel(flight.riskLevel)}</span>
-        </div>
+        <RiskPill risk={flight.riskLevel} emphasis="soft" />
       </div>
-
-      {/* Route */}
-      <div className="flex items-center gap-3 mb-3">
-        <div>
-          <p className="text-lg font-bold text-navy-700">{flight.origin.code}</p>
-        </div>
-        <div className="flex-1 flex items-center gap-2 px-2">
-          <div className="flex-1 border-t border-dashed border-navy-300" />
-          <Check className="w-4 h-4 text-green-500" />
-          <div className="flex-1 border-t border-dashed border-navy-300" />
-        </div>
-        <div>
-          <p className="text-lg font-bold text-navy-700">{flight.destination.code}</p>
-        </div>
-      </div>
-
-      {/* Date & Times */}
-      <div className="flex items-center justify-between text-sm text-navy-500">
+      <div className="flex items-center gap-2 text-body-md text-ink-caption">
+        <span>{flight.origin.code}</span>
+        <Plane className="h-4 w-4 rotate-45" aria-hidden />
+        <span>{flight.destination.code}</span>
+        <Check className="h-4 w-4 text-status-success-text" aria-label="Completed" />
+        <span>·</span>
         <span>{formatDate(flight.scheduledDeparture)}</span>
-        <span>Scheduled {formatTime(flight.scheduledDeparture)}</span>
+        <span>·</span>
+        <span className="tabular-nums">{formatTime(flight.scheduledDeparture)}</span>
       </div>
     </button>
   );
