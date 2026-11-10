@@ -6,13 +6,13 @@ interface HeaderProps {
   title: string;
   showBack?: boolean;
   onBackClick?: () => void;
-  /** Sits to the left of the title (e.g. a refresh icon button). */
+  /** Sits at the right edge of the header (e.g. a refresh icon button). */
   rightAction?: React.ReactNode;
   subtitle?: string;
   transparent?: boolean;
 }
 
-/** Figma "Secondary Navigation": small back icon button on the left, screen title on the right. */
+/** Secondary navigation: back button, then the screen title (left-aligned), then an optional action at the right edge. */
 export function Header({
   title,
   showBack = false,
@@ -33,12 +33,11 @@ export function Header({
           <ChevronLeft className="h-5 w-5" />
         </IconButton>
       )}
-      <div className="flex-1" />
-      {rightAction && <div className="flex shrink-0 items-center">{rightAction}</div>}
-      <div className="min-w-0 text-right">
+      <div className="min-w-0 flex-1">
         <h1 className="truncate text-title-sm text-ink">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-body-sm text-ink-caption">{subtitle}</p>}
+        {subtitle && <p className="mt-0.5 truncate text-body-sm text-ink-caption">{subtitle}</p>}
       </div>
+      {rightAction && <div className="-mr-2 flex shrink-0 items-center">{rightAction}</div>}
     </header>
   );
 }
