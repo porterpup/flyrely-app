@@ -9,9 +9,10 @@ export function useFlights(): StoreSnapshot {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
-const SERVER_STATUS: SyncStatus = { pending: 0, state: 'synced' };
-
-/** Upload status for the Account screen. */
+/**
+ * Upload status for the Account screen. The server snapshot is the same object the client starts with, so React sees
+ * no difference during hydration (a separate constant object made it re-render early: minified React error #421).
+ */
 export function useSyncStatus(): SyncStatus {
-  return useSyncExternalStore(subscribe, getSyncStatus, () => SERVER_STATUS);
+  return useSyncExternalStore(subscribe, getSyncStatus, getSyncStatus);
 }
