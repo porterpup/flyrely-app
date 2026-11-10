@@ -40,7 +40,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm motion-safe:animate-fade-in"
         onClick={onClose}
       />
 
@@ -48,7 +48,7 @@ export function Modal({
       <div
         className={cn(
           'relative w-full bg-white rounded-t-3xl sm:rounded-2xl p-6',
-          'animate-in slide-in-from-bottom sm:zoom-in-95 duration-200',
+          'pb-[max(1.5rem,env(safe-area-inset-bottom))] motion-safe:animate-sheet-up sm:motion-safe:animate-pop-in',
           sizeClasses[size]
         )}
       >

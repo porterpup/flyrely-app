@@ -35,7 +35,7 @@ function LoginRoute() {
   const search = redirect ? { redirect } : {}
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-6 p-4">
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-4">
       <div>
         <h1 className="text-2xl font-bold text-navy-900">FlyRely</h1>
         <p className="text-sm text-ink-caption">Private beta</p>

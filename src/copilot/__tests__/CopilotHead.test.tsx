@@ -20,20 +20,20 @@ describe('CopilotHead', () => {
     ['true', ''],
     ['', 'true'],
     ['', ''],
-  ])('registers nothing and adds no links (copilot=%s push=%s)', async (copilot, push) => {
+  ])('registers no service worker, but still emits the PWA tags (copilot=%s push=%s)', async (copilot, push) => {
     const register = vi.fn();
     vi.stubGlobal('navigator', { serviceWorker: { register } });
-    const { CopilotBootstrap, copilotHeadLinks } = await load(copilot, push);
-    expect(copilotHeadLinks()).toEqual([]);
+    const { CopilotBootstrap, pwaHeadLinks, pwaMeta } = await load(copilot, push);
+    expect(pwaHeadLinks().map((l) => l.rel)).toEqual(['manifest', 'apple-touch-icon']);
+    expect(pwaMeta().map((m) => m.name)).toContain('theme-color');
     render(<CopilotBootstrap />);
     expect(register).not.toHaveBeenCalled();
   });
 
-  it('with both flags on: manifest link and one registration of /sw.js', async () => {
+  it('with both flags on: one registration of /sw.js', async () => {
     const register = vi.fn(async () => ({}));
     vi.stubGlobal('navigator', { serviceWorker: { register } });
-    const { CopilotBootstrap, copilotHeadLinks } = await load('true', 'true');
-    expect(copilotHeadLinks().map((l) => l.rel)).toEqual(['manifest', 'apple-touch-icon']);
+    const { CopilotBootstrap } = await load('true', 'true');
     render(<CopilotBootstrap />);
     expect(register).toHaveBeenCalledWith('/sw.js', { scope: '/', updateViaCache: 'none' });
   });

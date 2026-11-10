@@ -30,7 +30,7 @@ export function RiskPill({
       {detail && (
         <>
           <span aria-hidden className="mx-1">·</span>
-          <span className="font-semibold">{detail}</span>
+          <span className="font-semibold tabular-nums">{detail}</span>
         </>
       )}
     </Pill>

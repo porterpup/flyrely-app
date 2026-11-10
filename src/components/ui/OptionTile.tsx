@@ -11,7 +11,8 @@ export function OptionTile({ title, description, icon, className, ...props }: Op
   return (
     <div
       className={cn(
-        'min-h-[104px] rounded-tile border border-surface-stroke bg-surface-muted p-4',
+        'min-h-[104px] rounded-tile border border-surface-stroke bg-surface-muted p-4 transition duration-150',
+        'hover:border-surface-divider active:bg-surface-stroke motion-safe:active:scale-[0.98]',
         className
       )}
       {...props}

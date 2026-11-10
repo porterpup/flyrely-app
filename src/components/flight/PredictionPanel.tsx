@@ -26,18 +26,21 @@ export function PredictionPanel({ risk, chancePercent, reason, why, children, cl
         <Icon className="h-5 w-5" aria-hidden />
         FlyRely prediction
       </div>
-      <div className="flex items-end justify-between gap-3">
+      {typeof chancePercent === 'number' ? (
         <div>
           <p className="text-title-md">{getRiskLabel(risk)}</p>
+          <p className="mt-2 text-hero tabular-nums" aria-label={`${chancePercent} percent chance of a 15 plus minute delay`}>
+            {chancePercent}
+            <span className="ml-0.5 text-heading-md align-top">%</span>
+          </p>
+          <p className="mt-2 text-body-sm opacity-80">chance of a 15+ min delay · based on historical data</p>
+        </div>
+      ) : (
+        <div>
+          <p className="text-heading-sm">{getRiskLabel(risk)}</p>
           <p className="mt-1 text-body-sm opacity-80">Based on historical data</p>
         </div>
-        {typeof chancePercent === 'number' && (
-          <div className="text-right">
-            <p className="text-title-md">{chancePercent}%</p>
-            <p className="mt-1 text-body-sm opacity-80">chance of a 15+ min delay</p>
-          </div>
-        )}
-      </div>
+      )}
       <div className="mt-5 flex items-start gap-2 text-body-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         <p>{why ? `Why: ${why}` : reason}</p>
