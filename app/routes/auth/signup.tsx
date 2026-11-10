@@ -82,12 +82,12 @@ function SignupRoute() {
               {busy ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
-          <div className="flex justify-between text-body-md text-ink-caption">
+          <div className="flex flex-wrap justify-between gap-x-4 gap-y-2 text-body-md text-ink-caption">
             <span>
               Have an account?{' '}
-              <Link to="/auth/login" search={search} className="text-body-md font-medium text-surface-accent">Sign in</Link>
+              <Link to="/auth/login" search={search} className="whitespace-nowrap text-body-md font-medium text-surface-accent">Sign in</Link>
             </span>
-            <Link to="/auth/forgot-password" className="text-body-md font-medium text-surface-accent">Forgot password?</Link>
+            <Link to="/auth/forgot-password" className="whitespace-nowrap text-body-md font-medium text-surface-accent">Forgot password?</Link>
           </div>
         </>
       )}
