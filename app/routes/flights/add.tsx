@@ -15,6 +15,7 @@ import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/l
 import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
 import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
+import { useAuth } from '~/context/AuthContext';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
 import { getAirportRef, validateAirports } from '~/lib/airportRef';
@@ -151,14 +152,18 @@ function AddFlightScreen() {
   // "Add connecting flight": ?after=<flightId> pre-fills the route search from that flight's destination and arrival date.
   const { after: afterFlightId } = Route.useSearch();
   const { flights: storedFlights } = useFlights();
+  const { user } = useAuth();
+  // Profile: the saved home airport pre-fills the route search origin (a connecting flight overrides it below).
+  const profileHome = user?.profile.homeAirport ?? '';
+  const preferredAirline = user?.profile.preferredAirline ?? null;
 
   // Flight number search
   const [airlineName, setAirlineName] = useState('');
   const [airlineCode, setAirlineCodeState] = useState('');
   const [flightNumber, setFlightNumber] = useState('');
   const [otherAirline, setOtherAirline] = useState(false);
-  const [originCode, setOriginCode] = useState('');
-  const [originInfo, setOriginInfo] = useState<AirportInfo | undefined>();
+  const [originCode, setOriginCode] = useState(profileHome);
+  const [originInfo, setOriginInfo] = useState<AirportInfo | undefined>(profileHome ? getAirport(profileHome) : undefined);
   const [destCode, setDestCode] = useState('');
   const [destInfo, setDestInfo] = useState<AirportInfo | undefined>();
   const [tab, setTab] = useState<'number' | 'route' | 'recent'>('number');
@@ -680,6 +685,7 @@ function AddFlightScreen() {
                     flights={routeResult.flights}
                     asOf={routeResult.schedule_as_of}
                     disabled={isFinding}
+                    preferredAirline={preferredAirline}
                     onPick={handlePickRouteFlight}
                   />
                 </div>

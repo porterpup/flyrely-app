@@ -43,4 +43,17 @@ describe('RouteResults', () => {
     fireEvent.click(screen.getAllByRole('button')[1]);
     expect(onPick).toHaveBeenCalledWith(flights[0]);
   });
+
+  it('lists the preferred airline first and marks it', () => {
+    const dl = { ...f('DL100', '20:00', '23:00', 0.4, 'high'), airline: 'DL', airline_name: 'Delta Air Lines' };
+    render(<RouteResults flights={[f('UA648', '06:00', '09:31', 0.18, 'low'), dl]} preferredAirline="DL" onPick={() => {}} />);
+    const buttons = screen.getAllByRole('button');
+    expect(buttons[0].getAttribute('aria-label')).toContain('DL100');
+    expect(screen.getAllByText('Your airline')).toHaveLength(1);
+  });
+
+  it('keeps departure order when there is no preference', () => {
+    render(<RouteResults flights={flights} onPick={() => {}} />);
+    expect(screen.queryByText('Your airline')).toBeNull();
+  });
 });

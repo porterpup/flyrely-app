@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Plane, Plus } from 'lucide-react';
 import { AppShell } from '~/components/layout';
-import { Alert, Button, Card, SectionHeader } from '~/components/ui';
+import { Alert, Button, Card, EmptyState, PageTitle, SectionHeader, Skeleton } from '~/components/ui';
 import { FlightCard, TripCard } from '~/components/flight';
 import { formatDate } from '~/lib/utils';
 import { createTrip, dismissSuggestion, selectUpcoming } from '~/lib/flightStore';
@@ -64,31 +64,33 @@ function TripsScreen() {
 
   return (
     <AppShell>
-      <div className="px-4 pt-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-navy-900">Trips</h1>
-          {!nothing && (
-            <Button
-              size="sm"
-              onClick={() => navigate({ to: '/flights/add' })}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              Add flight
-            </Button>
-          )}
-        </div>
+      <div className="px-6 pb-6 pt-10">
+        <PageTitle
+          title="Trips"
+          action={
+            !nothing && (
+              <Button size="sm" onClick={() => navigate({ to: '/flights/add' })} icon={<Plus className="w-4 h-4" />}>
+                Add flight
+              </Button>
+            )
+          }
+        />
+
+        {!loaded && (
+          <div className="space-y-3" role="status" aria-label="Loading trips">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-24 rounded-tile" />
+            <Skeleton className="h-24 rounded-tile" />
+          </div>
+        )}
 
         {loaded && nothing && (
-          <div className="flex flex-col items-center text-center py-16">
-            <div className="text-6xl mb-6">✈️</div>
-            <h2 className="text-xl font-bold text-navy-900 mb-2">No upcoming flights</h2>
-            <p className="text-navy-500 mb-8 max-w-xs">
-              Flights you add will show up here, grouped by departure date.
-            </p>
-            <Button onClick={() => navigate({ to: '/flights/add' })}>
-              Add flight
-            </Button>
-          </div>
+          <EmptyState
+            icon={<Plane />}
+            title="No upcoming flights"
+            description="Flights you add show up here, grouped by day."
+            action={<Button onClick={() => navigate({ to: '/flights/add' })}>Add flight</Button>}
+          />
         )}
 
         {upcomingTrips.length > 0 && (
@@ -133,9 +135,9 @@ function TripsScreen() {
         )}
 
         <div className="space-y-6">
-          {groups.map((group) => (
+          {loaded && groups.map((group) => (
             <section key={group.date}>
-              <h2 className="text-sm font-semibold text-navy-500 uppercase tracking-wider mb-3">
+              <h2 className="mb-3 text-body-md font-medium text-ink-caption">
                 {formatDate(`${group.date}T00:00:00`)}
               </h2>
               <div className="space-y-3">

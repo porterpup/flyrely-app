@@ -23,14 +23,19 @@ export function RouteResults({
   flights,
   asOf,
   disabled,
+  preferredAirline,
   onPick,
 }: {
   flights: SearchFlight[];
   asOf?: string | null;
   disabled?: boolean;
+  /** Airline code from the user's profile; its flights are listed first and marked. */
+  preferredAirline?: string | null;
   onPick: (flight: SearchFlight) => void;
 }) {
-  const sorted = sortByDeparture(flights);
+  const byTime = sortByDeparture(flights);
+  const isPreferred = (f: SearchFlight) => !!preferredAirline && f.airline === preferredAirline;
+  const sorted = preferredAirline ? [...byTime.filter(isPreferred), ...byTime.filter((f) => !isPreferred(f))] : byTime;
   const best = mostReliableIndex(sorted);
   return (
     <div className="space-y-3" data-testid="route-results">
@@ -46,12 +51,16 @@ export function RouteResults({
           onClick={() => onPick(f)}
           aria-label={`${f.flight} ${f.origin} to ${f.dest}, ${formatClock(f.dep_time)} to ${formatClock(f.arr_time)}, ${Math.round(f.delay_probability * 100)}% chance of a 15+ min delay${f.risk_factors?.length ? `. Why: ${topReasons(f.risk_factors)}` : ''}`}
           className={cn(
-            'w-full rounded-2xl border border-navy-stroke bg-white p-4 text-left hover:border-navy-300',
+            'w-full rounded-2xl border bg-white p-4 text-left hover:border-navy-300',
+            isPreferred(f) ? 'border-surface-accent' : 'border-navy-stroke',
             disabled && 'opacity-60'
           )}
         >
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-navy-ink">{f.flight}</span>
+            <span className="font-semibold text-navy-ink">
+              {f.flight}
+              {isPreferred(f) && <span className="ml-2 text-sm font-medium text-surface-accent">Your airline</span>}
+            </span>
             <span className="text-sm text-navy-caption">{f.airline_name}</span>
           </div>
           <p className="mt-1 text-sm text-navy-caption">

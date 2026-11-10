@@ -33,7 +33,7 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
             <span className="text-ink-caption">·</span>
             <span className="text-body-md text-ink-caption">{flight.airline.name}</span>
           </div>
-          <RiskPill risk={flight.riskLevel} emphasis="soft" />
+          <RiskPill risk={flight.riskLevel} emphasis="soft" detail={flight.riskLevel !== 'low' && typeof flight.delayProbability === 'number' ? `${Math.round(flight.delayProbability * 100)}%` : null} />
         </div>
         <div className="flex items-center gap-2 text-body-md text-ink-caption">
           <span>{flight.origin.code}</span>

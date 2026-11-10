@@ -67,7 +67,7 @@ export function Ticket({
     >
       {title && <p className="text-title-sm text-white">{title}</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-title-md underline underline-offset-4">{flightNumber}</span>
+        <span className="text-title-md tabular-nums">{flightNumber}</span>
         {badge}
       </div>
       <div className="flex items-start gap-2.5">

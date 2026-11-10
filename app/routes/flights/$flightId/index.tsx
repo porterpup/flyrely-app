@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw } from 'lucide-react';
-import { Header, Button, IconButton, Card, Duration, SectionHeader } from '~/components/ui';
+import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw, SearchX } from 'lucide-react';
+import { Header, Button, IconButton, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
 import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
@@ -145,12 +145,13 @@ function FlightDetailsScreen() {
       <div className="app-container">
         <div className="screen">
           <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
-          <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
-            <div className="text-5xl mb-4">🔍</div>
-            <h2 className="text-xl font-bold text-ink mb-2">Flight not found</h2>
-            <p className="text-ink-caption mb-6">This flight may have been removed.</p>
-            <Button onClick={() => navigate({ to: '/' })}>Go home</Button>
-          </div>
+          <EmptyState
+            className="flex-1 justify-center"
+            icon={<SearchX />}
+            title="Flight not found"
+            description="This flight may have been removed."
+            action={<Button onClick={() => navigate({ to: '/' })}>Go home</Button>}
+          />
         </div>
       </div>
     );
@@ -161,8 +162,15 @@ function FlightDetailsScreen() {
       <div className="app-container">
         <div className="screen">
           <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
-          <div className="flex-1 flex items-center justify-center py-20">
-            <div className="text-navy-400">Loading...</div>
+          <div className="flex-1 rounded-t-4xl bg-surface-card px-2 pt-10" role="status" aria-label="Loading flight">
+            <div className="mx-auto mb-8 flex flex-col items-center gap-3">
+              <Skeleton onDark className="h-5 w-16" />
+              <Skeleton onDark className="h-7 w-64 max-w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton onDark className="h-56 rounded-panel" />
+              <Skeleton onDark className="h-48 rounded-panel" />
+            </div>
           </div>
         </div>
       </div>
@@ -192,7 +200,7 @@ function FlightDetailsScreen() {
 
         <div className="flex-1 overflow-y-auto bg-surface-card rounded-t-4xl text-white pb-24">
           <div className="px-4 pt-8 pb-4 text-center">
-            <p className="text-title-sm underline underline-offset-4">{flight.flightNumber}</p>
+            <p className="text-title-sm tabular-nums">{flight.flightNumber}</p>
             <h2 className="text-title-lg mt-3">Your trip to {getCityLabel(flight.destination.code)}</h2>
             <p className="text-body-sm text-ink-on-dark-muted mt-2">{formatLongDate(flight.scheduledDeparture)}</p>
           </div>
@@ -261,12 +269,6 @@ function FlightDetailsScreen() {
               </Card>
             )}
 
-            <Card tone="dark">
-              <SectionHeader as="h3" kind="no-space" onDark title="Schedule" className="mb-3" />
-              <p className="text-body-sm font-semibold">Scheduled departure</p>
-              <p className="mt-2 text-body-lg">{formatTime(flight.scheduledDeparture)}</p>
-            </Card>
-
             {trip && tripLegs.length > 0 && (
               <Link
                 to="/trips/$tripId"
@@ -300,17 +302,15 @@ function FlightDetailsScreen() {
               <ChevronRight className="w-5 h-5 text-ink-on-dark-muted" />
             </Link>
 
-            <Button
-              variant="secondary"
-              fullWidth
-              onClick={() => setShowRemoveModal(true)}
-              className="border-white/80 text-white hover:bg-white/10 active:bg-white/20"
-            >
-              Remove this flight
-            </Button>
-
-            <div className="flex justify-center pt-2">
+            <div className="flex items-center justify-center gap-6 pt-4">
               <FeedbackLink onDark />
+              <button
+                type="button"
+                onClick={() => setShowRemoveModal(true)}
+                className="rounded text-body-sm text-ink-on-dark-muted underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Remove this flight
+              </button>
             </div>
           </div>
         </div>

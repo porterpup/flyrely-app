@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Header } from '~/components/ui';
+import { Header, Skeleton } from '~/components/ui';
 import { FeedbackError, listFeedback, type FeedbackItem } from '~/lib/feedback';
 
 export const Route = createFileRoute('/account/feedback')({
@@ -23,7 +23,13 @@ function FeedbackAdminScreen() {
       <div className="screen">
         <Header title="Feedback" showBack onBackClick={() => navigate({ to: '/account' })} />
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-6">
-          {!items && !error && <div className="py-16 text-center text-navy-400">Loading...</div>}
+          {!items && !error && (
+            <div className="space-y-3" role="status" aria-label="Loading">
+              <Skeleton className="h-24 rounded-xl" />
+              <Skeleton className="h-24 rounded-xl" />
+              <Skeleton className="h-24 rounded-xl" />
+            </div>
+          )}
           {error && <div className="py-16 text-center text-red-500">{error}</div>}
           {items && items.length === 0 && <div className="py-16 text-center text-navy-400">No feedback yet</div>}
           {items?.map((it) => {

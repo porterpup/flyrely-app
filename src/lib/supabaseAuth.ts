@@ -41,3 +41,8 @@ export async function resetPasswordForEmail(email: string) {
 export async function updateUserPassword(password: string) {
   return getSupabase().auth.updateUser({ password })
 }
+
+/** Saves profile fields in the user's metadata (no table). Passing null clears a field. */
+export async function updateUserMetadata(data: Record<string, string | null>) {
+  return getSupabase().auth.updateUser({ data })
+}

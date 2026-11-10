@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { BarChart3, TrendingUp, DollarSign, Zap, Download } from 'lucide-react';
-import { Header } from '~/components/ui';
+import { Header, Skeleton } from '~/components/ui';
 import { API_BASE_URL } from '~/lib/api';
 import { getSupabase, isSupabaseConfigured } from '~/lib/supabaseAuth';
 
@@ -122,7 +122,7 @@ function UsageDashboardScreen() {
           </div>
 
           {loading && (
-            <div className="text-center py-16 text-navy-400">Loading...</div>
+            <div className="space-y-3 py-4" role="status" aria-label="Loading"><Skeleton className="h-20 rounded-xl" /><Skeleton className="h-20 rounded-xl" /><Skeleton className="h-20 rounded-xl" /></div>
           )}
           {error && (
             <div className="text-center py-16 text-red-500">{error}</div>
