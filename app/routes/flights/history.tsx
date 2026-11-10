@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Trash2 } from 'lucide-react';
 import { Header, Button, Modal } from '~/components/ui';
 import { CompletedFlightCard } from '~/components/flight/CompletedFlightCard';
 import { cn } from '~/lib/utils';
-import { getCompletedFlights, clearCompletedFlights } from '~/lib/flightStore';
+import { selectCompleted, clearCompletedFlights } from '~/lib/flightStore';
+import { useFlights } from '~/hooks/useFlights';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/history')({
@@ -22,13 +23,10 @@ function filterFlights(flights: Flight[], period: FilterPeriod): Flight[] {
 
 function FlightHistoryScreen() {
   const navigate = useNavigate();
-  const [allCompleted, setAllCompleted] = useState<Flight[]>([]);
+  const { flights } = useFlights();
+  const allCompleted = useMemo(() => selectCompleted(flights), [flights]);
   const [filter, setFilter] = useState<FilterPeriod>('all');
   const [showClearModal, setShowClearModal] = useState(false);
-
-  useEffect(() => {
-    setAllCompleted(getCompletedFlights());
-  }, []);
 
   const completedFlights = filterFlights(allCompleted, filter);
 
@@ -61,7 +59,6 @@ function FlightHistoryScreen() {
 
   function handleClearAll() {
     clearCompletedFlights();
-    setAllCompleted([]);
     setShowClearModal(false);
   }
 

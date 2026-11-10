@@ -67,4 +67,19 @@ export interface Flight {
   warnings?: string[];
   /** Weather at both airports from the last /predict; absent when weather was unavailable. */
   weather?: { origin: AirportWeather | null; destination: AirportWeather | null };
+  /** Scheduled arrival, local time at the destination, `YYYY-MM-DDTHH:MM:SS` (no offset). Never named `scheduledArrival`: that legacy key is stripped on load. */
+  scheduledArrivalLocal?: string;
+  arrivalSource?: 'lookup' | 'manual';
+  /** Trip this flight belongs to (a trip is 2-4 connecting flights), and its position (0-based). */
+  tripId?: string;
+  legIndex?: number;
+  /** Minimum connect time in minutes needed before THIS leg (leg index > 0). */
+  connectMctOverride?: number;
+}
+
+/** A trip header. Legs live on the flights (tripId + legIndex). */
+export interface Trip {
+  id: string;
+  name?: string;
+  clientUpdatedAt: string;
 }

@@ -13,6 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/smoke-test.mjs",
+    "rls-check": "node scripts/rls-check.mjs",
     "postinstall": "node scripts/fix-nested-deps.mjs",
     "test": "vitest run"
   },

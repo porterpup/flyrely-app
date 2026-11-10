@@ -1,4 +1,7 @@
-import { clearAllFlights } from '~/lib/flightStore'
+import { clearAllFlights, clearOtherUsersData, getActiveUser, setActiveUser } from '~/lib/flightStore'
+import { download, flushOutbox, pendingCount, startSyncListeners } from '~/lib/syncEngine'
+import type { SyncStatus } from '~/lib/syncEngine'
+import { useSyncStatus } from '~/hooks/useFlights'
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from '@tanstack/react-router'
@@ -32,7 +35,12 @@ type AuthContextValue = {
   recoveryReady: boolean
   signIn: (email: string, password: string) => Promise<AuthResult>
   signUp: (email: string, password: string) => Promise<SignUpResult>
-  signOut: () => Promise<void>
+  /**
+   * Uploads waiting changes (up to 5 s). If some are still waiting and `force` is not set, nothing is signed out
+   * and `signedOut` is false so the caller can ask the user to confirm.
+   */
+  signOut: (opts?: { force?: boolean }) => Promise<{ signedOut: boolean; pending: number }>
+  syncStatus: SyncStatus
   resetPassword: (email: string) => Promise<AuthResult>
   updatePassword: (password: string) => Promise<AuthResult>
 }
@@ -47,6 +55,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(configured)
   const [recoveryReady, setRecoveryReady] = useState(false)
+  const syncStatus = useSyncStatus()
+
+  /** Point the flight store at this user (clearing anyone else's data first), then start syncing. */
+  function applyUser(u: { id: string; email?: string | null } | null | undefined) {
+    if (u) {
+      if (getActiveUser() !== u.id) {
+        clearOtherUsersData(u.id)
+        setActiveUser(u.id)
+        startSyncListeners()
+        void download(true)
+      }
+      setUser({ id: u.id, email: u.email })
+    } else {
+      setActiveUser(null)
+      setUser(null)
+    }
+  }
 
   useEffect(() => {
     if (!configured) {
@@ -58,12 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return
-      const u = data.session?.user
-      setUser(u ? { id: u.id, email: u.email } : null)
+      applyUser(data.session?.user)
       setLoading(false)
     }).catch(() => {
       if (!mounted) return
-      setUser(null)
+      applyUser(null)
       setLoading(false)
     })
 
@@ -73,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRecoveryReady(true)
         navigate({ to: '/auth/reset-password' })
       }
-      setUser(session?.user ? { id: session.user.id, email: session.user.email } : null)
+      applyUser(session?.user)
     })
 
     return () => {
@@ -95,12 +119,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null, signedIn: Boolean(data?.session) }
   }
 
-  async function signOut() {
-    if (!configured) return
+  async function signOut(opts?: { force?: boolean }): Promise<{ signedOut: boolean; pending: number }> {
+    if (!configured) return { signedOut: true, pending: 0 }
+    // Try to save waiting changes first; ask the caller before throwing any away.
+    await flushOutbox(5000)
+    const pending = pendingCount()
+    if (pending > 0 && !opts?.force) return { signedOut: false, pending }
     await supabaseSignOut()
     // Flights live in this browser's localStorage; don't leave them for the next person to sign in here.
+    // They stay in the account and come back on the next sign-in.
     clearAllFlights()
+    setActiveUser(null)
     setUser(null)
+    return { signedOut: true, pending }
   }
 
   async function resetPassword(email: string): Promise<AuthResult> {
@@ -116,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, configured, recoveryReady, signIn, signUp, signOut, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ user, loading, configured, recoveryReady, signIn, signUp, signOut, syncStatus, resetPassword, updatePassword }}>
       {children}
     </AuthContext.Provider>
   )

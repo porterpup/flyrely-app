@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { LogOut, MessageSquare } from 'lucide-react';
 import { AppShell } from '~/components/layout';
+import { Button, Modal } from '~/components/ui';
 import { useAuth } from '~/context/AuthContext';
 import { openFeedback } from '~/lib/feedback';
 
@@ -10,14 +12,28 @@ export const Route = createFileRoute('/account/')({
 
 function AccountScreen() {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, syncStatus } = useAuth();
+  const [confirmPending, setConfirmPending] = useState<number | null>(null);
   const email = user?.email ?? null;
   const initial = email ? email[0].toUpperCase() : '?';
 
-  async function handleSignOut() {
-    await signOut();
-    navigate({ to: '/auth/login' });
+  async function handleSignOut(force = false) {
+    const result = await signOut({ force });
+    if (result.signedOut) {
+      navigate({ to: '/auth/login' });
+    } else {
+      setConfirmPending(result.pending);
+    }
   }
+
+  const syncLine =
+    syncStatus.state === 'offline'
+      ? syncStatus.pending > 0
+        ? `Offline: ${syncStatus.pending} ${syncStatus.pending === 1 ? 'change' : 'changes'} will upload when you reconnect`
+        : 'Offline: changes will upload when you reconnect'
+      : syncStatus.pending > 0
+        ? `${syncStatus.pending} ${syncStatus.pending === 1 ? 'change' : 'changes'} waiting to upload`
+        : 'Flights saved to your account';
 
   return (
     <AppShell>
@@ -40,6 +56,8 @@ function AccountScreen() {
           </div>
         </div>
 
+        {user && <p className="mb-4 px-4 text-body-md text-ink-caption" role="status">{syncLine}</p>}
+
         {user && (
           <button
             onClick={openFeedback}
@@ -53,7 +71,7 @@ function AccountScreen() {
         {/* Sign Out */}
         {user && (
           <button
-            onClick={handleSignOut}
+            onClick={() => handleSignOut()}
             className="w-full mt-8 flex items-center justify-center gap-2 p-4 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -62,6 +80,19 @@ function AccountScreen() {
         )}
 
       </div>
+
+      <Modal isOpen={confirmPending !== null} onClose={() => setConfirmPending(null)} title="Sign out anyway?" size="sm">
+        <div className="space-y-4">
+          <p className="text-navy-600">
+            {confirmPending} {confirmPending === 1 ? 'change hasn\'t' : 'changes haven\'t'} been saved to your account yet
+            (you may be offline). Sign out anyway and lose {confirmPending === 1 ? 'it' : 'them'}?
+          </p>
+          <div className="flex gap-3">
+            <Button variant="secondary" fullWidth onClick={() => setConfirmPending(null)}>Cancel</Button>
+            <Button variant="danger" fullWidth onClick={() => { setConfirmPending(null); void handleSignOut(true); }}>Sign out</Button>
+          </div>
+        </div>
+      </Modal>
     </AppShell>
   );
 }

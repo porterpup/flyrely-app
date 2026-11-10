@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
 import { formatDate } from '~/lib/utils';
-import { getUpcomingFlights } from '~/lib/flightStore';
+import { selectUpcoming } from '~/lib/flightStore';
+import { useFlights } from '~/hooks/useFlights';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/trips/')({
@@ -26,13 +27,9 @@ function groupByDate(flights: Flight[]): { date: string; flights: Flight[] }[] {
 
 function TripsScreen() {
   const navigate = useNavigate();
-  const [flights, setFlights] = useState<Flight[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setFlights(getUpcomingFlights());
-    setLoaded(true);
-  }, []);
+  const { flights: allFlights, ready } = useFlights();
+  const flights = useMemo(() => selectUpcoming(allFlights), [allFlights]);
+  const loaded = ready || allFlights.length > 0;
 
   const groups = groupByDate(flights);
 

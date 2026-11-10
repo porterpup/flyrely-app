@@ -1,79 +1,180 @@
-import type { Flight } from '~/types';
+import type { Flight, Trip } from '~/types';
+import { stripLegacy, validateFlightForCloud } from '~/lib/cloudFlights';
+import {
+  CACHE_PREFIX,
+  DISMISS_PREFIX,
+  LEGACY_KEY,
+  OUTBOX_PREFIX,
+  allKeys,
+  cacheKey,
+  readJson,
+  removeKey,
+  writeJson,
+} from '~/lib/storageKeys';
+import { configureEngine, dropEngineState, enqueue, mergeCloudWithOutbox, setEngineUser } from '~/lib/syncEngine';
 
-const STORAGE_KEY = 'flyrely_flights';
-
-/**
- * Older versions stored invented values (scheduledArrival = departure + 5h,
- * delayMinutes, predictedDeparture/Arrival, airlineStatus). Never show them.
- */
-const LEGACY_FIELDS = [
-  'scheduledArrival',
-  'delayMinutes',
-  'predictedDeparture',
-  'predictedArrival',
-  'airlineStatus',
-] as const;
-
+/** Older versions stored invented values (scheduledArrival, delayMinutes, ...). Never show them. */
 export function stripLegacyFields(raw: unknown): Flight | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const copy = { ...(raw as Record<string, unknown>) };
-  for (const key of LEGACY_FIELDS) delete copy[key];
-  return copy as unknown as Flight;
+  return stripLegacy(raw);
 }
+
+// ── State ───────────────────────────────────────────────────────────────────
+// Pages stay synchronous: these functions read an in-memory copy of the signed-in user's flights, which is mirrored
+// to a per-user localStorage cache. Writes update it at once and queue an upload (see syncEngine.ts).
+
+export interface StoreSnapshot {
+  flights: Flight[];
+  trips: Trip[];
+  /** First download for this user finished (or failed): "no flights" / "not found" can now be believed. */
+  ready: boolean;
+  /** The first download succeeded this session. */
+  downloaded: boolean;
+}
+
+const EMPTY: StoreSnapshot = { flights: [], trips: [], ready: false, downloaded: false };
+
+let activeUser: string | null = null;
+let snapshot: StoreSnapshot = EMPTY;
+const listeners = new Set<() => void>();
+
+function emit(): void {
+  for (const l of listeners) l();
+}
+
+function persistCache(): void {
+  if (activeUser) {
+    writeJson(cacheKey(activeUser), { flights: snapshot.flights, trips: snapshot.trips, pulledAt: Date.now() });
+  }
+}
+
+function setData(flights: Flight[], trips: Trip[]): void {
+  snapshot = { ...snapshot, flights, trips };
+  persistCache();
+  emit();
+}
+
+configureEngine({
+  host: {
+    applyCloud: (d) => setData(d.flights, d.trips),
+    markReady: (downloaded) => {
+      snapshot = { ...snapshot, ready: true, downloaded: snapshot.downloaded || downloaded };
+      emit();
+    },
+    notify: emit,
+  },
+});
+
+/** Called by AuthContext when the signed-in user changes (null = signed out). */
+export function setActiveUser(userId: string | null): void {
+  if (userId === activeUser) return;
+  activeUser = userId;
+  if (!userId) {
+    snapshot = EMPTY;
+    setEngineUser(null);
+    emit();
+    return;
+  }
+  const cached = readJson<{ flights?: unknown; trips?: unknown }>(cacheKey(userId));
+  const flights = Array.isArray(cached?.flights)
+    ? cached.flights.map(stripLegacyFields).filter((f): f is Flight => f !== null)
+    : [];
+  const trips = Array.isArray(cached?.trips) ? (cached.trips as Trip[]) : [];
+  snapshot = { flights, trips, ready: false, downloaded: false };
+  setEngineUser(userId);
+  emit();
+}
+
+export function getActiveUser(): string | null {
+  return activeUser;
+}
+
+export function subscribe(cb: () => void): () => void {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+/** Stable between changes (for useSyncExternalStore). */
+export function getSnapshot(): StoreSnapshot {
+  return snapshot;
+}
+
+export function getServerSnapshot(): StoreSnapshot {
+  return EMPTY;
+}
+
+export function isReady(): boolean {
+  return snapshot.ready;
+}
+
+function requireUser(): void {
+  if (!activeUser) throw new Error('not signed in');
+}
+
+const nowIso = () => new Date().toISOString();
+
+// ── Reads ───────────────────────────────────────────────────────────────────
 
 export function getFlights(): Flight[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(stripLegacyFields).filter((f): f is Flight => f !== null);
-  } catch {
-    return [];
-  }
+  return snapshot.flights;
 }
 
-export function saveFlight(flight: Flight): void {
-  const flights = getFlights();
-  const existing = flights.findIndex((f) => f.id === flight.id);
-  if (existing >= 0) {
-    flights[existing] = flight;
-  } else {
-    flights.push(flight);
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(flights));
+export function getTrips(): Trip[] {
+  return snapshot.trips;
 }
 
-export function removeFlight(id: string): void {
-  const flights = getFlights().filter((f) => f.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(flights));
+export function getTripById(id: string): Trip | undefined {
+  return snapshot.trips.find((t) => t.id === id);
 }
 
 export function getFlightById(id: string): Flight | undefined {
-  return getFlights().find((f) => f.id === id);
+  return snapshot.flights.find((f) => f.id === id);
+}
+
+/** Upcoming = departs now or later, soonest first. Pure, for components that already hold the flights. */
+export function selectUpcoming(flights: Flight[]): Flight[] {
+  const now = new Date();
+  return flights
+    .filter((f) => new Date(f.scheduledDeparture) >= now)
+    .sort((a, b) => new Date(a.scheduledDeparture).getTime() - new Date(b.scheduledDeparture).getTime());
+}
+
+/** Completed = departure in the past, newest first. */
+export function selectCompleted(flights: Flight[]): Flight[] {
+  const now = new Date();
+  return flights
+    .filter((f) => new Date(f.scheduledDeparture) < now)
+    .sort((a, b) => new Date(b.scheduledDeparture).getTime() - new Date(a.scheduledDeparture).getTime());
 }
 
 export function getUpcomingFlights(): Flight[] {
-  const now = new Date();
-  return getFlights()
-    .filter((f) => new Date(f.scheduledDeparture) >= now)
-    .sort(
-      (a, b) =>
-        new Date(a.scheduledDeparture).getTime() -
-        new Date(b.scheduledDeparture).getTime()
-    );
+  return selectUpcoming(getFlights());
 }
 
 /** Returns flights whose scheduled departure is in the past, newest first. */
 export function getCompletedFlights(): Flight[] {
-  const now = new Date();
-  return getFlights()
-    .filter((f) => new Date(f.scheduledDeparture) < now)
-    .sort(
-      (a, b) =>
-        new Date(b.scheduledDeparture).getTime() - new Date(a.scheduledDeparture).getTime()
-    );
+  return selectCompleted(getFlights());
+}
+
+// ── Writes (optimistic, queued for upload) ──────────────────────────────────
+
+export function saveFlight(flight: Flight): void {
+  requireUser();
+  const clean = stripLegacyFields(flight) as Flight;
+  const i = snapshot.flights.findIndex((f) => f.id === clean.id);
+  const flights = snapshot.flights.slice();
+  if (i >= 0) flights[i] = clean;
+  else flights.push(clean);
+  setData(flights, snapshot.trips);
+  enqueue({ type: 'upsertFlight', flight: clean, at: nowIso() });
+}
+
+export function removeFlight(id: string): void {
+  requireUser();
+  setData(
+    snapshot.flights.filter((f) => f.id !== id),
+    snapshot.trips
+  );
+  enqueue({ type: 'deleteFlight', id, at: nowIso() });
 }
 
 /**
@@ -82,38 +183,81 @@ export function getCompletedFlights(): Flight[] {
  * list clean without requiring manual removal.
  */
 export function autoCompleteOldFlights(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined' || !activeUser) return;
   const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
-  const flights = getFlights();
-  let changed = false;
-  for (const f of flights) {
+  for (const f of snapshot.flights.slice()) {
     if (new Date(f.scheduledDeparture) < cutoff && f.status !== 'completed') {
-      f.status = 'completed';
-      changed = true;
+      saveFlight({ ...f, status: 'completed' });
     }
   }
-  if (changed) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(flights));
-  }
 }
 
-/** Removes every tracked flight from this browser (called on sign-out so the next person starts clean). */
+/**
+ * Removes every tracked flight from this browser (called on sign-out so the next person starts clean).
+ * The flights stay in the account; they come back on the next sign-in.
+ */
 export function clearAllFlights(): void {
   if (typeof window === 'undefined') return;
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // storage unavailable: nothing to clear
+  for (const key of allKeys()) {
+    if (key === LEGACY_KEY || key.startsWith(CACHE_PREFIX) || key.startsWith(OUTBOX_PREFIX) || key.startsWith(DISMISS_PREFIX)) {
+      removeKey(key);
+    }
+  }
+  dropEngineState();
+  snapshot = { ...EMPTY };
+  emit();
+}
+
+/** A different user is signing in on this device: remove every other user's cache, queue and dismissed list. */
+export function clearOtherUsersData(userId: string): void {
+  for (const key of allKeys()) {
+    for (const prefix of [CACHE_PREFIX, OUTBOX_PREFIX, DISMISS_PREFIX]) {
+      if (key.startsWith(prefix) && key !== `${prefix}${userId}`) removeKey(key);
+    }
   }
 }
 
-/** Permanently removes all past (completed) flights from storage. */
+/** Removes all past (completed) flights. In the account they are soft-deleted. */
 export function clearCompletedFlights(): void {
-  if (typeof window === 'undefined') return;
-  const upcoming = getFlights().filter(
-    (f) => new Date(f.scheduledDeparture) >= new Date()
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(upcoming));
+  requireUser();
+  const now = new Date();
+  const gone = snapshot.flights.filter((f) => new Date(f.scheduledDeparture) < now);
+  for (const f of gone) removeFlight(f.id);
+}
+
+// ── Old on-device flights (pre-account), for the one-time import ────────────
+
+export function readLegacyFlights(): Flight[] {
+  const raw = readJson<unknown>(LEGACY_KEY);
+  if (!Array.isArray(raw)) return [];
+  return raw.map(stripLegacyFields).filter((f): f is Flight => f !== null);
+}
+
+export function clearLegacyFlights(): void {
+  removeKey(LEGACY_KEY);
+}
+
+/**
+ * Queue the one-time import. Flights that fail the format checks are skipped and reported.
+ * The old key is removed only after the upload succeeds (see syncEngine).
+ */
+export function queueLegacyImport(flights: Flight[]): { queued: number; skipped: { id: string; reason: string }[] } {
+  requireUser();
+  const good: Flight[] = [];
+  const skipped: { id: string; reason: string }[] = [];
+  for (const f of flights) {
+    const reason = validateFlightForCloud(f);
+    if (reason) skipped.push({ id: String(f?.id ?? '?'), reason });
+    else good.push(f);
+  }
+  if (good.length > 0) {
+    setData(mergeCloudWithOutbox({ flights: snapshot.flights, trips: snapshot.trips }, [
+      { seq: 0, type: 'importFlights', flights: good, at: nowIso() },
+    ]).flights, snapshot.trips);
+  }
+  // Always queue (even when nothing is valid) so the old key is cleared after the call succeeds.
+  enqueue({ type: 'importFlights', flights: good, at: nowIso() });
+  return { queued: good.length, skipped };
 }
 
 /**
@@ -145,9 +289,4 @@ export function stampFlightChecked(flight: Flight): Flight {
   const stamped = { ...flight, lastCheckedAt: Date.now() } as Flight & { lastCheckedAt: number };
   saveFlight(stamped as unknown as Flight);
   return stamped as unknown as Flight;
-}
-
-// NOTE: we add user_id support for future Supabase migration.
-export function attachUserIdToFlight(flight: Flight, userId: string): Flight {
-  return { ...flight, user_id: userId } as Flight & { user_id: string };
 }

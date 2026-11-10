@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw } from 'lucide-react';
 import { Header, Button, IconButton, Card, Duration, SectionHeader } from '~/components/ui';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
 import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
+import { useFlights } from '~/hooks/useFlights';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { weatherFromPrediction, weatherCard } from '~/lib/weather';
 import { FeedbackLink } from '~/components/feedback';
@@ -26,47 +27,71 @@ function FlightDetailsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [predictionUnavailable, setPredictionUnavailable] = useState(false);
+  const { flights: storedFlights, ready } = useFlights();
+  const inStore = storedFlights.some((x) => x.id === flightId);
+  const loadedId = useRef<string | null>(null);
 
   useEffect(() => {
+    if (loadedId.current === flightId) return;
     const f = getFlightById(flightId);
     if (f) {
+      loadedId.current = flightId;
+      setNotFound(false);
       setFlight(f);
-      // Auto-refresh if due
-      if (shouldRefreshFlight(f)) {
-        // Run in background — don't block render
-        (async () => {
-          try {
-            const payload = buildPredictPayload(
-              f.origin.code,
-              f.destination.code,
-              f.scheduledDeparture,
-              f.airline.code,
-              f.id,
-              f.flightNumber
-            );
-            const prediction = await flyrelyApi.predict(payload);
-            const updated: Flight = {
-              ...f,
-              riskLevel: prediction.risk_level,
-              delayProbability: prediction.delay_probability,
-              delayReason: topReasons(prediction.risk_factors),
-              warnings: prediction.warnings,
-              delaySeverity: prediction.delay_severity ?? undefined,
-              weather: weatherFromPrediction(prediction),
-            };
-            const stamped = stampFlightChecked(updated);
-            setFlight(stamped);
-            setPredictionUnavailable(false);
-          } catch (e) {
-            if (e instanceof PredictionUnavailableError) setPredictionUnavailable(true);
-            stampFlightChecked(f); // still stamp so we don't retry every load
-          }
-        })();
-      }
-    } else {
+    } else if (ready) {
+      // Only after the first download: a fresh device must not say "not found" before the cloud copy arrives.
       setNotFound(true);
     }
-  }, [flightId]);
+  }, [flightId, ready, inStore]);
+
+  // Keep the page in step with the store (a download or another screen may have changed this flight).
+  const storedFlight = storedFlights.find((x) => x.id === flightId);
+  useEffect(() => {
+    if (storedFlight && loadedId.current === flightId) setFlight(storedFlight);
+  }, [storedFlight, flightId]);
+
+  // Auto-refresh if due. Wait for the first download, so a stale cached copy is never saved over a newer edit.
+  const refreshedId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ready || refreshedId.current === flightId) return;
+    const f = getFlightById(flightId);
+    if (!f) return;
+    refreshedId.current = flightId;
+    if (!shouldRefreshFlight(f)) return;
+    // Run in background — don't block render
+    (async () => {
+      try {
+        const payload = buildPredictPayload(
+          f.origin.code,
+          f.destination.code,
+          f.scheduledDeparture,
+          f.airline.code,
+          f.id,
+          f.flightNumber
+        );
+        const prediction = await flyrelyApi.predict(payload);
+        // Apply to the current copy; skip if the flight was removed while the prediction loaded.
+        const current = getFlightById(flightId);
+        if (!current) return;
+        const updated: Flight = {
+          ...current,
+          riskLevel: prediction.risk_level,
+          delayProbability: prediction.delay_probability,
+          delayReason: topReasons(prediction.risk_factors),
+          warnings: prediction.warnings,
+          delaySeverity: prediction.delay_severity ?? undefined,
+          weather: weatherFromPrediction(prediction),
+        };
+        const stamped = stampFlightChecked(updated);
+        setFlight(stamped);
+        setPredictionUnavailable(false);
+      } catch (e) {
+        if (e instanceof PredictionUnavailableError) setPredictionUnavailable(true);
+        const current = getFlightById(flightId);
+        if (current) stampFlightChecked(current); // still stamp so we don't retry every load
+      }
+    })();
+  }, [flightId, ready, inStore]);
 
   const handleRefresh = async () => {
     if (!flight) return;
@@ -81,8 +106,13 @@ function FlightDetailsScreen() {
         flight.flightNumber
       );
       const prediction = await flyrelyApi.predict(payload);
+      const current = getFlightById(flight.id);
+      if (!current) {
+        setIsRefreshing(false);
+        return;
+      }
       const updated: Flight = {
-        ...flight,
+        ...current,
         riskLevel: prediction.risk_level,
         delayProbability: prediction.delay_probability,
         delayReason: topReasons(prediction.risk_factors),
@@ -228,6 +258,17 @@ function FlightDetailsScreen() {
               <p className="text-body-sm font-semibold">Scheduled departure</p>
               <p className="mt-2 text-body-lg">{formatTime(flight.scheduledDeparture)}</p>
             </Card>
+
+            {new Date(flight.scheduledDeparture) >= new Date() && (
+              <Button
+                variant="secondary"
+                fullWidth
+                onClick={() => navigate({ to: '/flights/add', search: { after: flight.id } })}
+                className="border-white/80 text-white hover:bg-white/10 active:bg-white/20"
+              >
+                Add connecting flight
+              </Button>
+            )}
 
             <Link
               to="/flights/$flightId/edit"

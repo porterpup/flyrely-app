@@ -1,20 +1,26 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { installMemStorage, makeFlight } from './memStorage';
 
 describe('clearAllFlights', () => {
+  let store: Record<string, string>;
   beforeEach(() => {
-    const d: Record<string, string> = { flyrely_flights: '[{"id":"a"}]', other: 'keep' };
-    vi.stubGlobal('window', {});
-    vi.stubGlobal('localStorage', {
-      getItem: (k: string) => d[k] ?? null,
-      setItem: (k: string, v: string) => void (d[k] = v),
-      removeItem: (k: string) => void delete d[k],
+    store = installMemStorage({
+      flyrely_flights: '[{"id":"a"}]',
+      'flyrely_cache:u1': JSON.stringify({ flights: [makeFlight()], trips: [] }),
+      'flyrely_outbox:u1': '[]',
+      'flyrely_tripdismiss:u1': '[]',
+      'flyrely_cache:u2': '{}',
+      other: 'keep',
     });
   });
-  it('removes tracked flights only', async () => {
-    const { clearAllFlights, getFlights } = await import('../flightStore');
+  it('removes the old key and every per-user cache, queue and dismissed list; leaves other keys', async () => {
+    const { clearAllFlights, getFlights, setActiveUser, readLegacyFlights } = await import('../flightStore');
+    setActiveUser('u1');
     expect(getFlights()).toHaveLength(1);
+    expect(readLegacyFlights()).toHaveLength(1);
     clearAllFlights();
     expect(getFlights()).toHaveLength(0);
-    expect(localStorage.getItem('other')).toBe('keep');
+    expect(Object.keys(store)).toEqual(['other']);
+    setActiveUser(null);
   });
 });

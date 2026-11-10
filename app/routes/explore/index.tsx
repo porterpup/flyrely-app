@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Plane, ChevronRight } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button } from '~/components/ui';
 import { RiskPill } from '~/components/flight';
 import { getAirport } from '~/lib/airports';
-import { getFlights } from '~/lib/flightStore';
+import { useFlights } from '~/hooks/useFlights';
 import { formatDelayChance } from '~/lib/utils';
 import type { Flight } from '~/types';
 
@@ -33,13 +33,9 @@ function summarizeRoutes(flights: Flight[]): RouteSummary[] {
 
 function ExploreScreen() {
   const navigate = useNavigate();
-  const [routes, setRoutes] = useState<RouteSummary[]>([]);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setRoutes(summarizeRoutes(getFlights()));
-    setLoaded(true);
-  }, []);
+  const { flights, ready } = useFlights();
+  const routes = useMemo(() => summarizeRoutes(flights), [flights]);
+  const loaded = ready || flights.length > 0;
 
   return (
     <AppShell>
