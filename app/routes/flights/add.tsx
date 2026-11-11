@@ -15,6 +15,7 @@ import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/l
 import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
 import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
+import { useGoBack } from '~/hooks/useGoBack';
 import { useAuth } from '~/context/AuthContext';
 import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
@@ -149,6 +150,7 @@ function predictionErrorMessage(e: unknown): string {
 
 function AddFlightScreen() {
   const navigate = useNavigate();
+  const goBack = useGoBack('/');
   // "Add connecting flight": ?after=<flightId> pre-fills the route search from that flight's destination and arrival date.
   const { after: afterFlightId } = Route.useSearch();
   const { flights: storedFlights } = useFlights();
@@ -469,7 +471,7 @@ function AddFlightScreen() {
         <Header
           title="Add Flight"
           showBack
-          onBackClick={() => navigate({ to: '/' })}
+          onBackClick={goBack}
         />
 
         <div className="pt-4" />
