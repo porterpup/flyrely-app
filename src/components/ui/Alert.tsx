@@ -14,6 +14,8 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   showRightIcon?: boolean;
   /** Solid high-emphasis fill, used on the dark ticket (warning is the #FFB400 yellow). */
   solid?: boolean;
+  /** Trailing control, e.g. an Undo button. */
+  action?: React.ReactNode;
 }
 
 const icons = {
@@ -44,6 +46,7 @@ export function Alert({
   showIcon = true,
   showRightIcon = false,
   solid = false,
+  action,
   className,
   ...props
 }: AlertProps) {
@@ -63,6 +66,7 @@ export function Alert({
         <p className="text-body-md">{lineOne}</p>
         {lineTwo && <p className="mt-0.5 text-body-sm">{lineTwo}</p>}
       </div>
+      {action}
       {showRightIcon && <ChevronRight className="h-6 w-6 shrink-0 opacity-60" aria-hidden />}
     </div>
   );

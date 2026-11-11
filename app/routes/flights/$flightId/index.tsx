@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ChevronRight, PlaneTakeoff, PlaneLanding, SearchX } from 'lucide-react';
 import { Header, Button, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
+import { AddedStrip } from '~/components/flight/AddedStrip';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
 import { formatLongDate, formatTime, formatDelayChance, formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
@@ -21,6 +22,8 @@ import { COPILOT_ENABLED } from '~/copilot/flags';
 import { releaseFlightCopilot } from '~/copilot/cleanup';
 
 export const Route = createFileRoute('/flights/$flightId/')({
+  validateSearch: (search: Record<string, unknown>): { added?: '1' } =>
+    search.added === '1' || search.added === 1 ? { added: '1' } : {},
   component: FlightDetailsScreen,
 });
 
@@ -28,6 +31,8 @@ function FlightDetailsScreen() {
   const navigate = useNavigate();
   const goBack = useGoBack('/');
   const { flightId } = Route.useParams();
+  const { added } = Route.useSearch();
+  const [showAdded, setShowAdded] = useState(added === '1');
   const [flight, setFlight] = useState<Flight | null>(null);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -104,6 +109,24 @@ function FlightDetailsScreen() {
     setIsRefreshing(false);
   };
 
+  // The "You're tracking" strip hides itself after 8 s, and clears ?added so a reload does not show it again.
+  useEffect(() => {
+    if (added !== '1') return;
+    setShowAdded(true);
+    const timer = setTimeout(() => {
+      setShowAdded(false);
+      navigate({ to: '.', search: {}, replace: true });
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [added, navigate]);
+
+  const handleUndo = () => {
+    if (!flight) return;
+    removeFlight(flight.id);
+    if (COPILOT_ENABLED) void releaseFlightCopilot(flight.id);
+    navigate({ to: '/flights/add', replace: true });
+  };
+
   const handleRemove = async () => {
     if (!flight) return;
     const tripChange = removeFlight(flight.id);
@@ -174,6 +197,7 @@ function FlightDetailsScreen() {
           </div>
 
           <div className="px-2 space-y-2">
+            <AddedStrip show={added === '1' && showAdded} flightNumber={flight.flightNumber} onUndo={handleUndo} />
             {predictionUnavailable && (
               <NoPredictionBanner
                 type="temporary"
@@ -215,6 +239,7 @@ function FlightDetailsScreen() {
                 checkedAt={flight.lastCheckedAt}
                 onRefresh={handleRefresh}
                 refreshing={isRefreshing}
+                className={added === '1' && showAdded ? 'motion-safe:animate-pop-in' : undefined}
               >
                 {flight.warnings && flight.warnings.length > 0 && (
                   <ul className="mt-4 space-y-1">
