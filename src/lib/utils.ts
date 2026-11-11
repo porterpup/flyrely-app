@@ -135,3 +135,15 @@ export function formatMonthYear(iso: string | null | undefined): string {
   if (!m) return iso;
   return `${MONTH_NAMES[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
 }
+
+/** "just now", "12 min ago", "3 h ago", "yesterday", else a short date. */
+export function formatCheckedAgo(ms: number, now: number): string {
+  const diff = Math.max(0, now - ms);
+  const min = Math.floor(diff / 60_000);
+  if (min < 1) return 'just now';
+  if (min < 60) return `${min} min ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h ago`;
+  if (h < 48) return 'yesterday';
+  return formatDate(new Date(ms).toISOString());
+}

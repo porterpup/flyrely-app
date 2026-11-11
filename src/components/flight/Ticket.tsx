@@ -18,6 +18,8 @@ export interface TicketProps extends React.HTMLAttributes<HTMLElement> {
   as?: 'div' | 'button';
   /** Optional heading above the flight number row, e.g. "Your trip to Jacksonville, FL". */
   title?: string;
+  /** Small line above the title, e.g. a departure countdown ("Leaves in 42 min"). */
+  eyebrow?: string;
   flightNumber: string;
   /** Top right slot, usually a RiskPill. */
   badge?: React.ReactNode;
@@ -52,6 +54,7 @@ function End({ end, align }: { end: TicketEnd; align: 'left' | 'right' }) {
 export function Ticket({
   as: Tag = 'div',
   title,
+  eyebrow,
   flightNumber,
   badge,
   departure,
@@ -68,6 +71,7 @@ export function Ticket({
       className={cn('flex w-full flex-col gap-4 rounded-ticket bg-surface-card p-4 text-left text-white', className)}
       {...(props as React.HTMLAttributes<HTMLElement>)}
     >
+      {eyebrow && <p className="-mb-2 text-body-sm text-ink-on-dark-muted">{eyebrow}</p>}
       {title && <p className="text-title-sm text-white">{title}</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-title-md tabular-nums">{flightNumber}</span>

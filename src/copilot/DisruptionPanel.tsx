@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Flight } from '~/types';
+import { departureMs } from '~/lib/flightTime';
 import { Button, Skeleton } from '~/components/ui';
 import {
   CopilotError,
@@ -81,7 +82,7 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
   const apiOn = config.data?.enabled === true;
 
   const departsSoon = useMemo(() => {
-    const ms = new Date(flight.scheduledDeparture).getTime() - Date.now();
+    const ms = departureMs(flight) - Date.now();
     return Number.isFinite(ms) && ms <= DAY_MS;
   }, [flight.scheduledDeparture]);
   const status = useCopilotStatus(flight, apiOn && statusSourceOrNone(config.data?.status_source) !== 'none' && departsSoon);
