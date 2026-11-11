@@ -9,9 +9,9 @@ import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, legDepartureISO, legArrivalISO, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
-import { cn, formatDate, formatTime, formatDelayChance, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
-import { weatherFromPrediction } from '~/lib/weather';
-import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
+import { cn, formatDate, formatTime, formatDelayChance, newUuid, parseFlightNumber } from '~/lib/utils';
+import { rescoreFlight } from '~/lib/prediction';
+import { PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
 import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
@@ -390,9 +390,7 @@ function AddFlightScreen() {
   ): Promise<Flight> => {
     const fullFlightNumber = `${code}${number}`;
     const flightId = `flight-${newUuid()}`;
-    const payload = buildPredictPayload(oCode, dCode, depISO, code, flightId, fullFlightNumber);
-    const prediction = await flyrelyApi.predict(payload);
-    return {
+    const base: Flight = {
       id: flightId,
       flightNumber: fullFlightNumber,
       airline: { code, name: AIRLINES.find((x) => x.code === code)?.name ?? (airlineName || code) },
@@ -408,14 +406,10 @@ function AddFlightScreen() {
       },
       scheduledDeparture: depISO,
       status: 'scheduled',
-      riskLevel: prediction.risk_level,
-      delayProbability: prediction.delay_probability,
-      delayReason: topReasons(prediction.risk_factors),
-      delaySeverity: prediction.delay_severity ?? undefined,
-      warnings: prediction.warnings,
-      weather: weatherFromPrediction(prediction),
+      riskLevel: 'low',
       ...(arrivalISO ? { scheduledArrivalLocal: arrivalISO, arrivalSource: 'lookup' as const } : {}),
     };
+    return rescoreFlight(base);
   };
 
   // Manual mode: check the typed flight against the schedule so a wrong time is flagged (a warning, never a block).

@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import { cn, getRiskLabel } from '~/lib/utils';
+import { cn, getRiskLabel, formatCheckedAgo } from '~/lib/utils';
 import type { RiskLevel } from '~/types';
 
 export interface PredictionPanelProps {
@@ -12,6 +12,11 @@ export interface PredictionPanelProps {
   why?: string | null;
   /** Extra content under the reason: severity bar, warnings. */
   children?: React.ReactNode;
+  /** When the prediction was last computed (epoch ms). Shows "Checked 12 min ago". */
+  checkedAt?: number;
+  /** Shows a text "Refresh" button next to the checked time. */
+  onRefresh?: () => void;
+  refreshing?: boolean;
   className?: string;
 }
 
@@ -29,7 +34,7 @@ const iconClasses: Record<RiskLevel, string> = {
 };
 
 /** Figma "FlyRely prediction" panel. Calm when risk is low, a warning band when medium, solid fill only when high. */
-export function PredictionPanel({ risk, chancePercent, reason, why, children, className }: PredictionPanelProps) {
+export function PredictionPanel({ risk, chancePercent, reason, why, children, checkedAt, onRefresh, refreshing, className }: PredictionPanelProps) {
   const Icon = risk === 'low' ? CheckCircle : AlertTriangle;
   const labelClass = risk === 'medium' ? 'text-status-warning-text' : risk === 'low' ? 'text-status-success-text' : '';
   return (
@@ -57,6 +62,23 @@ export function PredictionPanel({ risk, chancePercent, reason, why, children, cl
           <p className={cn('text-heading-sm', labelClass)}>{getRiskLabel(risk)}</p>
           <p className="mt-1 text-body-sm">Based on historical data</p>
         </div>
+      )}
+      {(checkedAt || onRefresh) && (
+        <p className="mt-1 flex flex-wrap items-center text-body-sm">
+          {checkedAt ? <span>Checked {formatCheckedAgo(checkedAt, Date.now())}</span> : null}
+          {checkedAt && onRefresh ? <span aria-hidden className="mx-1">·</span> : null}
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              disabled={refreshing}
+              aria-busy={refreshing || undefined}
+              className="inline-flex min-h-[44px] items-center rounded underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current disabled:opacity-70"
+            >
+              {refreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
+          )}
+        </p>
       )}
       <div className="mt-5 flex items-start gap-2 text-body-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />

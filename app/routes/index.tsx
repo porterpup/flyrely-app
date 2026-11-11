@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Plus, History, Plane } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button, SectionHeader, EmptyState, ListGroup, ListRow, Skeleton } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
 import { FeedbackLink } from '~/components/feedback';
-import { selectUpcoming, autoCompleteOldFlights } from '~/lib/flightStore';
+import { selectUpcoming, autoCompleteOldFlights, shouldRefreshFlight, saveFlight, getFlightById } from '~/lib/flightStore';
+import { rescoreFlight, refreshDueFlights, applyRescore } from '~/lib/prediction';
 import { useFlights } from '~/hooks/useFlights';
 
 export const Route = createFileRoute('/')({
@@ -37,6 +38,22 @@ function HomeScreen() {
     // After the first download, so a stale cached copy is never saved over a newer edit from another device.
     if (ready) autoCompleteOldFlights(); // migrate departed flights to history
   }, [ready]);
+
+  // Quietly re-check due flights once per visit (max 3, in the background, errors ignored).
+  const refreshedOnce = useRef(false);
+  useEffect(() => {
+    if (!ready || refreshedOnce.current) return;
+    refreshedOnce.current = true;
+    void refreshDueFlights(
+      selectUpcoming(allFlights),
+      shouldRefreshFlight,
+      rescoreFlight,
+      (fresh) => {
+        const current = getFlightById(fresh.id);
+        if (current) saveFlight(applyRescore(current, fresh));
+      }
+    );
+  }, [ready, allFlights]);
 
   const hasFlights = flights.length > 0;
   const nextFlight = flights[0];
