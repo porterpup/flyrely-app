@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Button, Header, Input, Modal } from '~/components/ui';
 import { ConnectionRow, FlightCard } from '~/components/flight';
 import { useFlights } from '~/hooks/useFlights';
+import { useGoBack } from '~/hooks/useGoBack';
 import { removeLeg, renameTrip, ungroupTrip } from '~/lib/flightStore';
 import { emitNotice } from '~/lib/syncEngine';
 import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
@@ -22,7 +23,8 @@ function TripScreen() {
 
   const trip = trips.find((t) => t.id === tripId);
   const legs = trip ? legsOf(trip, flights) : [];
-  const goBack = () => navigate({ to: '/trips' });
+  const goBack = useGoBack('/trips');
+  const goToTrips = () => navigate({ to: '/trips' });
 
   if (!trip || legs.length === 0) {
     return (
@@ -33,7 +35,7 @@ function TripScreen() {
             <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
               <h2 className="text-xl font-bold text-ink mb-2">Trip not found</h2>
               <p className="text-ink-caption mb-6">This trip may have been removed.</p>
-              <Button onClick={goBack}>Back to trips</Button>
+              <Button onClick={goToTrips}>Back to trips</Button>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-center py-20">
@@ -58,13 +60,13 @@ function TripScreen() {
   const handleRemoveLeg = (flightId: string) => {
     const result = removeLeg(trip.id, flightId);
     if (result === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.');
-    if (result !== 'updated') goBack();
+    if (result !== 'updated') goToTrips();
   };
 
   const handleUngroup = () => {
     ungroupTrip(trip.id);
     setShowUngroup(false);
-    goBack();
+    goToTrips();
   };
 
   return (

@@ -6,6 +6,7 @@ import { getFlightById, revalidateTrip, saveFlight } from '~/lib/flightStore';
 import { emitNotice } from '~/lib/syncEngine';
 import { normalizeLocal } from '~/lib/cloudFlights';
 import { useFlights } from '~/hooks/useFlights';
+import { useGoBack } from '~/hooks/useGoBack';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { getAirport, getAirline } from '~/lib/airports';
@@ -63,13 +64,13 @@ function EditFlightScreen() {
     }
   }, [flightId, ready, inStore]);
 
-  const goBack = () => navigate({ to: '/flights/$flightId', params: { flightId } });
+  const goBack = useGoBack(`/flights/${flightId}`);
 
   if (notFound) {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Edit Flight" showBack onBackClick={() => navigate({ to: '/' })} />
+          <Header title="Edit Flight" showBack onBackClick={goBack} />
           <EmptyState
             className="flex-1 justify-center"
             icon={<SearchX />}
@@ -86,7 +87,7 @@ function EditFlightScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Edit Flight" showBack onBackClick={() => navigate({ to: '/' })} />
+          <Header title="Edit Flight" showBack onBackClick={goBack} />
           <div className="space-y-4 px-6 pt-4" role="status" aria-label="Loading flight">
             <Skeleton className="h-14 rounded-field" />
             <Skeleton className="h-14 rounded-field" />
@@ -206,7 +207,7 @@ function EditFlightScreen() {
     }
     if (COPILOT_ENABLED && predictionInputsChanged) void releaseFlightCopilot(flight.id);
     setIsSaving(false);
-    goBack();
+    navigate({ to: '/flights/$flightId', params: { flightId } });
   };
 
   return (

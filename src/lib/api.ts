@@ -1,4 +1,5 @@
 import type { AirportWeather } from '~/types';
+import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from '~/lib/fetchWithTimeout';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -75,10 +76,16 @@ export class PredictionUnavailableError extends Error {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${API_BASE_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+  } catch (err) {
+    if (isTimeoutError(err)) throw new PredictionUnavailableError('timeout', TIMEOUT_MESSAGE);
+    throw err;
+  }
   if (res.status === 503) {
     const body = await res.json().catch(() => ({}));
     throw new PredictionUnavailableError(
