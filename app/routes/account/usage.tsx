@@ -54,6 +54,11 @@ function UsageDashboardScreen() {
     setData(null);
     usageFetch(`/usage?days=${period}`)
       .then(async (r) => {
+        if (r.status === 403) {
+          // Not an admin: nothing here for you, go back to Account.
+          navigate({ to: '/account', replace: true });
+          return;
+        }
         if (!r.ok) {
           setError(usageErrorMessage(r.status));
           return;
@@ -62,7 +67,7 @@ function UsageDashboardScreen() {
       })
       .catch(() => setError('Could not load usage data'))
       .finally(() => setLoading(false));
-  }, [period]);
+  }, [period, navigate]);
 
   // The export needs the Authorization header, so a plain link or window.open won't work: download as a blob.
   const handleExport = async () => {
