@@ -1,3 +1,5 @@
+import { getAirportRef } from '~/lib/airportRef';
+
 /** Airports and airlines for form autocomplete (names and codes only; no statistics). */
 export interface AirportInfo {
   code: string;
@@ -80,9 +82,13 @@ export function searchAirlines(query: string): AirlineInfo[] {
   ).slice(0, 6);
 }
 
-/** Lookup a single airport by exact code */
+/** Lookup a single airport by exact code; falls back to the full reference list (AIRPORT_REF). */
 export function getAirport(code: string): AirportInfo | undefined {
-  return AIRPORTS.find((a) => a.code === code.toUpperCase());
+  const c = code.toUpperCase();
+  const short = AIRPORTS.find((a) => a.code === c);
+  if (short) return short;
+  const ref = getAirportRef(c);
+  return ref ? { code: c, name: ref.name, city: ref.city ?? c } : undefined;
 }
 
 /** Lookup a single airline by exact code */
