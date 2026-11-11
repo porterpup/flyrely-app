@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Check, ArrowRight, Clock } from 'lucide-react';
-import { fieldControlClass } from '~/components/ui/Field';
-import { Header, Button, Input, Select, FieldBox, FieldLabel, SegmentedTabs, Alert, Modal } from '~/components/ui';
-import { InputError } from '~/components/ui/InputError';
+import { Header, Button, Input, Select, SegmentedTabs, Alert, Modal } from '~/components/ui';
 import { RiskPill } from '~/components/flight';
+import { AirportAutocomplete } from '~/components/flight/AirportAutocomplete';
 import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, legDepartureISO, legArrivalISO, scheduleWarning } from '~/lib/flightLookup';
@@ -16,7 +15,7 @@ import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~
 import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
 import { useAuth } from '~/context/AuthContext';
-import { searchAirports, AIRLINES, getAirport } from '~/lib/airports';
+import { AIRLINES, getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
 import { getAirportRef, validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
@@ -26,102 +25,6 @@ export const Route = createFileRoute('/flights/add')({
     typeof search.after === 'string' && search.after ? { after: search.after } : {},
   component: AddFlightScreen,
 });
-
-// ── Autocomplete components ────────────────────────────────────────────────
-
-function AirportAutocomplete({
-  label,
-  placeholder,
-  value,
-  onChange,
-  leftIcon,
-  error,
-}: {
-  label: string;
-  placeholder: string;
-  value: string;
-  onChange: (code: string, info?: AirportInfo) => void;
-  leftIcon?: React.ReactNode;
-  error?: string;
-}) {
-  const [query, setQuery] = useState(value);
-  const [suggestions, setSuggestions] = useState<AirportInfo[]>([]);
-  const [open, setOpen] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Sync external value changes (e.g. clear)
-  useEffect(() => {
-    if (!value) { setQuery(''); setConfirmed(false); }
-  }, [value]);
-
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const q = e.target.value;
-    setQuery(q);
-    setConfirmed(false);
-    if (q.length >= 1) {
-      setSuggestions(searchAirports(q));
-      setOpen(true);
-    } else {
-      setSuggestions([]);
-      setOpen(false);
-    }
-    onChange(q.toUpperCase().slice(0, 3));
-  };
-
-  const select = (airport: AirportInfo) => {
-    setQuery(`${airport.code} – ${airport.city}`);
-    setConfirmed(true);
-    setOpen(false);
-    setSuggestions([]);
-    onChange(airport.code, airport);
-  };
-
-  return (
-    <div ref={containerRef} className="relative flex flex-col gap-1.5">
-      <FieldLabel>{label}</FieldLabel>
-      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-status-success-text bg-status-success-bg')}>
-        <input
-          type="text"
-          value={query}
-          onChange={handleInput}
-          onFocus={() => query.length >= 1 && suggestions.length > 0 && setOpen(true)}
-          placeholder={placeholder}
-          aria-label={label}
-          className={cn(fieldControlClass, leftIcon && 'pl-2')}
-        />
-      </FieldBox>
-      {error && <InputError message={error} className="mt-0" />}
-      {open && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-field border border-surface-divider bg-white shadow-lg">
-          {suggestions.map((ap) => (
-            <li key={ap.code}>
-              <button
-                type="button"
-                onMouseDown={() => select(ap)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-surface-muted"
-              >
-                <span className="font-semibold text-ink">{ap.code}</span>
-                <span className="ml-3 truncate text-body-md text-ink-caption">{ap.city}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 // ── Main screen ────────────────────────────────────────────────────────────
 
@@ -530,7 +433,7 @@ function AddFlightScreen() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <AirportAutocomplete
-                  key={`rfrom-${originCode}`}
+                  key="rfrom"
                   label="From"
                   placeholder="e.g., EWR"
                   value={originCode}
@@ -539,7 +442,7 @@ function AddFlightScreen() {
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
                 <AirportAutocomplete
-                  key={`rto-${destCode}`}
+                  key="rto"
                   label="To"
                   placeholder="e.g., SFO"
                   value={destCode}
@@ -625,7 +528,7 @@ function AddFlightScreen() {
               </div>
               {manual && <div className="grid grid-cols-2 gap-3">
                 <AirportAutocomplete
-                  key={`from-${originCode}`}
+                  key="mfrom"
                   label="From"
                   placeholder="e.g., SFO"
                   value={originCode}
@@ -634,7 +537,7 @@ function AddFlightScreen() {
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
                 <AirportAutocomplete
-                  key={`to-${destCode}`}
+                  key="mto"
                   label="To"
                   placeholder="e.g., JFK"
                   value={destCode}
