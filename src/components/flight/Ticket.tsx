@@ -43,9 +43,9 @@ function End({ end, align }: { end: TicketEnd; align: 'left' | 'right' }) {
       ) : (
         <p className="text-body-sm text-ink-on-dark-muted">{end.label ?? ' '}</p>
       )}
-      <p className="text-title-lg tabular-nums text-white">{end.primary}</p>
+      <p className="whitespace-nowrap text-title-lg tabular-nums text-white">{end.primary}</p>
       <p className="text-body-sm text-ink-on-dark-muted">{end.date ?? ' '}</p>
-      {end.place && <p className="text-body-sm text-ink-on-dark-muted">{end.place}</p>}
+      {end.place && <p className="truncate text-body-sm text-ink-on-dark-muted">{end.place}</p>}
     </div>
   );
 }
