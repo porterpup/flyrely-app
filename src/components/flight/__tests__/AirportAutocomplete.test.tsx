@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { AirportAutocomplete } from '../AirportAutocomplete';
 
@@ -31,5 +31,26 @@ describe('AirportAutocomplete', () => {
     const { rerender } = render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={() => {}} />);
     rerender(<AirportAutocomplete label="From" placeholder="x" value="SFO" onChange={() => {}} />);
     expect((screen.getByLabelText('From') as HTMLInputElement).value).toBe('SFO');
+  });
+
+  it('selects the prefilled value on focus so typing replaces it', () => {
+    render(<AirportAutocomplete label="From" placeholder="x" value="ATL" onChange={() => {}} />);
+    const input = screen.getByLabelText('From') as HTMLInputElement;
+    fireEvent.focus(input);
+    expect(input.selectionStart).toBe(0);
+    expect(input.selectionEnd).toBe(input.value.length);
+  });
+
+  it('clears with the x button and reports an empty value', () => {
+    const onChange = vi.fn();
+    render(<AirportAutocomplete label="From" placeholder="x" value="ATL" onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect((screen.getByLabelText('From') as HTMLInputElement).value).toBe('');
+    expect(onChange).toHaveBeenCalledWith('');
+  });
+
+  it('hides the clear button when empty', () => {
+    render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'Clear' })).toBeNull();
   });
 });
