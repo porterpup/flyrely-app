@@ -38,8 +38,8 @@ function HomeScreen() {
 
   useEffect(() => {
     // After the first download, so a stale cached copy is never saved over a newer edit from another device.
-    if (ready) autoCompleteOldFlights(); // migrate departed flights to history
-  }, [ready]);
+    if (downloaded) autoCompleteOldFlights(); // migrate departed flights to history (only after a real download)
+  }, [downloaded]);
 
   // Quietly re-check due flights once per visit (max 3, in the background, errors ignored).
   // Only after a successful download: `ready` is also set when the download failed, and saving a rescored

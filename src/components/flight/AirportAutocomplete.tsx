@@ -1,6 +1,8 @@
+import { X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { fieldControlClass } from '~/components/ui/Field';
 import { FieldBox, FieldLabel } from '~/components/ui';
+import { IconButton } from '~/components/ui/IconButton';
 import { InputError } from '~/components/ui/InputError';
 import { searchAirports } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
@@ -26,6 +28,7 @@ export function AirportAutocomplete({
   const [open, setOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync external value changes (clear, profile prefill) without remounting the input.
   // Skip when the value is just what typing or picking a suggestion already produced.
@@ -72,6 +75,15 @@ export function AirportAutocomplete({
     onChange(airport.code, airport);
   };
 
+  const clear = () => {
+    setQuery('');
+    setConfirmed(false);
+    setSuggestions([]);
+    setOpen(false);
+    onChange('');
+    inputRef.current?.focus();
+  };
+
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1.5">
       <FieldLabel>{label}</FieldLabel>
@@ -80,11 +92,21 @@ export function AirportAutocomplete({
           type="text"
           value={query}
           onChange={handleInput}
-          onFocus={() => query.length >= 1 && suggestions.length > 0 && setOpen(true)}
+          ref={inputRef}
+          onFocus={(e) => {
+            // A prefilled or picked value: select it all so typing replaces it instead of appending.
+            if (e.target.value && (confirmed || e.target.value === value)) e.target.select();
+            else if (query.length >= 1 && suggestions.length > 0) setOpen(true);
+          }}
           placeholder={placeholder}
           aria-label={label}
           className={cn(fieldControlClass, leftIcon && 'pl-2')}
         />
+        {query && (
+          <IconButton aria-label="Clear" kind="text" onClick={clear} className="self-center">
+            <X className="h-4 w-4" aria-hidden />
+          </IconButton>
+        )}
       </FieldBox>
       {error && <InputError message={error} className="mt-0" />}
       {open && suggestions.length > 0 && (

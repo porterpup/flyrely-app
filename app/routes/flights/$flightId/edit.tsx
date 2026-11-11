@@ -69,7 +69,7 @@ function EditFlightScreen() {
   if (notFound) {
     return (
       <div className="app-container">
-        <div className="screen">
+        <main className="screen">
           <Header title="Edit flight" showBack onBackClick={goBack} />
           <EmptyState
             className="flex-1 justify-center"
@@ -78,7 +78,7 @@ function EditFlightScreen() {
             description="This flight may have been removed."
             action={<Button onClick={() => navigate({ to: '/' })}>Go home</Button>}
           />
-        </div>
+        </main>
       </div>
     );
   }
@@ -86,7 +86,7 @@ function EditFlightScreen() {
   if (!flight) {
     return (
       <div className="app-container">
-        <div className="screen">
+        <main className="screen">
           <Header title="Edit flight" showBack onBackClick={goBack} />
           <div className="space-y-4 px-6 pt-4" role="status" aria-label="Loading flight">
             <Skeleton className="h-14 rounded-field" />
@@ -94,7 +94,7 @@ function EditFlightScreen() {
             <Skeleton className="h-14 rounded-field" />
             <Skeleton className="h-14 rounded-field" />
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -214,7 +214,7 @@ function EditFlightScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header title="Edit flight" showBack onBackClick={goBack} />
 
         <div className="flex-1 px-4 py-4 space-y-4">
@@ -277,7 +277,7 @@ function EditFlightScreen() {
             Save changes
           </Button>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

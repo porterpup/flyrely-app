@@ -17,7 +17,7 @@ describe('LookupResults', () => {
     const legs = [leg('EWR', 'SFO', '06:00', '09:31'), leg('SFO', 'MSP', '16:10', '21:57')];
     render(<LookupResults flight="UA648" legs={legs} note="Typical schedule (as of 2026-08)" onPick={onPick} />);
     expect(screen.getByText(/flies 2 legs/)).toBeTruthy();
-    expect(screen.getByText(/as of 2026-08/)).toBeTruthy();
+    expect(screen.getByText(/as of August 2026/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'UA648 · SFO → MSP · 4:10 PM → 9:57 PM' }));
     expect(onPick).toHaveBeenCalledWith(legs[1]);
   });

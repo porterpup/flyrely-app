@@ -67,7 +67,7 @@ function FlightHistoryScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header
           title="Past flights"
           showBack
@@ -187,7 +187,7 @@ function FlightHistoryScreen() {
             </div>
           </div>
         </Modal>
-      </div>
+      </main>
     </div>
   );
 }

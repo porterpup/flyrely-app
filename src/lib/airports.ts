@@ -1,5 +1,6 @@
 import { AIRLINES, findAirline } from '~/lib/airlines';
 import type { AirlineInfo } from '~/lib/airlines';
+import { AIRPORT_REF } from '~/lib/airportRef';
 
 export type { AirlineInfo };
 /** Airports and airlines for form autocomplete (names and codes only; no statistics). */
@@ -42,16 +43,31 @@ export const AIRPORTS: AirportInfo[] = [
   { code: 'TPA', name: 'Tampa International', city: 'Tampa' },
 ];
 
-/** Search airports by code, name, or city (case-insensitive) */
-export function searchAirports(query: string): AirportInfo[] {
+/** Search airports by code, name, or city (case-insensitive). Short list first, then the full reference list. */
+export function searchAirports(query: string, limit = 6): AirportInfo[] {
   const q = query.toLowerCase().trim();
   if (!q) return [];
-  return AIRPORTS.filter(
+  const short = AIRPORTS.filter(
     (a) =>
       a.code.toLowerCase().startsWith(q) ||
       a.city.toLowerCase().includes(q) ||
       a.name.toLowerCase().includes(q)
-  ).slice(0, 6);
+  );
+  const seen = new Set(short.map((a) => a.code));
+  const ref: { info: AirportInfo; rank: number }[] = [];
+  for (const [code, r] of Object.entries(AIRPORT_REF)) {
+    if (seen.has(code)) continue;
+    const city = (r.city ?? '').toLowerCase();
+    const name = r.name.toLowerCase();
+    let rank = -1;
+    if (code.toLowerCase() === q) rank = 0;
+    else if (city.startsWith(q) || name.startsWith(q)) rank = 1;
+    else if (code.toLowerCase().startsWith(q)) rank = 2;
+    else if (city.includes(q) || name.includes(q) || (r.state ?? '').toLowerCase() === q) rank = 3;
+    if (rank >= 0) ref.push({ info: { code, name: r.name, city: r.city ?? r.name }, rank });
+  }
+  ref.sort((x, y) => x.rank - y.rank || x.info.code.localeCompare(y.info.code));
+  return [...short, ...ref.map((x) => x.info)].slice(0, limit);
 }
 
 /** Search airlines by code or name (case-insensitive) */
