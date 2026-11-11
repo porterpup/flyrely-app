@@ -23,3 +23,14 @@ describe('PredictionPanel', () => {
     expect(h).toContain('text-white');
   });
 });
+
+describe('PredictionPanel checked line', () => {
+  it('shows checked time and a Refresh button', () => {
+    const h = renderToStaticMarkup(
+      <PredictionPanel risk="medium" chancePercent={25} reason="r" checkedAt={Date.now()} onRefresh={() => {}} refreshing />
+    );
+    expect(h).toContain('Checked just now');
+    expect(h).toContain('aria-busy="true"');
+    expect(h).toContain('min-h-[44px]');
+  });
+});

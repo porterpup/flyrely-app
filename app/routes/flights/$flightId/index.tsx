@@ -1,20 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
-import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw, SearchX } from 'lucide-react';
-import { Header, Button, IconButton, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
+import { ChevronRight, PlaneTakeoff, PlaneLanding, SearchX } from 'lucide-react';
+import { Header, Button, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
-import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
-import { formatDate } from '~/lib/utils';
+import { formatLongDate, formatTime, formatDelayChance, formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
 import { useGoBack } from '~/hooks/useGoBack';
 import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
 import { emitNotice } from '~/lib/syncEngine';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
-import { weatherFromPrediction, weatherCard } from '~/lib/weather';
+import { weatherCard } from '~/lib/weather';
+import { rescoreFlight, applyRescore } from '~/lib/prediction';
 import { isDeparted } from '~/lib/flightTime';
 import { FeedbackLink } from '~/components/feedback';
-import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
+import { PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
 import { DisruptionSlot } from '~/copilot/DisruptionSlot';
 import { COPILOT_ENABLED } from '~/copilot/flags';
@@ -67,28 +67,12 @@ function FlightDetailsScreen() {
     // Run in background — don't block render
     (async () => {
       try {
-        const payload = buildPredictPayload(
-          f.origin.code,
-          f.destination.code,
-          f.scheduledDeparture,
-          f.airline.code,
-          f.id,
-          f.flightNumber
-        );
-        const prediction = await flyrelyApi.predict(payload);
+        const fresh = await rescoreFlight(f);
         // Apply to the current copy; skip if the flight was removed while the prediction loaded.
         const current = getFlightById(flightId);
         if (!current) return;
-        const updated: Flight = {
-          ...current,
-          riskLevel: prediction.risk_level,
-          delayProbability: prediction.delay_probability,
-          delayReason: topReasons(prediction.risk_factors),
-          warnings: prediction.warnings,
-          delaySeverity: prediction.delay_severity ?? undefined,
-          weather: weatherFromPrediction(prediction),
-        };
-        const stamped = stampFlightChecked(updated);
+        const stamped: Flight = applyRescore(current, fresh);
+        saveFlight(stamped);
         setFlight(stamped);
         setPredictionUnavailable(false);
       } catch (e) {
@@ -103,29 +87,13 @@ function FlightDetailsScreen() {
     if (!flight) return;
     setIsRefreshing(true);
     try {
-      const payload = buildPredictPayload(
-        flight.origin.code,
-        flight.destination.code,
-        flight.scheduledDeparture,
-        flight.airline.code,
-        flight.id,
-        flight.flightNumber
-      );
-      const prediction = await flyrelyApi.predict(payload);
+      const fresh = await rescoreFlight(flight);
       const current = getFlightById(flight.id);
       if (!current) {
         setIsRefreshing(false);
         return;
       }
-      const updated: Flight = {
-        ...current,
-        riskLevel: prediction.risk_level,
-        delayProbability: prediction.delay_probability,
-        delayReason: topReasons(prediction.risk_factors),
-        warnings: prediction.warnings,
-        delaySeverity: prediction.delay_severity ?? undefined,
-        weather: weatherFromPrediction(prediction),
-      };
+      const updated: Flight = applyRescore(current, fresh);
       saveFlight(updated);
       setFlight(updated);
       setPredictionUnavailable(false);
@@ -195,11 +163,6 @@ function FlightDetailsScreen() {
           title={`${flight.flightNumber} · ${formatDate(flight.scheduledDeparture)}`}
           showBack
           onBackClick={goBack}
-          rightAction={
-            <IconButton kind="text" size="sm" aria-label="Refresh prediction" onClick={handleRefresh}>
-              <RefreshCw className={cn('w-5 h-5', isRefreshing && 'animate-spin')} />
-            </IconButton>
-          }
         />
 
         <div className="flex-1 overflow-y-auto bg-surface-card rounded-t-4xl text-white pb-24">
@@ -244,7 +207,13 @@ function FlightDetailsScreen() {
                 risk={flight.riskLevel}
                 chancePercent={formatDelayChance(flight.delayProbability) ? Math.round((flight.delayProbability ?? 0) * 100) : null}
                 why={flight.delayReason}
-                reason="Based on historical performance for this route, airline and time of day."
+                reason={
+                  'Based on years of flights on this route at this time of day.' +
+                  (weather.kind === 'later' ? ' We add the weather forecast about a day before you fly.' : '')
+                }
+                checkedAt={flight.lastCheckedAt}
+                onRefresh={handleRefresh}
+                refreshing={isRefreshing}
               >
                 {flight.warnings && flight.warnings.length > 0 && (
                   <ul className="mt-4 space-y-1">
