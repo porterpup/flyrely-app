@@ -4,11 +4,14 @@ import { getCityLabel, getAirportRef } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 import { RiskPill } from './RiskPill';
 import { Ticket } from './Ticket';
+import { departureMs, formatCountdown, originTz } from '~/lib/flightTime';
 
 interface FlightCardProps {
   flight: Flight;
   onClick?: () => void;
   variant?: 'default' | 'compact';
+  /** Current time in epoch ms, for the countdown. Callers that tick pass it in. */
+  now?: number;
 }
 
 /** "Jacksonville, FL" style label for the destination, from airport reference data. */
@@ -20,7 +23,7 @@ function shortCity(code: string, fallback: string): string {
   return getAirportRef(code)?.city ?? (fallback && fallback !== code ? fallback : '');
 }
 
-export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardProps) {
+export function FlightCard({ flight, onClick, variant = 'default', now = Date.now() }: FlightCardProps) {
   if (variant === 'compact') {
     return (
       <button
@@ -57,6 +60,7 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
       as="button"
       onClick={onClick}
       className={cn('active:scale-[0.99] transition-transform')}
+      eyebrow={formatCountdown(departureMs(flight), now, originTz(flight))}
       title={`Your trip to ${tripCity(flight)}`}
       flightNumber={flight.flightNumber}
       badge={<RiskPill risk={flight.riskLevel} detail={flight.riskLevel === 'low' ? null : chance} />}

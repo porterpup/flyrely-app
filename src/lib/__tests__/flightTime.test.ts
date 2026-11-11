@@ -60,3 +60,16 @@ describe('formatCountdown', () => {
   it('minutes', () => expect(formatCountdown(now + 42 * 60_000, now, tz)).toBe('Leaves in 42 min'));
   it('departed', () => expect(formatCountdown(now - 1000, now, tz)).toBe('Departed'));
 });
+
+describe('formatCountdown edge bands', () => {
+  const tz = 'America/Los_Angeles';
+  it('uses a countdown for a late-night flight within 12 h', () => {
+    const now = localToUtcMs('2026-06-10T23:00', tz);
+    expect(formatCountdown(localToUtcMs('2026-06-11T01:00', tz), now, tz)).toBe('Leaves in 2 h 0 min');
+  });
+  it('rolls minutes over cleanly', () => {
+    const now = utc('2026-06-10T14:00:00Z');
+    expect(formatCountdown(now + 59 * 60_000 + 30_000, now, tz)).toBe('Leaves in 59 min');
+    expect(formatCountdown(now + 60 * 60_000, now, tz)).toBe('Leaves in 1 h 0 min');
+  });
+});

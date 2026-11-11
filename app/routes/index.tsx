@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Plus, History, Plane } from 'lucide-react';
 import { AppShell } from '~/components/layout';
@@ -15,7 +15,21 @@ export const Route = createFileRoute('/')({
 function HomeScreen() {
   const navigate = useNavigate();
   const { flights: allFlights, ready } = useFlights();
-  const flights = useMemo(() => selectUpcoming(allFlights), [allFlights]);
+  // Ticks once a minute while the tab is visible so the countdown and "upcoming" list stay current.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const tick = () => {
+      if (!document.hidden) setNow(Date.now());
+    };
+    const id = setInterval(tick, 60_000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `now` re-runs the filter as flights depart
+  const flights = useMemo(() => selectUpcoming(allFlights), [allFlights, now]);
   // Show the cached list at once; the "no flights" state only after the first download (never flash it on a fresh device).
   const loaded = ready || allFlights.length > 0;
 
@@ -78,6 +92,7 @@ function HomeScreen() {
           {nextFlight && (
             <FlightCard
               flight={nextFlight}
+              now={now}
               onClick={() =>
                 navigate({ to: '/flights/$flightId', params: { flightId: nextFlight.id } })
               }
