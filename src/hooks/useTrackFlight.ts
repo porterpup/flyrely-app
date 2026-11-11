@@ -87,7 +87,7 @@ export function useTrackFlight() {
       const key = naturalKey(base);
       const existing = getFlights().find((f) => naturalKey(f) === key);
       if (existing) {
-        emitNotice(`You already track ${existing.flightNumber}.`);
+        emitNotice(`You already track ${existing.flightNumber}.`, 'info');
         navigate({ to: '/flights/$flightId', params: { flightId: existing.id } });
         return null;
       }
@@ -109,11 +109,11 @@ export function useTrackFlight() {
       if (prev) {
         const result = prev.tripId ? appendLeg(prev.tripId, flight.id) : createTrip([prev.id, flight.id]);
         if (result.ok) {
-          emitNotice('Added to your trip.');
+          emitNotice('Added to your trip.', 'success');
           navigate({ to: '/trips/$tripId', params: { tripId: result.tripId } });
           return null;
         }
-        emitNotice(result.reason);
+        emitNotice(result.reason, 'warning');
       }
       navigate({ to: '/flights/$flightId', params: { flightId: flight.id }, search: { added: '1' } });
       return null;

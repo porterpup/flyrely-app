@@ -4,7 +4,7 @@ import { useAuth } from '~/context/AuthContext'
 import { useFlights } from '~/hooks/useFlights'
 import { clearLegacyFlights, queueLegacyImport, readLegacyFlights } from '~/lib/flightStore'
 import { chooseLegacyToImport } from '~/lib/legacyImport'
-import { onNotice } from '~/lib/syncEngine'
+import { onNotice, type NoticeKind } from '~/lib/syncEngine'
 import type { Flight } from '~/types'
 
 /**
@@ -68,8 +68,9 @@ export function LegacyImportModal() {
 
 /** Shows a Toast when the sync engine drops a change it can't save. */
 export function SyncNotices() {
-  const [message, setMessage] = useState<string | null>(null)
-  useEffect(() => onNotice((m) => setMessage(m)), [])
-  if (!message) return null
-  return <Toast type="warning" title={message} onClose={() => setMessage(null)} />
+  const [shown, setShown] = useState<{ id: number; message: string; kind: NoticeKind } | null>(null)
+  useEffect(() => onNotice((message, kind) => setShown((s) => ({ id: (s?.id ?? 0) + 1, message, kind }))), [])
+  if (!shown) return null
+  // key restarts the timer when a new notice replaces one that is still showing.
+  return <Toast key={shown.id} type={shown.kind} title={shown.message} duration={4000} onClose={() => setShown((s) => (s?.id === shown.id ? null : s))} />
 }

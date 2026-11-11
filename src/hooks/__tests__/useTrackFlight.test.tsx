@@ -23,7 +23,7 @@ vi.mock('~/lib/flightStore', () => ({
 }));
 vi.mock('~/lib/syncEngine', async (orig) => ({
   ...(await orig<typeof import('~/lib/syncEngine')>()),
-  emitNotice: (m: string) => emitNotice(m),
+  emitNotice: (m: string, k?: string) => emitNotice(m, k),
 }));
 
 import { useTrackFlight, autoTrackSingle } from '../useTrackFlight';
@@ -71,7 +71,7 @@ describe('useTrackFlight', () => {
     getFlights.mockReturnValue([saved]);
     expect(await result.current(input)).toBeNull();
     expect(saveFlight).not.toHaveBeenCalled();
-    expect(emitNotice).toHaveBeenCalledWith('You already track AA100.');
+    expect(emitNotice).toHaveBeenCalledWith('You already track AA100.', 'info');
     expect(navigate).toHaveBeenCalledWith({ to: '/flights/$flightId', params: { flightId: saved.id } });
   });
   it('goes to the trip with a notice when added as a connecting flight', async () => {
@@ -84,7 +84,7 @@ describe('useTrackFlight', () => {
     const { result } = renderHook(() => useTrackFlight());
     expect(await result.current({ airline: 'AA', number: '200', depISO: '2030-01-02T07:00:00', origin: 'JFK', dest: 'LAX', after: 'prev' })).toBeNull();
     expect(createTrip).toHaveBeenCalled();
-    expect(emitNotice).toHaveBeenCalledWith('Added to your trip.');
+    expect(emitNotice).toHaveBeenCalledWith('Added to your trip.', 'success');
     expect(navigate).toHaveBeenCalledWith({ to: '/trips/$tripId', params: { tripId: 'trip-1' } });
   });
   it('returns a message instead of throwing when the prediction fails', async () => {
