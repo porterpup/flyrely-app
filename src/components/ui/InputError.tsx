@@ -10,7 +10,7 @@ export function InputError({ message, className }: InputErrorProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-2 text-sm text-red-600 mt-1.5',
+        'flex items-center gap-2 text-body-md text-status-error-text mt-1.5',
         className
       )}
     >
@@ -44,7 +44,7 @@ export const validationErrors = {
   password: {
     required: 'Password is required',
     tooShort: 'Password must be at least 8 characters',
-    noUppercase: 'Password must contain an uppercase letter',
+    noUppercase: 'Password must contain an letter',
     noNumber: 'Password must contain a number',
   },
 };

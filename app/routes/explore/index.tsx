@@ -6,7 +6,7 @@ import { Button, EmptyState, ListGroup, ListRow, PageTitle } from '~/components/
 import { RiskPill } from '~/components/flight';
 import { getAirport } from '~/lib/airports';
 import { useFlights } from '~/hooks/useFlights';
-import { formatDelayChance } from '~/lib/utils';
+import { formatDelayPercent } from '~/lib/utils';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/explore/')({
@@ -59,15 +59,14 @@ function ExploreScreen() {
               const latest = [...route.flights].sort((a, b) =>
                 b.scheduledDeparture.localeCompare(a.scheduledDeparture)
               )[0];
-              const chance = formatDelayChance(latest.delayProbability);
               const n = route.flights.length;
               return (
                 <ListRow
                   key={`${route.from}-${route.to}`}
                   icon={<Plane className="rotate-45" />}
                   title={`${route.from} to ${route.to}`}
-                  subtitle={`${fromInfo?.city ?? route.from} to ${toInfo?.city ?? route.to} · ${n} tracked flight${n !== 1 ? 's' : ''}${chance ? ` · latest ${chance}` : ''}`}
-                  trailing={<RiskPill risk={latest.riskLevel} emphasis="soft" size="small" />}
+                  subtitle={`${fromInfo?.city ?? route.from} to ${toInfo?.city ?? route.to} · ${n} tracked flight${n !== 1 ? 's' : ''}`}
+                  trailing={<RiskPill risk={latest.riskLevel} emphasis="soft" size="small" detail={formatDelayPercent(latest.delayProbability)} />}
                   onClick={() => navigate({ to: '/flights/$flightId', params: { flightId: latest.id } })}
                 />
               );

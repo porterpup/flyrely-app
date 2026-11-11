@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, BellOff } from 'lucide-react';
+import { Trash2, BellOff, Plane } from 'lucide-react';
 import { Button, Modal } from '~/components/ui';
 import { formatDate } from '~/lib/utils';
 import type { Flight } from '~/types';
@@ -30,23 +30,23 @@ export function RemoveFlightModal({
     <Modal isOpen={isOpen} onClose={onClose} size="sm">
       <div className="text-center">
         {/* Icon */}
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Trash2 className="w-8 h-8 text-red-600" />
+        <div className="w-16 h-16 bg-status-error-bg rounded-full flex items-center justify-center mx-auto mb-4">
+          <Trash2 className="w-8 h-8 text-status-error-text" />
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-bold text-navy-900 mb-2">Remove flight?</h2>
+        <h2 className="text-title-md font-semibold text-ink mb-2">Remove flight?</h2>
 
         {/* Flight info */}
-        <div className="bg-navy-50 rounded-xl p-4 mb-4 text-left">
+        <div className="bg-surface-muted rounded-tile p-4 mb-4 text-left">
           <div className="flex items-center gap-3">
-            <div className="text-2xl">✈️</div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-ink-caption"><Plane className="h-5 w-5 rotate-45" aria-hidden /></div>
             <div>
-              <p className="font-semibold text-navy-900">{flight.flightNumber}</p>
-              <p className="text-sm text-navy-600">
+              <p className="font-semibold text-ink">{flight.flightNumber}</p>
+              <p className="text-body-md text-ink-caption">
                 {flight.origin.code} → {flight.destination.code}
               </p>
-              <p className="text-sm text-navy-500">
+              <p className="text-body-md text-ink-caption">
                 {formatDate(flight.scheduledDeparture)}
               </p>
             </div>
@@ -54,10 +54,10 @@ export function RemoveFlightModal({
         </div>
 
         {/* Warning */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 text-left">
+        <div className="bg-status-warning-bg border border-status-warning-text/20 rounded-lg p-3 mb-6 text-left">
           <div className="flex items-start gap-2">
-            <BellOff className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-amber-800">
+            <BellOff className="w-5 h-5 text-status-warning-text flex-shrink-0 mt-0.5" />
+            <p className="text-body-md text-status-warning-text">
               This flight and its prediction will be removed from your list.
             </p>
           </div>

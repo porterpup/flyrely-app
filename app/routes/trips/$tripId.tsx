@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Button, Header, Input, Modal } from '~/components/ui';
+import { SearchX } from 'lucide-react';
+import { Button, EmptyState, Header, Input, Modal, Skeleton } from '~/components/ui';
 import { ConnectionRow, FlightCard } from '~/components/flight';
 import { useFlights } from '~/hooks/useFlights';
 import { useGoBack } from '~/hooks/useGoBack';
@@ -32,14 +33,17 @@ function TripScreen() {
         <div className="screen">
           <Header title="Trip" showBack onBackClick={goBack} />
           {ready ? (
-            <div className="flex-1 flex flex-col items-center justify-center px-6 text-center py-20">
-              <h2 className="text-xl font-bold text-ink mb-2">Trip not found</h2>
-              <p className="text-ink-caption mb-6">This trip may have been removed.</p>
-              <Button onClick={goToTrips}>Back to trips</Button>
-            </div>
+            <EmptyState
+              className="flex-1 justify-center"
+              icon={<SearchX />}
+              title="Trip not found"
+              description="This trip may have been removed."
+              action={<Button onClick={goToTrips}>Back to trips</Button>}
+            />
           ) : (
-            <div className="flex-1 flex items-center justify-center py-20">
-              <div className="text-navy-400">Loading...</div>
+            <div className="flex-1 space-y-3 px-6 py-4" role="status" aria-label="Loading trip">
+              <Skeleton className="h-24 w-full rounded-tile" />
+              <Skeleton className="h-24 w-full rounded-tile" />
             </div>
           )}
         </div>
@@ -121,7 +125,7 @@ function TripScreen() {
 
         <Modal isOpen={showUngroup} onClose={() => setShowUngroup(false)} title="Ungroup this trip?" size="sm">
           <div className="space-y-4">
-            <p className="text-navy-600">
+            <p className="text-ink-caption">
               The flights stay on your list as separate flights. Nothing is deleted.
             </p>
             <div className="flex gap-3">

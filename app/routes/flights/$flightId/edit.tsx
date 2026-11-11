@@ -70,7 +70,7 @@ function EditFlightScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Edit Flight" showBack onBackClick={goBack} />
+          <Header title="Edit flight" showBack onBackClick={goBack} />
           <EmptyState
             className="flex-1 justify-center"
             icon={<SearchX />}
@@ -87,7 +87,7 @@ function EditFlightScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Edit Flight" showBack onBackClick={goBack} />
+          <Header title="Edit flight" showBack onBackClick={goBack} />
           <div className="space-y-4 px-6 pt-4" role="status" aria-label="Loading flight">
             <Skeleton className="h-14 rounded-field" />
             <Skeleton className="h-14 rounded-field" />
@@ -213,7 +213,7 @@ function EditFlightScreen() {
   return (
     <div className="app-container">
       <div className="screen">
-        <Header title="Edit Flight" showBack onBackClick={goBack} />
+        <Header title="Edit flight" showBack onBackClick={goBack} />
 
         <div className="flex-1 px-4 py-4 space-y-4">
           <Input label="Flight number" type="text" value={flightNumber} onChange={(e) => setFlightNumber(e.target.value.toUpperCase())} />
@@ -267,7 +267,7 @@ function EditFlightScreen() {
           {error && <Alert status="error" showIcon={false} lineOne={error} />}
         </div>
 
-        <div className="sticky bottom-0 p-4 bg-white border-t border-navy-100 flex gap-3">
+        <div className="sticky bottom-0 p-4 bg-white border-t border-surface-stroke flex gap-3">
           <Button variant="secondary" fullWidth onClick={goBack}>
             Cancel
           </Button>

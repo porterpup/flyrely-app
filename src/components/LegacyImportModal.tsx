@@ -51,7 +51,7 @@ export function LegacyImportModal() {
     <>
       <Modal isOpen={candidates !== null} onClose={close} title="Add your saved flights?" size="sm" showCloseButton={false}>
         <div className="space-y-4">
-          <p className="text-navy-600">
+          <p className="text-ink-caption">
             We found {candidates?.length ?? 0} {candidates?.length === 1 ? 'flight' : 'flights'} saved on this device.
             Add {candidates?.length === 1 ? 'it' : 'them'} to your account?
           </p>
