@@ -86,28 +86,6 @@ export default {
           'error-solid': '#CD1A3B',
           'info-solid': '#276EF1',
         },
-        // Accent - Orange/Amber
-        accent: {
-          50: '#FFFBEB',
-          100: '#FEF3C7',
-          200: '#FDE68A',
-          300: '#FCD34D',
-          400: '#FBBF24',
-          500: '#F59E0B',
-          600: '#D97706',
-          700: '#B45309',
-          800: '#92400E',
-          900: '#78350F',
-        },
-        // Risk status colors
-        risk: {
-          low: '#10B981',
-          'low-bg': '#D1FAE5',
-          medium: '#F59E0B',
-          'medium-bg': '#FEF3C7',
-          high: '#EF4444',
-          'high-bg': '#FEE2E2',
-        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

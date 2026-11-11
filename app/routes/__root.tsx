@@ -53,7 +53,7 @@ function RootComponent() {
       <body>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <div className="min-h-dvh bg-navy-50">
+            <div className="min-h-dvh bg-surface-muted">
               <AuthGate>
                 <Outlet />
                 <FeedbackHost />

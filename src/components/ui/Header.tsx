@@ -34,7 +34,7 @@ export function Header({
         </IconButton>
       )}
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-title-sm text-ink">{title}</h1>
+        <h1 className="truncate text-title-sm font-medium text-ink">{title}</h1>
         {subtitle && <p className="mt-0.5 truncate text-body-sm text-ink-caption">{subtitle}</p>}
       </div>
       {rightAction && <div className="-mr-2 flex shrink-0 items-center">{rightAction}</div>}
