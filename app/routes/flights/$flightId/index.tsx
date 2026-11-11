@@ -6,6 +6,7 @@ import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/compon
 import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
+import { useGoBack } from '~/hooks/useGoBack';
 import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
 import { emitNotice } from '~/lib/syncEngine';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/flights/$flightId/')({
 
 function FlightDetailsScreen() {
   const navigate = useNavigate();
+  const goBack = useGoBack('/');
   const { flightId } = Route.useParams();
   const [flight, setFlight] = useState<Flight | null>(null);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
@@ -144,7 +146,7 @@ function FlightDetailsScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
+          <Header title="Flight Details" showBack onBackClick={goBack} />
           <EmptyState
             className="flex-1 justify-center"
             icon={<SearchX />}
@@ -161,7 +163,7 @@ function FlightDetailsScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Flight Details" showBack onBackClick={() => navigate({ to: '/' })} />
+          <Header title="Flight Details" showBack onBackClick={goBack} />
           <div className="flex-1 rounded-t-4xl bg-surface-card px-2 pt-10" role="status" aria-label="Loading flight">
             <div className="mx-auto mb-8 flex flex-col items-center gap-3">
               <Skeleton onDark className="h-5 w-16" />
@@ -190,7 +192,7 @@ function FlightDetailsScreen() {
         <Header
           title="Flight Details"
           showBack
-          onBackClick={() => navigate({ to: '/' })}
+          onBackClick={goBack}
           rightAction={
             <IconButton kind="text" size="sm" aria-label="Refresh prediction" onClick={handleRefresh}>
               <RefreshCw className={cn('w-5 h-5', isRefreshing && 'animate-spin')} />
@@ -256,16 +258,12 @@ function FlightDetailsScreen() {
 
             <DisruptionSlot flight={flight} onFlightChange={setFlight} />
 
-            {weather.kind !== 'none' && (
+            {weather.kind === 'lines' && (
               <Card tone="dark">
                 <SectionHeader as="h3" kind="no-space" onDark title="Weather" className="mb-3" />
-                {weather.kind === 'lines' ? (
-                  <ul className="space-y-2 text-body-sm">
-                    {weather.lines.map((l) => <li key={l}>{l}</li>)}
-                  </ul>
-                ) : (
-                  <p className="text-body-sm text-ink-on-dark-muted">{weather.message}</p>
-                )}
+                <ul className="space-y-2 text-body-sm">
+                  {weather.lines.map((l) => <li key={l}>{l}</li>)}
+                </ul>
               </Card>
             )}
 
