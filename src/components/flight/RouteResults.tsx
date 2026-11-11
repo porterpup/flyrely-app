@@ -140,7 +140,7 @@ export function RouteResults({
       {localHint && <p className="text-body-md text-ink-caption">Times are local to each airport.</p>}
       {visible.map((g) => (
         <section key={g.part} aria-label={g.part} className="space-y-2">
-          <h3 className="pt-1 text-body-md font-semibold text-ink-sub">{g.part}</h3>
+          <h2 className="pt-1 text-body-md font-semibold text-ink-sub">{g.part}</h2>
           {g.flights.map((f) => (
             <button
               key={`${f.flight}-${f.dep_time}`}
