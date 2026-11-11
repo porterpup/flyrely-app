@@ -2,6 +2,7 @@ export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { IconButton } from './IconButton';
 export { Input } from './Input';
+export { PasswordInput } from './PasswordInput';
 export { Select } from './Select';
 export { FieldBox, FieldLabel, FieldMessage } from './Field';
 export { Header } from './Header';

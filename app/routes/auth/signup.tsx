@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
-import { Alert, Button, Input } from '~/components/ui'
+import { Check } from 'lucide-react'
+import { Alert, Button, Input, PasswordInput } from '~/components/ui'
+import { validationErrors } from '~/components/ui/InputError'
 import { AuthLayout } from '~/components/auth/AuthLayout'
 import { friendlyAuthError } from '~/lib/authErrors'
 import { sanitizeRedirect } from '~/lib/authGate'
@@ -14,6 +16,8 @@ export const Route = createFileRoute('/auth/signup')({
   component: SignupRoute,
 })
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 function SignupRoute() {
   const { signUp, configured } = useAuth()
   const { redirect } = Route.useSearch()
@@ -22,6 +26,8 @@ function SignupRoute() {
   const [error, setError] = useState<string | null>(null)
   const [confirmationSent, setConfirmationSent] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const passwordOk = password.length >= 6
 
   const search = redirect ? { redirect } : {}
 
@@ -29,6 +35,10 @@ function SignupRoute() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      setEmailError(validationErrors.email.invalid)
+      return
+    }
     if (password.length < 6) {
       setError('Password must be at least 6 characters')
       return
@@ -63,20 +73,33 @@ function SignupRoute() {
               label="Email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setEmailError(null)
+              }}
+              onBlur={() => {
+                if (email.trim() && !EMAIL_PATTERN.test(email.trim())) setEmailError(validationErrors.email.invalid)
+              }}
+              error={emailError ?? undefined}
               autoComplete="email"
               required
             />
-            <Input
+            <div className="flex flex-col gap-1.5">
+            <PasswordInput
               label="Password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
               minLength={6}
-              hint="At least 6 characters"
               required
             />
+            <p
+              className={`flex items-center gap-1.5 px-1 text-body-sm ${passwordOk ? 'text-status-success-text' : 'text-ink-caption'}`}
+            >
+              {passwordOk && <Check className="h-4 w-4" aria-hidden />}
+              At least 6 characters
+            </p>
+            </div>
             {error && <Alert status="error" lineOne={error} />}
             <Button fullWidth type="submit" loading={busy} disabled={!configured}>
               {busy ? 'Creating account...' : 'Create account'}

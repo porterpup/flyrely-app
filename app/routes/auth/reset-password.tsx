@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
-import { Alert, Button, Input } from '~/components/ui'
+import { Alert, Button, PasswordInput } from '~/components/ui'
 import { buttonSizeClasses, buttonVariantClasses } from '~/components/ui/Button'
 import { cn } from '~/lib/utils'
 import { AuthLayout } from '~/components/auth/AuthLayout'
@@ -75,18 +75,16 @@ function ResetPasswordRoute() {
     <AuthLayout title="Set a new password">
       {!configured && <Alert status="warning" lineOne="Sign-in isn't configured" />}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input
+        <PasswordInput
           label="New password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
           minLength={6}
           required
         />
-        <Input
+        <PasswordInput
           label="Confirm new password"
-          type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
