@@ -1,6 +1,6 @@
 // Small user profile kept in Supabase user metadata (no table): home airport + preferred airline.
-import { AIRLINES } from '~/lib/airports';
-import type { AirlineInfo } from '~/lib/airports';
+import { AIRLINES } from '~/lib/airlines';
+import type { AirlineInfo } from '~/lib/airlines';
 import { getAirportRef } from '~/lib/airportRef';
 
 export interface Profile {
@@ -10,10 +10,7 @@ export interface Profile {
 
 export const EMPTY_PROFILE: Profile = { homeAirport: null, preferredAirline: null };
 
-/** Spirit has stopped flying; Hawaiian now flies as Alaska, so HA is not offered either. */
-const EXCLUDED = new Set(['NK', 'HA']);
-
-export const PROFILE_AIRLINES: AirlineInfo[] = AIRLINES.filter((a) => !EXCLUDED.has(a.code));
+export const PROFILE_AIRLINES: AirlineInfo[] = AIRLINES;
 
 /** Normalise an airline code for profile use: uppercase, HA becomes AS. Null if not a supported airline. */
 export function normalizeAirline(code: unknown): string | null {

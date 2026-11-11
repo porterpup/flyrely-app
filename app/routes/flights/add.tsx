@@ -16,7 +16,8 @@ import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
 import { useGoBack } from '~/hooks/useGoBack';
 import { useAuth } from '~/context/AuthContext';
-import { AIRLINES, getAirport } from '~/lib/airports';
+import { AIRLINES, findAirline } from '~/lib/airlines';
+import { getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
 import { getAirportRef, validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
@@ -114,7 +115,7 @@ function AddFlightScreen() {
       setFlightNumber(value);
       return;
     }
-    const known = AIRLINES.find((x) => x.code === parsed.airlineCode);
+    const known = findAirline(parsed.airlineCode);
     setAirlineCodeState(parsed.airlineCode);
     setAirlineName(known?.name ?? parsed.airlineCode);
     setOtherAirline(!known);
@@ -298,7 +299,7 @@ function AddFlightScreen() {
     return {
       id: flightId,
       flightNumber: fullFlightNumber,
-      airline: { code, name: AIRLINES.find((x) => x.code === code)?.name ?? (airlineName || code) },
+      airline: { code, name: findAirline(code)?.name ?? (airlineName || code) },
       origin: {
         code: oCode,
         name: oInfo?.name ?? getAirportRef(oCode)?.name ?? oCode,
@@ -405,7 +406,7 @@ function AddFlightScreen() {
                     onClick={() => {
                       setAirlineName(f.airline.name);
                       setAirlineCodeState(f.airline.code);
-                      setOtherAirline(!AIRLINES.some((x) => x.code === f.airline.code));
+                      setOtherAirline(!findAirline(f.airline.code));
                       setFlightNumber(f.flightNumber.replace(/^[A-Z0-9]{2}/, ''));
                       setOriginCode(f.origin.code);
                       setOriginInfo(getAirport(f.origin.code));
@@ -505,11 +506,11 @@ function AddFlightScreen() {
                   value={airlineCode}
                   maxLength={2}
                   autoCapitalize="characters"
-                  placeholder="2-character IATA code, e.g. HA"
+                  placeholder="2-character IATA code, e.g. QX"
                   onChange={(e) => {
                     const code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
                     setAirlineCodeState(code);
-                    setAirlineName(AIRLINES.find((x) => x.code === code)?.name ?? code);
+                    setAirlineName(findAirline(code)?.name ?? code);
                   }}
                 />
               )}
