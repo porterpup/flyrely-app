@@ -29,13 +29,15 @@ export interface TicketProps extends React.HTMLAttributes<HTMLElement> {
   middle?: React.ReactNode;
   /** Centered caption under the times, e.g. "Operated by United Airlines". */
   footer?: string;
+  /** Extra classes for the footer line (e.g. hide it on very narrow screens). */
+  footerClassName?: string;
   /** Rendered under a divider, normally an Alert. */
   children?: React.ReactNode;
 }
 
 function End({ end, align }: { end: TicketEnd; align: 'left' | 'right' }) {
   return (
-    <div className={cn('flex w-[104px] shrink-0 flex-col', align === 'right' && 'items-end text-right')}>
+    <div className={cn('flex w-[104px] max-[359px]:w-24 min-w-0 shrink flex-col', align === 'right' && 'items-end text-right')}>
       {end.originalTime ? (
         <p className="text-body-sm text-ink-on-dark-muted line-through">{end.originalTime}</p>
       ) : (
@@ -59,6 +61,7 @@ export function Ticket({
   arrival,
   middle,
   footer,
+  footerClassName,
   children,
   className,
   ...props
@@ -79,7 +82,7 @@ export function Ticket({
         <div className="flex min-w-0 flex-1 pt-[27px]">{middle ?? <Duration onDark />}</div>
         <End end={arrival} align="right" />
       </div>
-      {footer && <p className="text-center text-body-sm text-ink-on-dark-muted">{footer}</p>}
+      {footer && <p className={cn('text-center text-body-sm text-ink-on-dark-muted', footerClassName)}>{footer}</p>}
       {children && (
         <>
           <Divider tone="dark" dashed />

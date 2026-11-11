@@ -37,7 +37,7 @@ describe('scheduleWarning', () => {
     const w = scheduleWarning(lookup, 'EWR', 'SFO', '07:01');
     expect(w).toContain('6:00 AM');
     expect(w).toContain('7:01 AM');
-    expect(w).toContain('2026-08');
+    expect(w).toContain('August 2026');
   });
   it('compares against the nearest frequency', () => {
     const two = { ...lookup, matches: [leg('JFK', 'LAX', '07:15', '10:40'), leg('JFK', 'LAX', '18:15', '21:40')] };

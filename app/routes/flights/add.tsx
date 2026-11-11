@@ -8,7 +8,7 @@ import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, legDepartureISO, legArrivalISO, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
-import { cn, formatDate, formatTime, formatDelayChance, formatDelayPercent, newUuid, parseFlightNumber } from '~/lib/utils';
+import { cn, localToday, formatDate, formatTime, formatDelayChance, formatDelayPercent, newUuid, parseFlightNumber } from '~/lib/utils';
 import { rescoreFlight } from '~/lib/prediction';
 import { PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
@@ -16,7 +16,8 @@ import { legsOf, tripErrorMessage, validateTripLegs } from '~/lib/tripGrouping';
 import { useFlights } from '~/hooks/useFlights';
 import { useGoBack } from '~/hooks/useGoBack';
 import { useAuth } from '~/context/AuthContext';
-import { AIRLINES, getAirport } from '~/lib/airports';
+import { AIRLINES, findAirline } from '~/lib/airlines';
+import { getAirport } from '~/lib/airports';
 import type { AirportInfo } from '~/lib/airports';
 import { getAirportRef, validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
@@ -114,7 +115,7 @@ function AddFlightScreen() {
       setFlightNumber(value);
       return;
     }
-    const known = AIRLINES.find((x) => x.code === parsed.airlineCode);
+    const known = findAirline(parsed.airlineCode);
     setAirlineCodeState(parsed.airlineCode);
     setAirlineName(known?.name ?? parsed.airlineCode);
     setOtherAirline(!known);
@@ -296,7 +297,7 @@ function AddFlightScreen() {
     const base: Flight = {
       id: flightId,
       flightNumber: fullFlightNumber,
-      airline: { code, name: AIRLINES.find((x) => x.code === code)?.name ?? (airlineName || code) },
+      airline: { code, name: findAirline(code)?.name ?? (airlineName || code) },
       origin: {
         code: oCode,
         name: oInfo?.name ?? getAirportRef(oCode)?.name ?? oCode,
@@ -399,7 +400,7 @@ function AddFlightScreen() {
                     onClick={() => {
                       setAirlineName(f.airline.name);
                       setAirlineCodeState(f.airline.code);
-                      setOtherAirline(!AIRLINES.some((x) => x.code === f.airline.code));
+                      setOtherAirline(!findAirline(f.airline.code));
                       setFlightNumber(f.flightNumber.replace(/^[A-Z0-9]{2}/, ''));
                       setOriginCode(f.origin.code);
                       setOriginInfo(getAirport(f.origin.code));
@@ -450,6 +451,7 @@ function AddFlightScreen() {
               <Input
                 label="Date"
                 type="date"
+                min={localToday()}
                 value={date}
                 onChange={(e) => { setDate(e.target.value); setRouteResult(null); setRouteMiss(''); }}
                 leftIcon={<Calendar />}
@@ -499,11 +501,11 @@ function AddFlightScreen() {
                   value={airlineCode}
                   maxLength={2}
                   autoCapitalize="characters"
-                  placeholder="2-character IATA code, e.g. HA"
+                  placeholder="2-character IATA code, e.g. QX"
                   onChange={(e) => {
                     const code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2);
                     setAirlineCodeState(code);
-                    setAirlineName(AIRLINES.find((x) => x.code === code)?.name ?? code);
+                    setAirlineName(findAirline(code)?.name ?? code);
                   }}
                 />
               )}
@@ -546,6 +548,7 @@ function AddFlightScreen() {
                 <Input
                   label="Date"
                   type="date"
+                min={localToday()}
                   value={date}
                   onChange={(e) => { setDate(e.target.value); setLookup(null); setLookupMiss(''); }}
                   leftIcon={<Calendar />}
@@ -591,7 +594,7 @@ function AddFlightScreen() {
               )}
               <button
                 type="button"
-                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={goManual}
               >
                 Enter details manually
@@ -629,7 +632,7 @@ function AddFlightScreen() {
 
               <button
                 type="button"
-                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={goManual}
               >
                 Enter details manually
@@ -650,7 +653,7 @@ function AddFlightScreen() {
               </Button>
               <button
                 type="button"
-                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={() => { setManual(false); setError(''); setSearchResult(null); }}
               >
                 Look up by flight number instead

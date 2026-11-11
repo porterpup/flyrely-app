@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
-import { Alert, Button, Input } from '~/components/ui'
+import { Alert, Button, Input, PasswordInput } from '~/components/ui'
 import { AuthLayout } from '~/components/auth/AuthLayout'
 import { friendlyAuthError } from '~/lib/authErrors'
 import { sanitizeRedirect } from '~/lib/authGate'
@@ -49,9 +49,8 @@ function LoginRoute() {
           autoComplete="email"
           required
         />
-        <Input
+        <PasswordInput
           label="Password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"

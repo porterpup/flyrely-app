@@ -1,3 +1,7 @@
+import { AIRLINES, findAirline } from '~/lib/airlines';
+import type { AirlineInfo } from '~/lib/airlines';
+
+export type { AirlineInfo };
 /** Airports and airlines for form autocomplete (names and codes only; no statistics). */
 export interface AirportInfo {
   code: string;
@@ -38,25 +42,6 @@ export const AIRPORTS: AirportInfo[] = [
   { code: 'TPA', name: 'Tampa International', city: 'Tampa' },
 ];
 
-export interface AirlineInfo {
-  code: string;
-  name: string;
-}
-
-export const AIRLINES: AirlineInfo[] = [
-  { code: 'AA', name: 'American Airlines' },
-  { code: 'AS', name: 'Alaska Airlines' },
-  { code: 'B6', name: 'JetBlue Airways' },
-  { code: 'DL', name: 'Delta Air Lines' },
-  { code: 'F9', name: 'Frontier Airlines' },
-  { code: 'G4', name: 'Allegiant Air' },
-  { code: 'HA', name: 'Hawaiian Airlines' },
-  { code: 'NK', name: 'Spirit Airlines' },
-  { code: 'SY', name: 'Sun Country Airlines' },
-  { code: 'UA', name: 'United Airlines' },
-  { code: 'WN', name: 'Southwest Airlines' },
-];
-
 /** Search airports by code, name, or city (case-insensitive) */
 export function searchAirports(query: string): AirportInfo[] {
   const q = query.toLowerCase().trim();
@@ -87,5 +72,5 @@ export function getAirport(code: string): AirportInfo | undefined {
 
 /** Lookup a single airline by exact code */
 export function getAirline(code: string): AirlineInfo | undefined {
-  return AIRLINES.find((a) => a.code === code.toUpperCase());
+  return findAirline(code);
 }

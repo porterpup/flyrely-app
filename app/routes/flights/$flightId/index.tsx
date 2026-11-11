@@ -152,9 +152,10 @@ function FlightDetailsScreen() {
   const weather = weatherCard(flight);
   const trip = flight.tripId ? trips.find((t) => t.id === flight.tripId) : undefined;
   const tripLegs = trip ? legsOf(trip, storedFlights) : [];
-  const isLastLeg = tripLegs.length > 0 && tripLegs[tripLegs.length - 1].id === flight.id;
+  // A connection is always added after the trip's last leg, whichever leg's page you are on.
+  const lastLeg = tripLegs.length > 0 ? tripLegs[tripLegs.length - 1] : flight;
   const canAddConnection =
-    !isDeparted(flight, Date.now()) && (!trip || (isLastLeg && tripLegs.length < MAX_LEGS));
+    !isDeparted(lastLeg, Date.now()) && (!trip || tripLegs.length < MAX_LEGS);
 
   return (
     <div className="app-container">
@@ -255,7 +256,7 @@ function FlightDetailsScreen() {
               <Button
                 variant="secondary"
                 fullWidth
-                onClick={() => navigate({ to: '/flights/add', search: { after: flight.id } })}
+                onClick={() => navigate({ to: '/flights/add', search: { after: lastLeg.id } })}
                 className="border-white/80 text-white hover:bg-white/10 active:bg-white/20"
               >
                 Add connecting flight
@@ -276,7 +277,7 @@ function FlightDetailsScreen() {
               <button
                 type="button"
                 onClick={() => setShowRemoveModal(true)}
-                className="rounded text-body-sm text-ink-on-dark-muted underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex min-h-11 items-center rounded px-2 text-body-sm text-ink-on-dark-muted underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Remove this flight
               </button>

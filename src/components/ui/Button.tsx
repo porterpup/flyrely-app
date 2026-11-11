@@ -24,7 +24,7 @@ export const buttonVariantClasses: Record<ButtonVariant, string> = {
 
 export const buttonSizeClasses: Record<ButtonSize, string> = {
   default: 'gap-1.5 px-4 py-3.5 rounded-btn text-action-lg',
-  sm: 'gap-1 px-3.5 py-3 rounded-btn-sm text-action-md',
+  sm: 'min-h-11 gap-1 px-3.5 py-3 rounded-btn-sm text-action-md',
 };
 
 export function Button({

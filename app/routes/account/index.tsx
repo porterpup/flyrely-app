@@ -121,7 +121,7 @@ function AccountScreen() {
                     setAirline(e.target.value);
                     setSaveMsg(null);
                   }}
-                  hint="Their flights are listed first in route results."
+                  hint="We list your airline's flights first when you search a route."
                 >
                   <option value="">No preference</option>
                   {PROFILE_AIRLINES.map((a) => (
@@ -151,7 +151,7 @@ function AccountScreen() {
             <div className="flex justify-center pt-2">
               <button
                 onClick={() => handleSignOut()}
-                className="rounded px-3 py-2 text-body-md text-ink-caption underline underline-offset-4 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
+                className="min-h-11 rounded px-3 py-2 text-body-md text-ink-caption underline underline-offset-4 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
               >
                 Sign out
               </button>

@@ -72,9 +72,11 @@ export function FlightCard({ flight, onClick, variant = 'default', now = Date.no
       arrival={{
         label: 'Arriving',
         primary: flight.destination.code,
+        date: flight.scheduledArrivalLocal ? `Arrives ${formatTime(flight.scheduledArrivalLocal)}` : undefined,
         place: destCity || flight.destination.code,
       }}
       footer={flight.airline.name}
+      footerClassName="max-[359px]:hidden"
     />
   );
 }

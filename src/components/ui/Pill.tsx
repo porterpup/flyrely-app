@@ -21,7 +21,7 @@ const soft: Record<PillTone, string> = {
 
 const solid: Record<PillTone, string> = {
   default: 'bg-white/15 text-white',
-  success: 'bg-status-success-solid text-white',
+  success: 'bg-status-success-bg text-status-success-text',
   warning: 'bg-status-warning-solid text-ink',
   error: 'bg-status-error-solid text-white',
   info: 'bg-status-info-solid text-white',

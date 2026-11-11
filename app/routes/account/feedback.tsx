@@ -15,8 +15,15 @@ function FeedbackAdminScreen() {
   useEffect(() => {
     listFeedback()
       .then(setItems)
-      .catch((e) => setError(e instanceof FeedbackError && e.status === 403 ? 'Admin only' : 'Could not load feedback'));
-  }, []);
+      .catch((e) => {
+        // Not an admin: this page is not for you, so go back to Account (sending feedback is on that screen).
+        if (e instanceof FeedbackError && e.status === 403) {
+          navigate({ to: '/account', replace: true });
+          return;
+        }
+        setError('Could not load feedback');
+      });
+  }, [navigate]);
 
   return (
     <div className="app-container">

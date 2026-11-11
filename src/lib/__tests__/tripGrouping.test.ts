@@ -113,8 +113,8 @@ describe('suggestTrips', () => {
 });
 
 describe('titles', () => {
-  it('uses the name or the first-to-last route', () => {
-    expect(tripTitle({}, [A, B])).toBe('SFO → BNA');
+  it('uses the name or lists every airport', () => {
+    expect(tripTitle({}, [A, B])).toBe('SFO → DEN → BNA');
     expect(tripTitle({ name: 'Home for the holidays' }, [A, B])).toBe('Home for the holidays');
   });
 });

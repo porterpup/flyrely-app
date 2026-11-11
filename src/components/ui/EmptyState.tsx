@@ -4,7 +4,7 @@ export interface EmptyStateProps {
   /** A lucide icon element; shown in a soft circle. */
   icon: React.ReactNode;
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   action?: React.ReactNode;
   /** Use on the dark navy screens. */
   onDark?: boolean;

@@ -76,7 +76,7 @@ function FlightHistoryScreen() {
             allCompleted.length > 0 ? (
               <button
                 onClick={() => setShowClearModal(true)}
-                className="p-2 text-ink-caption hover:text-status-error-text rounded-lg hover:bg-status-error-bg"
+                className="flex h-11 w-11 items-center justify-center text-ink-caption hover:text-status-error-text rounded-lg hover:bg-status-error-bg"
               >
                 <Trash2 className="w-5 h-5" />
               </button>

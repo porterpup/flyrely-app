@@ -11,10 +11,12 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   /** Figma "Trailing Icon" (clickable when onRightIconClick is given). */
   rightIcon?: React.ReactNode;
   onRightIconClick?: () => void;
+  /** Accessible name for the trailing icon button. */
+  rightIconLabel?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, leftIcon, rightIcon, onRightIconClick, className, id, ...props }, ref) => {
+  ({ label, error, hint, leftIcon, rightIcon, onRightIconClick, rightIconLabel, className, id, ...props }, ref) => {
     const autoId = useId();
     const inputId = id ?? autoId;
     return (
@@ -26,7 +28,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           trailing={
             rightIcon &&
             (onRightIconClick ? (
-              <button type="button" onClick={onRightIconClick} className="text-ink-caption hover:text-ink">
+              <button
+                type="button"
+                onClick={onRightIconClick}
+                aria-label={rightIconLabel}
+                className="-m-4 flex min-h-11 min-w-11 items-center justify-center p-4 text-ink-caption hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-surface-accent"
+              >
                 {rightIcon}
               </button>
             ) : (

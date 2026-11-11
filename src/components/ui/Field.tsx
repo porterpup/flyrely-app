@@ -25,7 +25,7 @@ export function FieldBox({
       className={cn(
         'flex items-stretch overflow-hidden rounded-field border-[0.5px] bg-white text-ink-caption transition-colors',
         invalid ? 'border-status-error-text' : 'border-surface-divider',
-        interactive && 'focus-within:border-surface-accent focus-within:ring-2 focus-within:ring-surface-accent/20',
+        interactive && 'focus-within:border-surface-accent focus-within:ring-2 focus-within:ring-surface-accent',
         className
       )}
       {...props}

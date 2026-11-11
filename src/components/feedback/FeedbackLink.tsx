@@ -12,7 +12,7 @@ export function FeedbackLink({ onDark = false, className }: { onDark?: boolean; 
       type="button"
       onClick={openFeedback}
       className={cn(
-        'flex items-center gap-1.5 rounded-full px-3 py-2 text-body-sm underline-offset-4 hover:underline',
+        'flex items-center gap-1.5 rounded-full min-h-11 px-3 py-2 text-body-sm underline-offset-4 hover:underline',
         onDark ? 'text-ink-on-dark-muted' : 'text-ink-caption',
         className
       )}

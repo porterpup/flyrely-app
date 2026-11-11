@@ -30,7 +30,7 @@ export function SegmentedTabs<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            'flex-1 rounded-pill py-2 text-body-md transition-colors',
+            'min-h-11 flex-1 rounded-pill py-2 text-body-md transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent',
             value === o.value ? 'bg-white text-ink shadow-sm' : 'text-ink-caption'
           )}

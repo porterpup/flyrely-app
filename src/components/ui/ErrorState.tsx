@@ -107,7 +107,7 @@ export function ErrorState({
             onClick={onRetry}
             icon={<RefreshCw className="w-4 h-4" />}
           >
-            Try Again
+            Try again
           </Button>
         )}
 

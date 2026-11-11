@@ -116,6 +116,26 @@ export function newUuid(): string {
   });
 }
 
+/** Today's date on this device as YYYY-MM-DD (device-local, not UTC). Used as the `min` of date inputs. */
+export function localToday(now: Date = new Date()): string {
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${m}-${d}`;
+}
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** "2026-08-31" or "2026-08" -> "August 2026". The one month-and-year format used in the app. */
+export function formatMonthYear(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  return `${MONTH_NAMES[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
+}
+
 /** "just now", "12 min ago", "3 h ago", "yesterday", else a short date. */
 export function formatCheckedAgo(ms: number, now: number): string {
   const diff = Math.max(0, now - ms);

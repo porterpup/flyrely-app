@@ -23,9 +23,22 @@ function RouteError({ error }: { error: unknown }) {
       />
     );
   }
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    return (
+      <ErrorState
+        type="network"
+        title="You're offline"
+        message="You're offline. We'll show your saved flights when you're back online."
+        onRetry={() => router.invalidate()}
+        onAction={() => router.navigate({ to: '/' })}
+        actionLabel="Go home"
+      />
+    );
+  }
   return (
     <ErrorState
       type="generic"
+      title="Something went wrong"
       onRetry={() => router.invalidate()}
       onAction={() => router.navigate({ to: '/' })}
       actionLabel="Go home"

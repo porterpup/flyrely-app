@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
-import { Alert, Button, Input } from '~/components/ui'
+import { Alert, Button, PasswordInput } from '~/components/ui'
+import { buttonSizeClasses, buttonVariantClasses } from '~/components/ui/Button'
+import { cn } from '~/lib/utils'
 import { AuthLayout } from '~/components/auth/AuthLayout'
 import { arrivedWithRecoveryLink, hasRecoveryLink } from '~/lib/recoveryLink'
 
@@ -53,9 +55,17 @@ function ResetPasswordRoute() {
   if (linkExpired || (!linkPresent && !recoveryReady)) {
     return (
       <AuthLayout title="Reset link expired">
-        <p className="text-body-lg text-ink-caption">This link has expired or is invalid.</p>
-        <Link to="/auth/forgot-password" className="text-body-md font-medium text-surface-accent">
-          Request a new one
+        <p className="text-body-lg text-ink-caption">This reset link has expired. Request a new one.</p>
+        <Link
+          to="/auth/forgot-password"
+          className={cn(
+            'inline-flex w-full items-center justify-center',
+            buttonVariantClasses.primary,
+            buttonSizeClasses.default,
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent focus-visible:ring-offset-2'
+          )}
+        >
+          Go to forgot password
         </Link>
       </AuthLayout>
     )
@@ -65,18 +75,16 @@ function ResetPasswordRoute() {
     <AuthLayout title="Set a new password">
       {!configured && <Alert status="warning" lineOne="Sign-in isn't configured" />}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input
+        <PasswordInput
           label="New password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
           minLength={6}
           required
         />
-        <Input
+        <PasswordInput
           label="Confirm new password"
-          type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
