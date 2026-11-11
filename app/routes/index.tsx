@@ -4,6 +4,8 @@ import { Plus, History, Plane } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button, SectionHeader, EmptyState, ListGroup, ListRow, Skeleton } from '~/components/ui';
 import { FlightCard } from '~/components/flight';
+import { ConnectionRow } from '~/components/flight/ConnectionRow';
+import { splitNextTrip } from '~/lib/tripGrouping';
 import { FeedbackLink } from '~/components/feedback';
 import { selectUpcoming, autoCompleteOldFlights, shouldRefreshFlight, saveFlight, getFlightById } from '~/lib/flightStore';
 import { rescoreFlight, refreshDueFlights, applyRescore } from '~/lib/prediction';
@@ -56,7 +58,7 @@ function HomeScreen() {
   }, [ready, allFlights]);
 
   const hasFlights = flights.length > 0;
-  const nextFlight = flights[0];
+  const { next: nextFlight, remainingLegs, rest: upcomingRest } = useMemo(() => splitNextTrip(flights, allFlights), [flights, allFlights]);
 
   if (!loaded) {
     return (
@@ -126,13 +128,28 @@ function HomeScreen() {
               }
             />
           )}
+
+          {nextFlight && remainingLegs.length > 0 && (
+            <div className="mt-3 space-y-3" data-testid="remaining-legs">
+              {remainingLegs.map((leg, i) => (
+                <div key={leg.id} className="space-y-3">
+                  <ConnectionRow prev={i === 0 ? nextFlight : remainingLegs[i - 1]} next={leg} />
+                  <FlightCard
+                    flight={leg}
+                    variant="compact"
+                    onClick={() => navigate({ to: '/flights/$flightId', params: { flightId: leg.id } })}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
-        {flights.length > 1 && (
+        {upcomingRest.length > 0 && (
           <section className="mb-8">
             <SectionHeader title="Upcoming flights" />
             <div className="space-y-3">
-              {flights.slice(1).map((flight) => (
+              {upcomingRest.map((flight) => (
                 <FlightCard
                   key={flight.id}
                   flight={flight}
