@@ -30,7 +30,7 @@ function TripScreen() {
   if (!trip || legs.length === 0) {
     return (
       <div className="app-container">
-        <div className="screen">
+        <main className="screen">
           <Header title="Trip" showBack onBackClick={goBack} />
           {ready ? (
             <EmptyState
@@ -46,7 +46,7 @@ function TripScreen() {
               <Skeleton className="h-24 w-full rounded-tile" />
             </div>
           )}
-        </div>
+        </main>
       </div>
     );
   }
@@ -75,7 +75,7 @@ function TripScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header title={tripTitle(trip, legs)} showBack onBackClick={goBack} />
 
         <div className="flex-1 px-4 py-4 space-y-3 pb-24">
@@ -151,7 +151,7 @@ function TripScreen() {
             </div>
           </div>
         </Modal>
-      </div>
+      </main>
     </div>
   );
 }

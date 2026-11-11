@@ -237,7 +237,7 @@ function AddFlightScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header
           title="Add flight"
           showBack
@@ -533,7 +533,7 @@ function AddFlightScreen() {
           )}
 
         </div>
-      </div>
+      </main>
     </div>
   );
 }
