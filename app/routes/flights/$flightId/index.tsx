@@ -12,6 +12,7 @@ import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
 import { emitNotice } from '~/lib/syncEngine';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { weatherFromPrediction, weatherCard } from '~/lib/weather';
+import { isDeparted } from '~/lib/flightTime';
 import { FeedbackLink } from '~/components/feedback';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
@@ -185,7 +186,7 @@ function FlightDetailsScreen() {
   const tripLegs = trip ? legsOf(trip, storedFlights) : [];
   const isLastLeg = tripLegs.length > 0 && tripLegs[tripLegs.length - 1].id === flight.id;
   const canAddConnection =
-    new Date(flight.scheduledDeparture) >= new Date() && (!trip || (isLastLeg && tripLegs.length < MAX_LEGS));
+    !isDeparted(flight, Date.now()) && (!trip || (isLastLeg && tripLegs.length < MAX_LEGS));
 
   return (
     <div className="app-container">

@@ -1,6 +1,7 @@
 import type { Flight, Trip } from '~/types';
 import { dismissKeysFor, legsOf, tripErrorMessage, validateTripLegs, MAX_LEGS } from '~/lib/tripGrouping';
 import { newUuid } from '~/lib/utils';
+import { departureMs, isDeparted } from '~/lib/flightTime';
 import { stripLegacy, validateFlightForCloud } from '~/lib/cloudFlights';
 import {
   CACHE_PREFIX,
@@ -138,18 +139,14 @@ export function getFlightById(id: string): Flight | undefined {
 
 /** Upcoming = departs now or later, soonest first. Pure, for components that already hold the flights. */
 export function selectUpcoming(flights: Flight[]): Flight[] {
-  const now = new Date();
-  return flights
-    .filter((f) => new Date(f.scheduledDeparture) >= now)
-    .sort((a, b) => new Date(a.scheduledDeparture).getTime() - new Date(b.scheduledDeparture).getTime());
+  const now = Date.now();
+  return flights.filter((f) => !isDeparted(f, now)).sort((a, b) => departureMs(a) - departureMs(b));
 }
 
 /** Completed = departure in the past, newest first. */
 export function selectCompleted(flights: Flight[]): Flight[] {
-  const now = new Date();
-  return flights
-    .filter((f) => new Date(f.scheduledDeparture) < now)
-    .sort((a, b) => new Date(b.scheduledDeparture).getTime() - new Date(a.scheduledDeparture).getTime());
+  const now = Date.now();
+  return flights.filter((f) => isDeparted(f, now)).sort((a, b) => departureMs(b) - departureMs(a));
 }
 
 export function getUpcomingFlights(): Flight[] {
@@ -201,9 +198,9 @@ export function removeFlight(id: string): TripChange | null {
  */
 export function autoCompleteOldFlights(): void {
   if (typeof window === 'undefined' || !activeUser) return;
-  const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 hours ago
+  const cutoff = Date.now() - 2 * 60 * 60 * 1000; // 2 hours ago
   for (const f of snapshot.flights.slice()) {
-    if (new Date(f.scheduledDeparture) < cutoff && f.status !== 'completed') {
+    if (isDeparted(f, cutoff) && f.status !== 'completed') {
       saveFlight({ ...f, status: 'completed' });
     }
   }
@@ -237,8 +234,8 @@ export function clearOtherUsersData(userId: string): void {
 /** Removes all past (completed) flights. In the account they are soft-deleted. */
 export function clearCompletedFlights(): void {
   requireUser();
-  const now = new Date();
-  const gone = snapshot.flights.filter((f) => new Date(f.scheduledDeparture) < now);
+  const now = Date.now();
+  const gone = snapshot.flights.filter((f) => isDeparted(f, now));
   for (const f of gone) removeFlight(f.id);
 }
 
@@ -409,7 +406,7 @@ export function queueLegacyImport(flights: Flight[]): { queued: number; skipped:
  */
 export function shouldRefreshFlight(flight: Flight): boolean {
   const now = Date.now();
-  const depMs = new Date(flight.scheduledDeparture).getTime();
+  const depMs = departureMs(flight);
   const hoursUntilDep = (depMs - now) / 3600000;
 
   // Past departure — don't refresh
