@@ -121,7 +121,7 @@ function AccountScreen() {
                     setAirline(e.target.value);
                     setSaveMsg(null);
                   }}
-                  hint="Their flights are listed first in route results."
+                  hint="We list your airline's flights first when you search a route."
                 >
                   <option value="">No preference</option>
                   {PROFILE_AIRLINES.map((a) => (

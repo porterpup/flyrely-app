@@ -122,3 +122,16 @@ export function localToday(now: Date = new Date()): string {
   const d = String(now.getDate()).padStart(2, '0');
   return `${now.getFullYear()}-${m}-${d}`;
 }
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** "2026-08-31" or "2026-08" -> "August 2026". The one month-and-year format used in the app. */
+export function formatMonthYear(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})/.exec(iso);
+  if (!m) return iso;
+  return `${MONTH_NAMES[Number(m[2]) - 1] ?? m[2]} ${m[1]}`;
+}

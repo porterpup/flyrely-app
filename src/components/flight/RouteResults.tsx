@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { cn, formatDelayPercent, topReasons } from '~/lib/utils';
+import { cn, formatDelayPercent, formatMonthYear, topReasons } from '~/lib/utils';
 import { RiskPill } from './RiskPill';
 import {
   formatClock, mostReliableIndex, SCHEDULE_LABEL, SCHEDULE_TOOLTIP, sortByDeparture,
@@ -10,7 +10,7 @@ import type { SearchFlight } from '~/lib/flightLookup';
 export function ScheduleHonesty({ asOf }: { asOf?: string | null }) {
   return (
     <p className="flex items-center gap-1.5 text-body-md text-ink-caption">
-      <span>{SCHEDULE_LABEL}{asOf ? ` (as of ${asOf})` : ''}</span>
+      <span>{SCHEDULE_LABEL}{asOf ? ` (as of ${formatMonthYear(asOf)})` : ''}</span>
       <span title={SCHEDULE_TOOLTIP} role="img" aria-label={SCHEDULE_TOOLTIP} tabIndex={0}>
         <Info className="h-4 w-4" />
       </span>

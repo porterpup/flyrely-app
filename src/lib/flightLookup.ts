@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '~/lib/api';
+import { formatMonthYear } from '~/lib/utils';
 import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from '~/lib/fetchWithTimeout';
 
 /** One leg of a flight number, from GET /flights/lookup (flyrely-api flight_lookup.py). Times are local "HH:MM". */
@@ -115,7 +116,7 @@ export function scheduleWarning(
   const times = legs.map((l) => l.dep_time);
   const nearest = times.reduce((best, t) => (clockDiffMinutes(t, time) < clockDiffMinutes(best, time) ? t : best));
   if (clockDiffMinutes(nearest, time) <= TIME_WARN_MINUTES) return null;
-  const asOf = lookup.schedule_as_of ? ` (typical schedule as of ${lookup.schedule_as_of})` : '';
+  const asOf = lookup.schedule_as_of ? ` (typical schedule as of ${formatMonthYear(lookup.schedule_as_of)})` : '';
   return `${lookup.flight} usually departs at ${times.map(formatClock).join(' or ')}${asOf}, not ${formatClock(time)}. Check your booking.`;
 }
 

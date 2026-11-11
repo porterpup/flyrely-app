@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '~/context/AuthContext'
 import { Alert, Button, Input } from '~/components/ui'
+import { buttonSizeClasses, buttonVariantClasses } from '~/components/ui/Button'
+import { cn } from '~/lib/utils'
 import { AuthLayout } from '~/components/auth/AuthLayout'
 import { arrivedWithRecoveryLink, hasRecoveryLink } from '~/lib/recoveryLink'
 
@@ -53,9 +55,17 @@ function ResetPasswordRoute() {
   if (linkExpired || (!linkPresent && !recoveryReady)) {
     return (
       <AuthLayout title="Reset link expired">
-        <p className="text-body-lg text-ink-caption">This link has expired or is invalid.</p>
-        <Link to="/auth/forgot-password" className="text-body-md font-medium text-surface-accent">
-          Request a new one
+        <p className="text-body-lg text-ink-caption">This reset link has expired. Request a new one.</p>
+        <Link
+          to="/auth/forgot-password"
+          className={cn(
+            'inline-flex w-full items-center justify-center',
+            buttonVariantClasses.primary,
+            buttonSizeClasses.default,
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent focus-visible:ring-offset-2'
+          )}
+        >
+          Go to forgot password
         </Link>
       </AuthLayout>
     )
