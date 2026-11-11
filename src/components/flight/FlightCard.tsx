@@ -1,5 +1,5 @@
 import { Plane } from 'lucide-react';
-import { formatDate, formatTime, formatDelayChance, cn } from '~/lib/utils';
+import { formatDate, formatTime, formatDelayPercent, cn } from '~/lib/utils';
 import { getCityLabel, getAirportRef } from '~/lib/airportRef';
 import type { Flight } from '~/types';
 import { RiskPill } from './RiskPill';
@@ -33,7 +33,7 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
             <span className="text-ink-caption">·</span>
             <span className="text-body-md text-ink-caption">{flight.airline.name}</span>
           </div>
-          <RiskPill risk={flight.riskLevel} emphasis="soft" detail={flight.riskLevel !== 'low' && typeof flight.delayProbability === 'number' ? `${Math.round(flight.delayProbability * 100)}%` : null} />
+          <RiskPill risk={flight.riskLevel} emphasis="soft" detail={formatDelayPercent(flight.delayProbability)} />
         </div>
         <div className="flex items-center gap-2 text-body-md text-ink-caption">
           <span>{flight.origin.code}</span>
@@ -48,7 +48,6 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
     );
   }
 
-  const chance = formatDelayChance(flight.delayProbability);
   const originCity = shortCity(flight.origin.code, flight.origin.city);
   const destCity = shortCity(flight.destination.code, flight.destination.city);
 
@@ -59,7 +58,7 @@ export function FlightCard({ flight, onClick, variant = 'default' }: FlightCardP
       className={cn('active:scale-[0.99] transition-transform')}
       title={`Your trip to ${tripCity(flight)}`}
       flightNumber={flight.flightNumber}
-      badge={<RiskPill risk={flight.riskLevel} detail={flight.riskLevel === 'low' ? null : chance} />}
+      badge={<RiskPill risk={flight.riskLevel} detail={formatDelayPercent(flight.delayProbability)} />}
       departure={{
         label: 'Departs',
         primary: formatTime(flight.scheduledDeparture),

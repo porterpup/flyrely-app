@@ -9,7 +9,7 @@ import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, legDepartureISO, legArrivalISO, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
-import { cn, formatDate, formatTime, formatDelayChance, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
+import { cn, formatDate, formatTime, formatDelayChance, formatDelayPercent, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
@@ -802,12 +802,7 @@ function AddFlightScreen() {
                   <span>{formatTime(flightToAdd.scheduledDeparture)}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-navy-200 flex items-center gap-2">
-                  <RiskPill risk={flightToAdd.riskLevel} emphasis="soft" />
-                  {formatDelayChance(flightToAdd.delayProbability) && (
-                    <span className="text-sm text-navy-600">
-                      · {formatDelayChance(flightToAdd.delayProbability)}
-                    </span>
-                  )}
+                  <RiskPill risk={flightToAdd.riskLevel} emphasis="soft" detail={formatDelayPercent(flightToAdd.delayProbability)} />
                 </div>
                 {flightToAdd.delayReason && (
                   <p className="mt-2 text-sm text-navy-600">Why: {flightToAdd.delayReason}</p>
@@ -857,7 +852,7 @@ function FlightSearchResult({
           <span className="font-semibold text-navy-900">{flight.flightNumber}</span>
           <span className="text-sm text-navy-500">{flight.airline.name}</span>
         </div>
-        <RiskPill risk={flight.riskLevel} emphasis="soft" />
+        <RiskPill risk={flight.riskLevel} emphasis="soft" detail={formatDelayPercent(flight.delayProbability)} />
       </div>
 
       <div className="flex items-center gap-3">

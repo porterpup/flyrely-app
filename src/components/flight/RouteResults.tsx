@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { cn, topReasons } from '~/lib/utils';
+import { cn, formatDelayPercent, topReasons } from '~/lib/utils';
 import { RiskPill } from './RiskPill';
 import {
   formatClock, mostReliableIndex, SCHEDULE_LABEL, SCHEDULE_TOOLTIP, sortByDeparture,
@@ -69,8 +69,7 @@ export function RouteResults({
             {f.operating_airline !== f.airline ? ` · operated by ${f.operating_airline_name}` : ''}
           </p>
           <div className="mt-2 flex items-center gap-2">
-            <RiskPill risk={f.risk_level} emphasis="soft" size="small" />
-            <span className="text-sm text-navy-caption">{Math.round(f.delay_probability * 100)}% chance of a 15+ min delay</span>
+            <RiskPill risk={f.risk_level} emphasis="soft" size="small" detail={formatDelayPercent(f.delay_probability)} />
             {i === best && sorted.length > 1 && (
               <span className="text-sm font-semibold text-status-success-text">Most reliable</span>
             )}
