@@ -4,6 +4,7 @@ import { Calendar, Trash2 } from 'lucide-react';
 import { Header, Button, Modal } from '~/components/ui';
 import { CompletedFlightCard } from '~/components/flight/CompletedFlightCard';
 import { cn } from '~/lib/utils';
+import { departureMs } from '~/lib/flightTime';
 import { selectCompleted, clearCompletedFlights } from '~/lib/flightStore';
 import { useFlights } from '~/hooks/useFlights';
 import type { Flight } from '~/types';
@@ -18,7 +19,7 @@ function filterFlights(flights: Flight[], period: FilterPeriod): Flight[] {
   if (period === 'all') return flights;
   const ms = period === 'week' ? 7 : period === 'month' ? 30 : 90;
   const cutoff = Date.now() - ms * 24 * 60 * 60 * 1000;
-  return flights.filter((f) => new Date(f.scheduledDeparture).getTime() >= cutoff);
+  return flights.filter((f) => departureMs(f) >= cutoff);
 }
 
 function FlightHistoryScreen() {

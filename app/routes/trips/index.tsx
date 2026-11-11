@@ -5,6 +5,7 @@ import { AppShell } from '~/components/layout';
 import { Alert, Button, Card, EmptyState, PageTitle, SectionHeader, Skeleton } from '~/components/ui';
 import { FlightCard, TripCard } from '~/components/flight';
 import { formatDate } from '~/lib/utils';
+import { isDeparted } from '~/lib/flightTime';
 import { createTrip, dismissSuggestion, selectUpcoming } from '~/lib/flightStore';
 import { useFlights } from '~/hooks/useFlights';
 import { chainLabel, legsOf, suggestTrips } from '~/lib/tripGrouping';
@@ -41,10 +42,10 @@ function TripsScreen() {
 
   // Trips that still have a flight to come, soonest first.
   const upcomingTrips = useMemo(() => {
-    const now = new Date();
+    const now = Date.now();
     return trips
       .map((trip) => ({ trip, legs: legsOf(trip, allFlights) }))
-      .filter(({ legs }) => legs.length > 0 && new Date(legs[legs.length - 1].scheduledDeparture) >= now)
+      .filter(({ legs }) => legs.length > 0 && !isDeparted(legs[legs.length - 1], now))
       .sort((a, b) => a.legs[0].scheduledDeparture.localeCompare(b.legs[0].scheduledDeparture));
   }, [trips, allFlights]);
 
