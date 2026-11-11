@@ -94,7 +94,7 @@ function UsageDashboardScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header
           title="API Usage"
           showBack
@@ -237,7 +237,7 @@ function UsageDashboardScreen() {
             </>
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

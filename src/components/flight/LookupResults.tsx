@@ -1,8 +1,13 @@
 import { ArrowRight } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import { cn, formatMonthYear } from '~/lib/utils';
 import { ScheduleHonesty } from './RouteResults';
 import { formatClock, legLabel } from '~/lib/flightLookup';
 import type { LookupLeg } from '~/lib/flightLookup';
+
+/** The API note says "as of 2026-08"; show "as of August 2026". */
+function humanizeAsOf(note: string): string {
+  return note.replace(/\bas of (\d{4}-\d{2}(?:-\d{2})?)/gi, (_m, iso: string) => `as of ${formatMonthYear(iso)}`);
+}
 
 /** Tappable cards for the leg(s) a flight number flies on the chosen date. */
 export function LookupResults({
@@ -49,7 +54,7 @@ export function LookupResults({
           </p>
         </button>
       ))}
-      {note && <p className="text-body-md text-ink-caption">{note}</p>}
+      {note && <p className="text-body-md text-ink-caption">{humanizeAsOf(note)}</p>}
     </div>
   );
 }

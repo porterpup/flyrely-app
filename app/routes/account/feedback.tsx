@@ -27,7 +27,7 @@ function FeedbackAdminScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header title="Feedback" showBack onBackClick={() => navigate({ to: '/account' })} />
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-6">
           {!items && !error && (
@@ -61,7 +61,7 @@ function FeedbackAdminScreen() {
             );
           })}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

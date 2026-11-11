@@ -30,17 +30,17 @@ export function FlightCard({ flight, onClick, variant = 'default', now = Date.no
         onClick={onClick}
         className="w-full rounded-tile border border-surface-stroke bg-white p-4 text-left transition-colors hover:border-surface-divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
       >
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-body-lg font-semibold text-ink">{flight.flightNumber}</span>
-            <span className="text-ink-caption">·</span>
-            <span className="text-body-md text-ink-caption">{flight.airline.name}</span>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="whitespace-nowrap text-body-lg font-semibold tabular-nums text-ink">{flight.flightNumber}</span>
+            <span className="text-ink-caption max-[359px]:hidden">·</span>
+            <span className="min-w-0 truncate text-body-md text-ink-caption max-[359px]:hidden">{flight.airline.name}</span>
           </div>
           <RiskPill risk={flight.riskLevel} emphasis="soft" detail={formatDelayPercent(flight.delayProbability)} />
         </div>
-        <div className="flex items-center gap-2 text-body-md text-ink-caption">
+        <div className="flex min-w-0 items-center gap-2 whitespace-nowrap max-[359px]:gap-1 text-body-md tabular-nums text-ink-caption">
           <span>{flight.origin.code}</span>
-          <Plane className="h-4 w-4 rotate-45" aria-hidden />
+          <Plane className="h-4 w-4 shrink-0 rotate-45" aria-hidden />
           <span>{flight.destination.code}</span>
           <span>·</span>
           <span>{formatDate(flight.scheduledDeparture)}</span>

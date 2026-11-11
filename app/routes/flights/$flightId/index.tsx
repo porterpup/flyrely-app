@@ -138,7 +138,7 @@ function FlightDetailsScreen() {
   if (notFound) {
     return (
       <div className="app-container">
-        <div className="screen">
+        <main className="screen">
           <Header title="Flight Details" showBack onBackClick={goBack} />
           <EmptyState
             className="flex-1 justify-center"
@@ -147,7 +147,7 @@ function FlightDetailsScreen() {
             description="This flight may have been removed."
             action={<Button onClick={() => navigate({ to: '/' })}>Go home</Button>}
           />
-        </div>
+        </main>
       </div>
     );
   }
@@ -155,7 +155,7 @@ function FlightDetailsScreen() {
   if (!flight) {
     return (
       <div className="app-container">
-        <div className="screen">
+        <main className="screen">
           <Header title="Flight Details" showBack onBackClick={goBack} />
           <div className="flex-1 rounded-t-4xl bg-surface-card px-2 pt-10" role="status" aria-label="Loading flight">
             <div className="mx-auto mb-8 flex flex-col items-center gap-3">
@@ -167,7 +167,7 @@ function FlightDetailsScreen() {
               <Skeleton onDark className="h-48 rounded-panel" />
             </div>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -182,7 +182,7 @@ function FlightDetailsScreen() {
 
   return (
     <div className="app-container">
-      <div className="screen">
+      <main className="screen">
         <Header
           title={`${flight.flightNumber} · ${formatDate(flight.scheduledDeparture)}`}
           showBack
@@ -316,7 +316,7 @@ function FlightDetailsScreen() {
           flight={flight}
           onConfirm={handleRemove}
         />
-      </div>
+      </main>
     </div>
   );
 }

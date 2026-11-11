@@ -15,9 +15,9 @@ export function AppShell({ children, hideNav = false }: AppShellProps) {
           You&apos;re offline
         </div>
       )}
-      <div className="screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
+      <main className="screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
         {children}
-      </div>
+      </main>
       {!hideNav && <BottomNav />}
     </div>
   );
