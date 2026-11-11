@@ -5,6 +5,7 @@ import {
   formatLayover,
   layoverMinutes,
   suggestTrips,
+  splitNextTrip,
   tripTitle,
   tripToItineraryRequest,
   validateTripLegs,
@@ -140,5 +141,34 @@ describe('tripToItineraryRequest', () => {
   it('gives an empty connection object when there is no override', () => {
     const req = tripToItineraryRequest({ id: 't' }, [{ ...A, legIndex: 0 }, { ...B, legIndex: 1 }]);
     expect(req.connections).toEqual([{}]);
+  });
+});
+
+describe('splitNextTrip (Home)', () => {
+  const ap = (code: string) => ({ code, name: code, city: code });
+  const leg = (id: string, from: string, to: string, dep: string, extra: Partial<Flight> = {}) =>
+    makeFlight({ id, origin: ap(from), destination: ap(to), scheduledDeparture: dep, ...extra });
+
+  it('pulls the next trip\'s remaining legs out of the upcoming list', () => {
+    const a = leg('a', 'SFO', 'DEN', '2026-12-03T07:00:00', { tripId: 't', legIndex: 0 });
+    const b = leg('b', 'DEN', 'BNA', '2026-12-03T10:00:00', { tripId: 't', legIndex: 1 });
+    const c = leg('c', 'BNA', 'ATL', '2026-12-03T14:00:00', { tripId: 't', legIndex: 2 });
+    const other = leg('x', 'JFK', 'LAX', '2026-12-05T09:00:00');
+    const r = splitNextTrip([a, b, c, other], [a, b, c, other]);
+    expect(r.next?.id).toBe('a');
+    expect(r.remainingLegs.map((f) => f.id)).toEqual(['b', 'c']);
+    expect(r.rest.map((f) => f.id)).toEqual(['x']);
+  });
+
+  it('leaves other flights alone when the next flight is not in a trip', () => {
+    const a = leg('a', 'SFO', 'DEN', '2026-12-03T07:00:00');
+    const b = leg('b', 'DEN', 'BNA', '2026-12-03T10:00:00');
+    const r = splitNextTrip([a, b], [a, b]);
+    expect(r.remainingLegs).toEqual([]);
+    expect(r.rest.map((f) => f.id)).toEqual(['b']);
+  });
+
+  it('handles an empty list', () => {
+    expect(splitNextTrip([], [])).toEqual({ next: undefined, remainingLegs: [], rest: [] });
   });
 });

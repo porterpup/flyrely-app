@@ -74,6 +74,23 @@ export function legsOf(trip: Pick<Trip, 'id'>, flights: Flight[]): Flight[] {
     .sort((a, b) => (a.legIndex ?? 0) - (b.legIndex ?? 0));
 }
 
+/**
+ * Home: the trip the next flight belongs to, as the legs after it, and the upcoming list without those legs
+ * (and without the next flight). `rest` is every other upcoming flight, in order.
+ */
+export function splitNextTrip(
+  upcoming: Flight[],
+  allFlights: Flight[]
+): { next: Flight | undefined; remainingLegs: Flight[]; rest: Flight[] } {
+  const next = upcoming[0];
+  if (!next) return { next, remainingLegs: [], rest: [] };
+  const remainingLegs = next.tripId
+    ? legsOf({ id: next.tripId }, allFlights).filter((f) => (f.legIndex ?? 0) > (next.legIndex ?? 0) && upcoming.some((u) => u.id === f.id))
+    : [];
+  const hidden = new Set(remainingLegs.map((f) => f.id));
+  return { next, remainingLegs, rest: upcoming.slice(1).filter((f) => !hidden.has(f.id)) };
+}
+
 /** "SFO → DEN → BNA" */
 export function chainLabel(legs: Flight[]): string {
   if (legs.length === 0) return '';

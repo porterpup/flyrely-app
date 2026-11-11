@@ -23,6 +23,16 @@ describe('ConnectionRow', () => {
     render(<ConnectionRow prev={p} next={n} />);
     expect(screen.getByText('Tight connection: 45 min in Chicago. We recommend at least 50 min here.')).toBeTruthy();
   });
+  it('adds a tip on a tight connection only', () => {
+    const tip = 'Tip: sit near the front and check your arrival gate as soon as you land.';
+    const [p, n] = pair('ORD', '2026-12-03T10:00:00', '2026-12-03T10:45:00');
+    const { unmount } = render(<ConnectionRow prev={p} next={n} />);
+    expect(screen.getByText(tip)).toBeTruthy();
+    unmount();
+    const [p2, n2] = pair('DEN', '2026-12-03T10:00:00', '2026-12-03T10:55:00');
+    render(<ConnectionRow prev={p2} next={n2} />);
+    expect(screen.queryByText(tip)).toBeNull();
+  });
   it('shows a short-connection caution', () => {
     const [p, n] = pair('DEN', '2026-12-03T10:00:00', '2026-12-03T10:55:00');
     render(<ConnectionRow prev={p} next={n} />);

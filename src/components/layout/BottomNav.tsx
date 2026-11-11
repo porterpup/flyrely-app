@@ -1,12 +1,12 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Home, Plane, Compass, User } from 'lucide-react';
+import { Home, Plane, Search, User } from 'lucide-react';
 import { cn } from '~/lib/utils';
 import { NavigationTab } from '~/components/ui/NavigationTab';
 
 const navItems = [
   { to: '/', icon: Home, label: 'Home' },
   { to: '/trips', icon: Plane, label: 'Trips' },
-  { to: '/explore', icon: Compass, label: 'Explore' },
+  { to: '/explore', icon: Search, label: 'Compare' },
   { to: '/account', icon: User, label: 'Account' },
 ] as const;
 

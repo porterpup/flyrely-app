@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Clock, Loader2 } from 'lucide-react';
 import { Header, Button, Input, Select, SegmentedTabs, Alert } from '~/components/ui';
 import { AirportAutocomplete } from '~/components/flight/AirportAutocomplete';
 import { LookupResults } from '~/components/flight/LookupResults';
-import { RouteResults } from '~/components/flight/RouteResults';
-import { lookupFlight, searchFlights, LookupError, scheduleWarning } from '~/lib/flightLookup';
-import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
+import { RouteSearch } from '~/components/flight/RouteSearch';
+import { lookupFlight, LookupError, scheduleWarning } from '~/lib/flightLookup';
+import type { LookupLeg, LookupResponse } from '~/lib/flightLookup';
 import { localToday, formatDate, formatTime, parseFlightNumber } from '~/lib/utils';
 import { getFlightById } from '~/lib/flightStore';
 import { legDepartureISO, legArrivalISO } from '~/lib/flightLookup';
@@ -16,6 +16,7 @@ import { useGoBack } from '~/hooks/useGoBack';
 import { useAuth } from '~/context/AuthContext';
 import { AIRLINES, findAirline } from '~/lib/airlines';
 import { getAirport } from '~/lib/airports';
+import { getAirportRef } from '~/lib/airportRef';
 import type { AirportInfo } from '~/lib/airports';
 import { validateAirports } from '~/lib/airportRef';
 import type { Flight } from '~/types';
@@ -53,6 +54,7 @@ function dayOffset(offset: number): string {
 
 function AddFlightScreen() {
   const track = useTrackFlight();
+  const navigate = useNavigate();
   const goBack = useGoBack('/');
   // "Add connecting flight": ?after=<flightId> pre-fills the route search from that flight's destination and arrival date.
   const { after: afterFlightId } = Route.useSearch();
@@ -70,7 +72,9 @@ function AddFlightScreen() {
   const [, setOriginInfo] = useState<AirportInfo | undefined>();
   const [destCode, setDestCode] = useState('');
   const [, setDestInfo] = useState<AirportInfo | undefined>();
-  const [tab, setTab] = useState<'number' | 'route' | 'recent'>('number');
+  const [tab, setTab] = useState<'number' | 'recent'>('number');
+  // Route search lives on the Compare tab; inside Add it is only offered when connecting from another flight.
+  const [showRoute, setShowRoute] = useState(false);
   const recent = useMemo(() => dedupeRecent(storedFlights), [storedFlights]);
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
@@ -81,11 +85,6 @@ function AddFlightScreen() {
   const [lookup, setLookup] = useState<LookupResponse | null>(null);
   const [lookupMiss, setLookupMiss] = useState('');
   const [notFound, setNotFound] = useState(false);
-  // Route search: From/To + date (+ optional time window) -> every flight that day, each with a delay chance.
-  const [after, setAfter] = useState('');
-  const [before, setBefore] = useState('');
-  const [routeResult, setRouteResult] = useState<SearchResponse | null>(null);
-  const [routeMiss, setRouteMiss] = useState('');
   const [manualLookup, setManualLookup] = useState<LookupResponse | null>(null);
 
   const [error, setError] = useState('');
@@ -97,7 +96,6 @@ function AddFlightScreen() {
     const prev = getFlightById(afterFlightId);
     if (!prev) return;
     prefilled.current = true;
-    setTab('route');
     setOriginCode(prev.destination.code);
     setOriginInfo(getAirport(prev.destination.code));
     setDate((prev.scheduledArrivalLocal ?? prev.scheduledDeparture).slice(0, 10));
@@ -191,46 +189,6 @@ function AddFlightScreen() {
     setIsFinding(false);
   };
 
-  const handleRouteSearch = async () => {
-    setError('');
-    setRouteMiss('');
-    setRouteResult(null);
-    setAirportErrors({});
-    if (originCode.length !== 3 || destCode.length !== 3) {
-      setError('Choose the From and To airports');
-      return;
-    }
-    const airportProblems = validateAirports(originCode, destCode);
-    if (airportProblems.origin || airportProblems.dest) {
-      setAirportErrors(airportProblems);
-      return;
-    }
-    const dateError = validateDate();
-    if (dateError) {
-      setError(dateError);
-      return;
-    }
-    setIsFinding(true);
-    try {
-      setRouteResult(await searchFlights(originCode, destCode, date, { after, before }));
-    } catch (e) {
-      setRouteMiss(e instanceof LookupError ? e.message : "We couldn't search flights right now.");
-    }
-    setIsFinding(false);
-  };
-
-  /** A flight was picked from the route list: the stored time is the scheduled one. */
-  const handlePickRouteFlight = async (f: SearchFlight) => {
-    setError('');
-    setIsFinding(true);
-    const message = await track({
-      airline: f.airline, number: f.flight_number, depISO: legDepartureISO(date, f), arrISO: legArrivalISO(date, f),
-      origin: f.origin, dest: f.dest, after: afterFlightId,
-    });
-    setIsFinding(false);
-    if (message) setError(message);
-  };
-
   const goManual = () => {
     setAirportErrors({});
     setManual(true);
@@ -239,8 +197,7 @@ function AddFlightScreen() {
     setLookup(null);
     setLookupMiss('');
     setNotFound(false);
-    setRouteResult(null);
-    setRouteMiss('');
+    setShowRoute(false);
   };
 
   /** A leg was picked from several: track it. */
@@ -271,6 +228,8 @@ function AddFlightScreen() {
   }, [manualKey]);
   const timeWarning = manualLookup && manual ? scheduleWarning(manualLookup, originCode, destCode, departureTime) : null;
 
+  const prevFlight = afterFlightId ? getFlightById(afterFlightId) : undefined;
+  const prevCity = prevFlight ? (getAirportRef(prevFlight.destination.code)?.city ?? prevFlight.destination.city) : '';
   const typedParsed = parseFlightNumber(flightNumber);
   const bareDigits = /^\d+$/.test(flightNumber.trim());
   const today = dayOffset(0);
@@ -295,7 +254,6 @@ function AddFlightScreen() {
             onChange={setTab}
             options={[
               { value: 'number', label: 'Flight number' },
-              { value: 'route', label: 'Route' },
               { value: 'recent', label: 'Recent' },
             ]}
           />
@@ -338,46 +296,32 @@ function AddFlightScreen() {
             </div>
           )}
 
-          {tab === 'route' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <AirportAutocomplete
-                  key="rfrom"
-                  label="From"
-                  placeholder="e.g., EWR"
-                  value={originCode}
-                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setRouteResult(null); setAirportErrors((e) => ({ ...e, origin: undefined })); }}
-                  error={airportErrors.origin}
-                  leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
-                />
-                <AirportAutocomplete
-                  key="rto"
-                  label="To"
-                  placeholder="e.g., SFO"
-                  value={destCode}
-                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setRouteResult(null); setAirportErrors((e) => ({ ...e, dest: undefined })); }}
-                  error={airportErrors.dest}
-                  leftIcon={<Plane className="w-5 h-5 rotate-45" />}
-                />
-              </div>
-              <Input
-                label="Date"
-                type="date"
-                min={localToday()}
-                value={date}
-                onChange={(e) => { setDate(e.target.value); setRouteResult(null); setRouteMiss(''); }}
-                leftIcon={<Calendar />}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Input label="Earliest (optional)" type="time" value={after}
-                  onChange={(e) => { setAfter(e.target.value); setRouteResult(null); }} leftIcon={<Clock />} />
-                <Input label="Latest (optional)" type="time" value={before}
-                  onChange={(e) => { setBefore(e.target.value); setRouteResult(null); }} leftIcon={<Clock />} />
-              </div>
-            </div>
+          {prevFlight && tab === 'number' && (
+            <p className="mb-4 text-body-md text-ink-sub" data-testid="connecting-caption">
+              Connecting from {prevCity} ({prevFlight.destination.code}){date ? ` · ${formatDate(`${date}T12:00:00`)}` : ''}
+            </p>
           )}
 
-          {tab === 'number' && (
+          {tab === 'number' && showRoute && afterFlightId && (
+            <>
+              <RouteSearch
+                initialOrigin={prevFlight?.destination.code ?? profileHome}
+                initialDate={date}
+                preferredAirline={preferredAirline}
+                onPick={(f, day) =>
+                  track({
+                    airline: f.airline, number: f.flight_number, depISO: legDepartureISO(day, f), arrISO: legArrivalISO(day, f),
+                    origin: f.origin, dest: f.dest, after: afterFlightId,
+                  })
+                }
+              />
+              <button type="button" className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline" onClick={() => setShowRoute(false)}>
+                Search by flight number instead
+              </button>
+            </>
+          )}
+
+          {tab === 'number' && !showRoute && (
             <div className="space-y-4">
               <div>
                 <Input
@@ -494,44 +438,11 @@ function AddFlightScreen() {
             </div>
           )}
 
-          {error && (
+          {error && !showRoute && (
             <Alert className="mt-4" status="error" showIcon={false} lineOne={error} />
           )}
 
-          {tab === 'route' && (
-            <>
-              <Button
-                fullWidth
-                className="mt-6"
-                onClick={handleRouteSearch}
-                loading={isFinding && !routeResult}
-                icon={<Search className="w-4 h-4" />}
-              >
-                Find flights
-              </Button>
-              {routeMiss && <Alert className="mt-4" status="warning" showIcon={false} lineOne={routeMiss} />}
-              {routeResult && (
-                <div className="mt-6">
-                  <RouteResults
-                    flights={routeResult.flights}
-                    asOf={routeResult.schedule_as_of}
-                    disabled={isFinding}
-                    preferredAirline={preferredAirline}
-                    onPick={handlePickRouteFlight}
-                  />
-                </div>
-              )}
-              <button
-                type="button"
-                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
-                onClick={goManual}
-              >
-                Enter details manually
-              </button>
-            </>
-          )}
-
-          {tab === 'number' && !manual && (
+          {tab === 'number' && !manual && !showRoute && (
             <>
               <Button
                 fullWidth
@@ -555,7 +466,7 @@ function AddFlightScreen() {
                   lineOne={`We couldn't find ${(typedParsed ? `${typedParsed.airlineCode}${typedParsed.number}` : flightNumber.trim()).toUpperCase()} on ${formatDate(`${date}T12:00:00`)}. We cover US domestic flights, and we don't have every schedule yet. Try searching by route instead.`}
                   lineTwo={
                     <span className="mt-1 flex flex-wrap gap-x-2">
-                      <Button size="sm" variant="text" onClick={() => { setNotFound(false); setTab('route'); }}>Search by route</Button>
+                      <Button size="sm" variant="text" onClick={() => { setNotFound(false); if (afterFlightId) setShowRoute(true); else navigate({ to: '/explore' }); }}>Search by route</Button>
                       <Button size="sm" variant="text" onClick={goManual}>Enter details manually</Button>
                     </span>
                   }
@@ -574,6 +485,22 @@ function AddFlightScreen() {
                 </div>
               )}
 
+              {afterFlightId ? (
+                <button
+                  type="button"
+                  className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
+                  onClick={() => setShowRoute(true)}
+                >
+                  Search by route instead
+                </button>
+              ) : (
+                <p className="mt-3 text-center text-body-md text-ink-sub">
+                  No flight number yet?{' '}
+                  <Link to="/explore" className="font-semibold text-ink underline underline-offset-2">
+                    Compare flights on a route
+                  </Link>
+                </p>
+              )}
               <button
                 type="button"
                 className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
@@ -584,7 +511,7 @@ function AddFlightScreen() {
             </>
           )}
 
-          {tab === 'number' && manual && (
+          {tab === 'number' && manual && !showRoute && (
             <>
               <Button
                 fullWidth

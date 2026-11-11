@@ -108,7 +108,12 @@ export function useTrackFlight() {
       saveFlight(flight);
       if (prev) {
         const result = prev.tripId ? appendLeg(prev.tripId, flight.id) : createTrip([prev.id, flight.id]);
-        if (!result.ok) emitNotice(result.reason);
+        if (result.ok) {
+          emitNotice('Added to your trip.');
+          navigate({ to: '/trips/$tripId', params: { tripId: result.tripId } });
+          return null;
+        }
+        emitNotice(result.reason);
       }
       navigate({ to: '/flights/$flightId', params: { flightId: flight.id }, search: { added: '1' } });
       return null;

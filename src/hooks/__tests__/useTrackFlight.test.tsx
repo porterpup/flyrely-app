@@ -8,15 +8,17 @@ const rescoreFlight = vi.fn();
 const saveFlight = vi.fn();
 const getFlights = vi.fn();
 const emitNotice = vi.fn();
+const getFlightById = vi.fn();
+const createTrip = vi.fn();
 
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigate }));
 vi.mock('~/lib/prediction', () => ({ rescoreFlight: (f: unknown) => rescoreFlight(f) }));
 vi.mock('~/lib/flightStore', () => ({
   saveFlight: (f: unknown) => saveFlight(f),
   getFlights: () => getFlights(),
-  getFlightById: () => undefined,
+  getFlightById: (id: string) => getFlightById(id),
   getTripById: () => undefined,
-  createTrip: () => ({ ok: true }),
+  createTrip: (ids: string[]) => createTrip(ids),
   appendLeg: () => ({ ok: true }),
 }));
 vi.mock('~/lib/syncEngine', async (orig) => ({
@@ -38,6 +40,8 @@ const lookup = (matches: LookupLeg[]): LookupResponse => ({
 beforeEach(() => {
   vi.clearAllMocks();
   getFlights.mockReturnValue([]);
+  getFlightById.mockReturnValue(undefined);
+  createTrip.mockReturnValue({ ok: true, tripId: 'trip-1' });
   rescoreFlight.mockImplementation(async (f) => f);
 });
 
@@ -69,6 +73,19 @@ describe('useTrackFlight', () => {
     expect(saveFlight).not.toHaveBeenCalled();
     expect(emitNotice).toHaveBeenCalledWith('You already track AA100.');
     expect(navigate).toHaveBeenCalledWith({ to: '/flights/$flightId', params: { flightId: saved.id } });
+  });
+  it('goes to the trip with a notice when added as a connecting flight', async () => {
+    const prev = {
+      id: 'prev', flightNumber: 'AA1', airline: { code: 'AA', name: 'American' },
+      origin: { code: 'SFO', name: 'SFO', city: 'SFO' }, destination: { code: 'JFK', name: 'JFK', city: 'JFK' },
+      scheduledDeparture: '2030-01-02T01:00:00', scheduledArrivalLocal: '2030-01-02T05:00:00', status: 'scheduled', riskLevel: 'low',
+    };
+    getFlightById.mockReturnValue(prev);
+    const { result } = renderHook(() => useTrackFlight());
+    expect(await result.current({ airline: 'AA', number: '200', depISO: '2030-01-02T07:00:00', origin: 'JFK', dest: 'LAX', after: 'prev' })).toBeNull();
+    expect(createTrip).toHaveBeenCalled();
+    expect(emitNotice).toHaveBeenCalledWith('Added to your trip.');
+    expect(navigate).toHaveBeenCalledWith({ to: '/trips/$tripId', params: { tripId: 'trip-1' } });
   });
   it('returns a message instead of throwing when the prediction fails', async () => {
     rescoreFlight.mockRejectedValue(new Error('boom'));
