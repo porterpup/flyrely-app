@@ -86,9 +86,14 @@ function HomeScreen() {
             </>
           }
           action={
-            <Button icon={<Plus className="w-4 h-4" />} onClick={() => navigate({ to: '/flights/add' })}>
-              Add your flight
-            </Button>
+            <div className="flex flex-col items-center gap-2">
+              <Button icon={<Plus className="w-4 h-4" />} onClick={() => navigate({ to: '/flights/add' })}>
+                Add your flight
+              </Button>
+              <Button variant="text" onClick={() => navigate({ to: '/explore' })}>
+                Compare flights on a route
+              </Button>
+            </div>
           }
         />
       </AppShell>
