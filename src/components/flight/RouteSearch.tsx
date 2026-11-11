@@ -13,11 +13,14 @@ export function RouteSearch({
   initialOrigin = '',
   initialDate = '',
   preferredAirline,
+  afterArrivalLocal,
   onPick,
 }: {
   initialOrigin?: string;
   initialDate?: string;
   preferredAirline?: string | null;
+  /** Connecting flight: the previous leg's arrival (local wall-clock). Results leaving before it, or over 24 hours after, are hidden. */
+  afterArrivalLocal?: string;
   /** A flight was picked; `date` is the searched day (YYYY-MM-DD). Resolves to an error message, or null. */
   onPick: (flight: SearchFlight, date: string) => Promise<string | null | void> | void;
 }) {
@@ -130,6 +133,8 @@ export function RouteSearch({
             asOf={result.schedule_as_of}
             disabled={busy}
             preferredAirline={preferredAirline}
+            afterArrivalLocal={afterArrivalLocal}
+            date={date}
             onPick={handlePick}
           />
         </div>

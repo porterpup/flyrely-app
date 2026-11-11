@@ -166,7 +166,7 @@ let failing = false;
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let statusSnap: SyncStatus = { pending: 0, state: 'synced' };
 let listenersStarted = false;
-const noticeListeners = new Set<(message: string) => void>();
+const noticeListeners = new Set<(message: string, kind: NoticeKind) => void>();
 
 export function configureEngine(opts: { api?: CloudApi; host?: EngineHost | null; autoFlush?: boolean }): void {
   if (opts.api) api = opts.api;
@@ -213,18 +213,21 @@ export function pendingCount(): number {
   return outbox.length;
 }
 
-export function onNotice(cb: (message: string) => void): () => void {
+export type NoticeKind = 'info' | 'success' | 'warning';
+
+export function onNotice(cb: (message: string, kind: NoticeKind) => void): () => void {
   noticeListeners.add(cb);
   return () => noticeListeners.delete(cb);
 }
 
 /** Show a short message to the user (rendered as a Toast by SyncNotices). */
-export function emitNotice(message: string): void {
-  notice(message);
+export function emitNotice(message: string, kind: NoticeKind = 'info'): void {
+  notice(message, kind);
 }
 
-function notice(message: string): void {
-  for (const cb of noticeListeners) cb(message);
+/** Notices from the sync engine itself (dropped changes) stay warnings. */
+function notice(message: string, kind: NoticeKind = 'warning'): void {
+  for (const cb of noticeListeners) cb(message, kind);
 }
 
 function persistOutbox(): void {

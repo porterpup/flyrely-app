@@ -203,7 +203,7 @@ function EditFlightScreen() {
     saveFlight(edited);
     // An edited leg may no longer connect (other airport, or a layover of 0 or more than 24 h): ungroup, as on delete.
     if (flight.tripId && revalidateTrip(flight.tripId) === 'ungrouped_not_connected') {
-      emitNotice('Trip ungrouped because the flights no longer connect.');
+      emitNotice('Trip ungrouped because the flights no longer connect.', 'warning');
     }
     if (COPILOT_ENABLED && predictionInputsChanged) void releaseFlightCopilot(flight.id);
     setIsSaving(false);

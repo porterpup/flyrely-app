@@ -14,6 +14,7 @@ interface ErrorStateProps {
   title?: string;
   message?: string;
   onRetry?: () => void;
+  retryDisabled?: boolean;
   onAction?: () => void;
   actionLabel?: string;
   className?: string;
@@ -57,6 +58,7 @@ export function ErrorState({
   title,
   message,
   onRetry,
+  retryDisabled = false,
   onAction,
   actionLabel,
   className,
@@ -105,6 +107,7 @@ export function ErrorState({
             variant="secondary"
             size={compact ? 'sm' : 'default'}
             onClick={onRetry}
+            disabled={retryDisabled}
             icon={<RefreshCw className="w-4 h-4" />}
           >
             Try again

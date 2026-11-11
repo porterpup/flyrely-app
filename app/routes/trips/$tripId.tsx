@@ -63,7 +63,7 @@ function TripScreen() {
 
   const handleRemoveLeg = (flightId: string) => {
     const result = removeLeg(trip.id, flightId);
-    if (result === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.');
+    if (result === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.', 'warning');
     if (result !== 'updated') goToTrips();
   };
 

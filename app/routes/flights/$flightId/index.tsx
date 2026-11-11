@@ -130,7 +130,7 @@ function FlightDetailsScreen() {
   const handleRemove = async () => {
     if (!flight) return;
     const tripChange = removeFlight(flight.id);
-    if (tripChange === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.');
+    if (tripChange === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.', 'warning');
     if (COPILOT_ENABLED) void releaseFlightCopilot(flight.id);
     navigate({ to: '/' });
   };

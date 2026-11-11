@@ -46,7 +46,7 @@ export function ConnectionRow({ prev, next }: ConnectionRowProps) {
             Connection in {city} · {formatLayover(minutes)}
           </span>
           {a.message && <span className={tight ? 'font-semibold' : undefined}>{a.message}</span>}
-          {tight && <span>Tip: sit near the front and check your arrival gate as soon as you land.</span>}
+          {(tight || a.level === 'short') && <span>Tip: sit near the front and check your arrival gate as soon as you land.</span>}
         </>
       )}
       {a.separateNote && <span>{a.separateNote}</span>}
