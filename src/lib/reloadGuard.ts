@@ -27,6 +27,8 @@ export function isChunkLoadError(err: unknown): boolean {
 
 /** Reloads once (rate limited) to pick up the new build. Used by window handlers and the router error boundary. */
 export function recoverFromStaleChunk(win: Window = window): void {
+  // Offline, a chunk failing to load is the network, not a redeploy: reloading would only show the browser's offline page.
+  if (win.navigator?.onLine === false) return;
   let storage: Storage | null = null;
   try {
     storage = win.sessionStorage;
