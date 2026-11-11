@@ -68,7 +68,7 @@ export default {
           sub: '#0A1220', // Type/subheading
           caption: '#3D4553', // Type/caption
           'on-dark': '#FFFFFF',
-          'on-dark-muted': 'rgba(255, 255, 255, 0.5)',
+          'on-dark-muted': 'rgba(255, 255, 255, 0.72)',
         },
         // Alert + pill status pairs (Status/*-text on Status/*-background)
         status: {
