@@ -17,7 +17,7 @@ export const Route = createFileRoute('/')({
 
 function HomeScreen() {
   const navigate = useNavigate();
-  const { flights: allFlights, ready } = useFlights();
+  const { flights: allFlights, ready, downloaded } = useFlights();
   // Ticks once a minute while the tab is visible so the countdown and "upcoming" list stay current.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -38,13 +38,15 @@ function HomeScreen() {
 
   useEffect(() => {
     // After the first download, so a stale cached copy is never saved over a newer edit from another device.
-    if (ready) autoCompleteOldFlights(); // migrate departed flights to history
-  }, [ready]);
+    if (downloaded) autoCompleteOldFlights(); // migrate departed flights to history (only after a real download)
+  }, [downloaded]);
 
   // Quietly re-check due flights once per visit (max 3, in the background, errors ignored).
+  // Only after a successful download: `ready` is also set when the download failed, and saving a rescored
+  // cached copy then would upload stale fields over a newer edit made on another device.
   const refreshedOnce = useRef(false);
   useEffect(() => {
-    if (!ready || refreshedOnce.current) return;
+    if (!downloaded || refreshedOnce.current) return;
     refreshedOnce.current = true;
     void refreshDueFlights(
       selectUpcoming(allFlights),
@@ -55,7 +57,7 @@ function HomeScreen() {
         if (current) saveFlight(applyRescore(current, fresh));
       }
     );
-  }, [ready, allFlights]);
+  }, [downloaded, allFlights]);
 
   const hasFlights = flights.length > 0;
   const { next: nextFlight, remainingLegs, rest: upcomingRest } = useMemo(() => splitNextTrip(flights, allFlights), [flights, allFlights]);

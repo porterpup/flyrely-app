@@ -207,7 +207,9 @@ function EditFlightScreen() {
     }
     if (COPILOT_ENABLED && predictionInputsChanged) void releaseFlightCopilot(flight.id);
     setIsSaving(false);
-    navigate({ to: '/flights/$flightId', params: { flightId } });
+    // Back to where Edit was opened (the flight or trip page); pushing the flight page here would leave this form
+    // in history, so Back from the flight page reopened it.
+    goBack();
   };
 
   return (

@@ -44,7 +44,7 @@ export const validationErrors = {
   password: {
     required: 'Password is required',
     tooShort: 'Password must be at least 8 characters',
-    noUppercase: 'Password must contain an letter',
+    noUppercase: 'Password must contain an uppercase letter',
     noNumber: 'Password must contain a number',
   },
 };

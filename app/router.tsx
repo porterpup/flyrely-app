@@ -8,7 +8,9 @@ import { isChunkLoadError, recoverFromStaleChunk } from '../src/lib/reloadGuard'
 // A stale chunk after a redeploy gets the same one-time reload; anything else shows a recoverable error.
 function RouteError({ error }: { error: unknown }) {
   const router = useRouter();
-  const stale = isChunkLoadError(error);
+  // Offline, a chunk that fails to load is the network, not a new deploy: show the offline state, don't reload.
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  const stale = !offline && isChunkLoadError(error);
   useEffect(() => {
     if (stale) recoverFromStaleChunk();
   }, [stale]);
@@ -23,7 +25,7 @@ function RouteError({ error }: { error: unknown }) {
       />
     );
   }
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+  if (offline) {
     return (
       <ErrorState
         type="network"

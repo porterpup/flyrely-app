@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { shouldReload, isChunkLoadError, RELOAD_KEY, RELOAD_WINDOW_MS } from '../reloadGuard';
+import { describe, it, expect, vi } from 'vitest';
+import { shouldReload, isChunkLoadError, recoverFromStaleChunk, RELOAD_KEY, RELOAD_WINDOW_MS } from '../reloadGuard';
 
 function mem(initial: Record<string, string> = {}) {
   const d = { ...initial };
@@ -54,5 +54,23 @@ describe('isChunkLoadError (Track Flight regression)', () => {
   });
   it('ignores unrelated errors', () => {
     expect(isChunkLoadError(new Error('Network down'))).toBe(false);
+  });
+});
+
+describe('recoverFromStaleChunk', () => {
+  const fakeWin = (onLine: boolean) => {
+    const reload = vi.fn();
+    const win = { navigator: { onLine }, sessionStorage: mem(), location: { reload } } as unknown as Window;
+    return { win, reload };
+  };
+  it('reloads once when online', () => {
+    const { win, reload } = fakeWin(true);
+    recoverFromStaleChunk(win);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+  it('does not reload while offline (the chunk failed because of the network)', () => {
+    const { win, reload } = fakeWin(false);
+    recoverFromStaleChunk(win);
+    expect(reload).not.toHaveBeenCalled();
   });
 });
