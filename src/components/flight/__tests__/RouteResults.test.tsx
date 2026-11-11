@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { RouteResults, groupByDayPart, pickBestBet } from '../RouteResults';
+import { RouteResults, filterAfterArrival, groupByDayPart, pickBestBet } from '../RouteResults';
 import type { SearchFlight } from '~/lib/flightLookup';
 
 const f = (flight: string, dep: string, arr: string, p: number, risk: SearchFlight['risk_level'], op = 'UA'): SearchFlight => ({
@@ -101,5 +101,35 @@ describe('route result helpers', () => {
   it('labels a tie', () => {
     render(<RouteResults flights={[f('UA2', '09:00', '12:00', 0.15, 'low'), f('UA1', '07:00', '10:00', 0.15, 'low')]} onPick={() => {}} />);
     expect(screen.getByTestId('best-bet').textContent).toContain('Best bet (tied on risk)');
+  });
+
+  describe('after a previous leg', () => {
+    const early = f('DL100', '08:15', '10:00', 0.05, 'low');
+    const mid = f('DL200', '20:30', '22:00', 0.2, 'low');
+    const late = f('DL300', '21:30', '23:00', 0.3, 'high');
+    const arrival = '2026-12-03T19:40:00';
+
+    it('keeps only flights leaving after the arrival, within 24 hours', () => {
+      expect(filterAfterArrival([early, mid, late], '2026-12-03', arrival)).toEqual([mid, late]);
+      // next morning is within 24 hours of a 7:40 PM landing
+      expect(filterAfterArrival([early], '2026-12-04', arrival)).toEqual([early]);
+      // more than 24 hours later is out; leaving exactly at arrival is out (must be more than 0)
+      expect(filterAfterArrival([early], '2026-12-05', arrival)).toEqual([]);
+      expect(filterAfterArrival([f('DL1', '19:40', '21:00', 0.1, 'low')], '2026-12-03', arrival)).toEqual([]);
+    });
+
+    it('picks the best bet from the filtered list', () => {
+      render(<RouteResults flights={[early, mid, late]} date="2026-12-03" afterArrivalLocal={arrival} onPick={() => {}} />);
+      const card = screen.getByTestId('best-bet');
+      expect(card.textContent).toContain('DL200');
+      expect(card.textContent).not.toContain('DL100');
+      expect(screen.queryByLabelText(/DL100/)).toBeNull();
+    });
+
+    it('says so when nothing leaves after the arrival', () => {
+      render(<RouteResults flights={[early]} date="2026-12-03" afterArrivalLocal={arrival} onPick={() => {}} />);
+      expect(screen.getByText('No flights leave after your arrival at 7:40 PM. Try another day.')).toBeTruthy();
+      expect(screen.queryByTestId('best-bet')).toBeNull();
+    });
   });
 });

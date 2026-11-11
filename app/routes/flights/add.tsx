@@ -308,6 +308,7 @@ function AddFlightScreen() {
                 initialOrigin={prevFlight?.destination.code ?? profileHome}
                 initialDate={date}
                 preferredAirline={preferredAirline}
+                afterArrivalLocal={prevFlight?.scheduledArrivalLocal}
                 onPick={(f, day) =>
                   track({
                     airline: f.airline, number: f.flight_number, depISO: legDepartureISO(day, f), arrISO: legArrivalISO(day, f),

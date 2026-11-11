@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Info } from 'lucide-react';
-import { Button, Card } from '~/components/ui';
+import { Plane } from 'lucide-react';
+import { Button, Card, EmptyState } from '~/components/ui';
+import { localMinutes, MAX_LAYOVER_MINUTES } from '~/lib/tripGrouping';
 import { AIRPORT_TZ } from '~/lib/airportTz';
 import { cn, formatDelayPercent, formatMonthYear, topReasons } from '~/lib/utils';
 import { RiskPill } from './RiskPill';
@@ -22,6 +24,22 @@ export function ScheduleHonesty({ asOf }: { asOf?: string | null }) {
 }
 
 export const ROW_CAP = 10;
+
+/**
+ * Connecting flights only: keeps flights that leave after the previous leg lands and within 24 hours of it.
+ * Same rule as validateTripLegs (more than 0, at most MAX_LAYOVER_MINUTES), so a row shown here can be added.
+ * `date` is the searched day; `afterArrivalLocal` is the previous leg's arrival wall-clock (YYYY-MM-DDTHH:MM).
+ */
+export function filterAfterArrival(flights: SearchFlight[], date: string, afterArrivalLocal: string): SearchFlight[] {
+  const arr = localMinutes(afterArrivalLocal);
+  if (arr === null) return flights;
+  return flights.filter((f) => {
+    const dep = localMinutes(`${date}T${f.dep_time}:00`);
+    if (dep === null) return true;
+    const layover = Math.round(dep - arr);
+    return layover > 0 && layover <= MAX_LAYOVER_MINUTES;
+  });
+}
 
 export type DayPart = 'Morning' | 'Afternoon' | 'Evening';
 
@@ -105,9 +123,15 @@ export function RouteResults({
   asOf,
   disabled,
   preferredAirline,
+  afterArrivalLocal,
+  date,
   onPick,
 }: {
   flights: SearchFlight[];
+  /** Adding a connecting flight: the previous leg's arrival (local). Earlier or more-than-24-hours-later flights are hidden. */
+  afterArrivalLocal?: string;
+  /** The searched day (YYYY-MM-DD); needed with afterArrivalLocal. */
+  date?: string;
   asOf?: string | null;
   disabled?: boolean;
   /** Airline code from the user's profile; its flights are listed first within each group and marked. */
@@ -115,6 +139,8 @@ export function RouteResults({
   onPick: (flight: SearchFlight) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const all = flights;
+  flights = afterArrivalLocal && date ? filterAfterArrival(all, date, afterArrivalLocal) : all;
   const isPreferred = (f: SearchFlight) => !!preferredAirline && f.airline === preferredAirline;
   const groups = groupByDayPart(flights, preferredAirline);
   const total = flights.length;
@@ -129,6 +155,16 @@ export function RouteResults({
       return { part: g.part, flights: rows };
     })
     .filter((g) => g.flights.length > 0);
+
+  if (flights.length === 0 && all.length > 0 && afterArrivalLocal) {
+    return (
+      <EmptyState
+        icon={<Plane />}
+        title={`No flights leave after your arrival at ${formatClock(afterArrivalLocal.slice(11, 16))}. Try another day.`}
+        className="py-8"
+      />
+    );
+  }
 
   return (
     <div className="space-y-3" data-testid="route-results">
