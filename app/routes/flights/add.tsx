@@ -8,7 +8,7 @@ import { LookupResults } from '~/components/flight/LookupResults';
 import { RouteResults } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, legDepartureISO, legArrivalISO, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
-import { cn, formatDate, formatTime, formatDelayChance, formatDelayPercent, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
+import { cn, localToday, formatDate, formatTime, formatDelayChance, formatDelayPercent, newUuid, parseFlightNumber, topReasons } from '~/lib/utils';
 import { weatherFromPrediction } from '~/lib/weather';
 import { flyrelyApi, buildPredictPayload, PredictionUnavailableError } from '~/lib/api';
 import { saveFlight, getFlightById, createTrip, appendLeg, getTripById } from '~/lib/flightStore';
@@ -457,6 +457,7 @@ function AddFlightScreen() {
               <Input
                 label="Date"
                 type="date"
+                min={localToday()}
                 value={date}
                 onChange={(e) => { setDate(e.target.value); setRouteResult(null); setRouteMiss(''); }}
                 leftIcon={<Calendar />}
@@ -553,6 +554,7 @@ function AddFlightScreen() {
                 <Input
                   label="Date"
                   type="date"
+                min={localToday()}
                   value={date}
                   onChange={(e) => { setDate(e.target.value); setLookup(null); setLookupMiss(''); }}
                   leftIcon={<Calendar />}

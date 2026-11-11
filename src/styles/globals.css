@@ -39,6 +39,21 @@
     font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
   }
 
+  /* One icon per date/time field: hide the browser's own indicator but keep the whole field tappable. */
+  input[type='date'],
+  input[type='time'] {
+    position: relative;
+  }
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+
   /* Numbers line up (times, percents, flight numbers). */
   h1, h2, h3, time {
     font-variant-numeric: tabular-nums;
