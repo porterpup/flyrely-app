@@ -80,11 +80,11 @@ export function chainLabel(legs: Flight[]): string {
   return [legs[0].origin.code, ...legs.map((l) => l.destination.code)].join(' → ');
 }
 
-/** The trip's name, or the automatic "SFO → BNA" title. */
+/** The trip's name, or the automatic title listing every airport ("SFO → BOS → ATL"). */
 export function tripTitle(trip: Pick<Trip, 'name'>, legs: Flight[]): string {
   if (trip.name) return trip.name;
   if (legs.length === 0) return 'Trip';
-  return `${legs[0].origin.code} → ${legs[legs.length - 1].destination.code}`;
+  return chainLabel(legs);
 }
 
 // ── Suggestions ─────────────────────────────────────────────────────────────
