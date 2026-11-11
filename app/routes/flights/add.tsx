@@ -598,7 +598,7 @@ function AddFlightScreen() {
               )}
               <button
                 type="button"
-                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={goManual}
               >
                 Enter details manually
@@ -636,7 +636,7 @@ function AddFlightScreen() {
 
               <button
                 type="button"
-                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={goManual}
               >
                 Enter details manually
@@ -657,7 +657,7 @@ function AddFlightScreen() {
               </Button>
               <button
                 type="button"
-                className="mt-4 w-full text-center text-body-md text-ink-sub underline"
+                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={() => { setManual(false); setError(''); setSearchResult(null); }}
               >
                 Look up by flight number instead

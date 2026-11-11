@@ -195,7 +195,7 @@ function FlightDetailsScreen() {
           showBack
           onBackClick={goBack}
           rightAction={
-            <IconButton kind="text" size="sm" aria-label="Refresh prediction" onClick={handleRefresh}>
+            <IconButton kind="text" aria-label="Refresh prediction" onClick={handleRefresh}>
               <RefreshCw className={cn('w-5 h-5', isRefreshing && 'animate-spin')} />
             </IconButton>
           }
@@ -306,7 +306,7 @@ function FlightDetailsScreen() {
               <button
                 type="button"
                 onClick={() => setShowRemoveModal(true)}
-                className="rounded text-body-sm text-ink-on-dark-muted underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex min-h-11 items-center rounded px-2 text-body-sm text-ink-on-dark-muted underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Remove this flight
               </button>

@@ -102,7 +102,7 @@ function UsageDashboardScreen() {
           rightAction={
             <button
               onClick={handleExport}
-              className="p-2 text-ink-caption hover:text-ink rounded-lg hover:bg-surface-muted"
+              className="flex h-11 w-11 items-center justify-center text-ink-caption hover:text-ink rounded-lg hover:bg-surface-muted"
               title="Export CSV"
             >
               <Download className="w-5 h-5" />

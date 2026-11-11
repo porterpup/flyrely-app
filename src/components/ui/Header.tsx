@@ -29,7 +29,7 @@ export function Header({
       )}
     >
       {showBack && (
-        <IconButton kind="text" size="sm" aria-label="Back" onClick={onBackClick} className="-ml-2">
+        <IconButton kind="text" aria-label="Back" onClick={onBackClick} className="-ml-2">
           <ChevronLeft className="h-5 w-5" />
         </IconButton>
       )}
