@@ -4,6 +4,7 @@ import { SearchX } from 'lucide-react';
 import { Button, EmptyState, Header, Input, Modal, Skeleton } from '~/components/ui';
 import { ConnectionRow, FlightCard } from '~/components/flight';
 import { useFlights } from '~/hooks/useFlights';
+import { useGoBack } from '~/hooks/useGoBack';
 import { removeLeg, renameTrip, ungroupTrip } from '~/lib/flightStore';
 import { emitNotice } from '~/lib/syncEngine';
 import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
@@ -23,7 +24,8 @@ function TripScreen() {
 
   const trip = trips.find((t) => t.id === tripId);
   const legs = trip ? legsOf(trip, flights) : [];
-  const goBack = () => navigate({ to: '/trips' });
+  const goBack = useGoBack('/trips');
+  const goToTrips = () => navigate({ to: '/trips' });
 
   if (!trip || legs.length === 0) {
     return (
@@ -36,7 +38,7 @@ function TripScreen() {
               icon={<SearchX />}
               title="Trip not found"
               description="This trip may have been removed."
-              action={<Button onClick={goBack}>Back to trips</Button>}
+              action={<Button onClick={goToTrips}>Back to trips</Button>}
             />
           ) : (
             <div className="flex-1 space-y-3 px-6 py-4" role="status" aria-label="Loading trip">
@@ -62,13 +64,13 @@ function TripScreen() {
   const handleRemoveLeg = (flightId: string) => {
     const result = removeLeg(trip.id, flightId);
     if (result === 'ungrouped_not_connected') emitNotice('Trip ungrouped because the flights no longer connect.');
-    if (result !== 'updated') goBack();
+    if (result !== 'updated') goToTrips();
   };
 
   const handleUngroup = () => {
     ungroupTrip(trip.id);
     setShowUngroup(false);
-    goBack();
+    goToTrips();
   };
 
   return (

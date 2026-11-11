@@ -6,6 +6,7 @@ import { CompletedFlightCard } from '~/components/flight/CompletedFlightCard';
 import { cn } from '~/lib/utils';
 import { selectCompleted, clearCompletedFlights } from '~/lib/flightStore';
 import { useFlights } from '~/hooks/useFlights';
+import { useGoBack } from '~/hooks/useGoBack';
 import type { Flight } from '~/types';
 
 export const Route = createFileRoute('/flights/history')({
@@ -23,6 +24,7 @@ function filterFlights(flights: Flight[], period: FilterPeriod): Flight[] {
 
 function FlightHistoryScreen() {
   const navigate = useNavigate();
+  const goBack = useGoBack('/');
   const { flights } = useFlights();
   const allCompleted = useMemo(() => selectCompleted(flights), [flights]);
   const [filter, setFilter] = useState<FilterPeriod>('all');
@@ -68,7 +70,7 @@ function FlightHistoryScreen() {
         <Header
           title="Past flights"
           showBack
-          onBackClick={() => navigate({ to: '/' })}
+          onBackClick={goBack}
           rightAction={
             allCompleted.length > 0 ? (
               <button

@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '~/lib/api';
+import { fetchWithTimeout, isTimeoutError, TIMEOUT_MESSAGE } from '~/lib/fetchWithTimeout';
 
 /** One leg of a flight number, from GET /flights/lookup (flyrely-api flight_lookup.py). Times are local "HH:MM". */
 export interface LookupLeg {
@@ -47,8 +48,9 @@ export async function lookupFlight(
   const qs = new URLSearchParams({ flight: `${airline}${number}`, date });
   let res: Response;
   try {
-    res = await fetchImpl(`${base}/flights/lookup?${qs}`);
-  } catch {
+    res = await fetchWithTimeout(`${base}/flights/lookup?${qs}`, undefined, undefined, fetchImpl);
+  } catch (err) {
+    if (isTimeoutError(err)) throw new LookupError(0, 'timeout', TIMEOUT_MESSAGE);
     throw new LookupError(0, 'network', FALLBACK);
   }
   if (!res.ok) {
@@ -171,8 +173,9 @@ export async function searchFlights(
   if (window.before) qs.set('before', window.before);
   let res: Response;
   try {
-    res = await fetchImpl(`${base}/flights/search?${qs}`);
-  } catch {
+    res = await fetchWithTimeout(`${base}/flights/search?${qs}`, undefined, undefined, fetchImpl);
+  } catch (err) {
+    if (isTimeoutError(err)) throw new LookupError(0, 'timeout', TIMEOUT_MESSAGE);
     throw new LookupError(0, 'network', FALLBACK);
   }
   if (!res.ok) {
