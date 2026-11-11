@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ChevronRight, PlaneTakeoff, PlaneLanding, SearchX } from 'lucide-react';
 import { Header, Button, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
-import { formatLongDate, formatTime, formatDelayChance } from '~/lib/utils';
+import { formatLongDate, formatTime, formatDelayChance, formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
 import { useGoBack } from '~/hooks/useGoBack';
@@ -160,7 +160,7 @@ function FlightDetailsScreen() {
     <div className="app-container">
       <div className="screen">
         <Header
-          title="Flight Details"
+          title={`${flight.flightNumber} · ${formatDate(flight.scheduledDeparture)}`}
           showBack
           onBackClick={goBack}
         />

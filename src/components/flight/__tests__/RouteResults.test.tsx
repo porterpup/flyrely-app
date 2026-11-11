@@ -23,7 +23,7 @@ describe('RouteResults', () => {
     expect(buttons[1].getAttribute('aria-label')).toContain('UA900');
     expect(screen.getByText(/Based on recent schedules/)).toBeTruthy();
     expect(screen.getByRole('img').getAttribute('title')).toMatch(/Confirm the time on your booking/);
-    expect(screen.getByText('18% chance of a 15+ min delay')).toBeTruthy();
+    expect(screen.getByText('18%')).toBeTruthy();
     expect(screen.getAllByText('Low risk').length).toBeGreaterThan(0);
     expect(screen.queryByText(/On track/)).toBeNull();
     expect(screen.getByText(/operated by SkyWest/)).toBeTruthy();

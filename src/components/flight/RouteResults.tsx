@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import { cn, topReasons } from '~/lib/utils';
+import { cn, formatDelayPercent, topReasons } from '~/lib/utils';
 import { RiskPill } from './RiskPill';
 import {
   formatClock, mostReliableIndex, SCHEDULE_LABEL, SCHEDULE_TOOLTIP, sortByDeparture,
@@ -9,7 +9,7 @@ import type { SearchFlight } from '~/lib/flightLookup';
 /** "Based on recent schedules" with a tooltip: times can change, confirm on your booking. */
 export function ScheduleHonesty({ asOf }: { asOf?: string | null }) {
   return (
-    <p className="flex items-center gap-1.5 text-sm text-navy-caption">
+    <p className="flex items-center gap-1.5 text-body-md text-ink-caption">
       <span>{SCHEDULE_LABEL}{asOf ? ` (as of ${asOf})` : ''}</span>
       <span title={SCHEDULE_TOOLTIP} role="img" aria-label={SCHEDULE_TOOLTIP} tabIndex={0}>
         <Info className="h-4 w-4" />
@@ -51,32 +51,31 @@ export function RouteResults({
           onClick={() => onPick(f)}
           aria-label={`${f.flight} ${f.origin} to ${f.dest}, ${formatClock(f.dep_time)} to ${formatClock(f.arr_time)}, ${Math.round(f.delay_probability * 100)}% chance of a 15+ min delay${f.risk_factors?.length ? `. Why: ${topReasons(f.risk_factors)}` : ''}`}
           className={cn(
-            'w-full rounded-2xl border bg-white p-4 text-left hover:border-navy-300',
-            isPreferred(f) ? 'border-surface-accent' : 'border-navy-stroke',
+            'w-full rounded-tile border bg-white p-4 text-left hover:border-surface-divider',
+            isPreferred(f) ? 'border-surface-accent' : 'border-surface-stroke',
             disabled && 'opacity-60'
           )}
         >
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-navy-ink">
+            <span className="font-semibold text-ink">
               {f.flight}
-              {isPreferred(f) && <span className="ml-2 text-sm font-medium text-surface-accent">Your airline</span>}
+              {isPreferred(f) && <span className="ml-2 text-body-md font-medium text-surface-accent">Your airline</span>}
             </span>
-            <span className="text-sm text-navy-caption">{f.airline_name}</span>
+            <span className="text-body-md text-ink-caption">{f.airline_name}</span>
           </div>
-          <p className="mt-1 text-sm text-navy-caption">
+          <p className="mt-1 text-body-md text-ink-caption">
             {formatClock(f.dep_time)} → {formatClock(f.arr_time)}
             {f.arr_next_day ? ' (+1 day)' : ''}
             {f.operating_airline !== f.airline ? ` · operated by ${f.operating_airline_name}` : ''}
           </p>
           <div className="mt-2 flex items-center gap-2">
-            <RiskPill risk={f.risk_level} emphasis="soft" size="small" />
-            <span className="text-sm text-navy-caption">{Math.round(f.delay_probability * 100)}% chance of a 15+ min delay</span>
+            <RiskPill risk={f.risk_level} emphasis="soft" size="small" detail={formatDelayPercent(f.delay_probability)} />
             {i === best && sorted.length > 1 && (
-              <span className="text-sm font-semibold text-status-success-text">Most reliable</span>
+              <span className="text-body-md font-semibold text-status-success-text">Most reliable</span>
             )}
           </div>
           {f.risk_factors && f.risk_factors.length > 0 && (
-            <p className="mt-1.5 text-sm text-navy-caption">Why: {topReasons(f.risk_factors)}</p>
+            <p className="mt-1.5 text-body-md text-ink-caption">Why: {topReasons(f.risk_factors)}</p>
           )}
         </button>
       ))}

@@ -75,6 +75,12 @@ export function formatDelayRange(minDelay: number, maxDelay: number): string {
 }
 
 /** Model output only: "34% chance of a 15+ min delay", or null if no probability is stored. */
+/** Short delay percent for pills, e.g. "18%". */
+export function formatDelayPercent(probability?: number | null): string | null {
+  if (typeof probability !== 'number') return null;
+  return `${Math.round(probability * 100)}%`;
+}
+
 export function formatDelayChance(probability?: number): string | null {
   if (typeof probability !== 'number') return null;
   return `${Math.round(probability * 100)}% chance of a 15+ min delay`;
