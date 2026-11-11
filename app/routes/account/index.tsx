@@ -162,7 +162,7 @@ function AccountScreen() {
 
       <Modal isOpen={confirmPending !== null} onClose={() => setConfirmPending(null)} title="Sign out anyway?" size="sm">
         <div className="space-y-4">
-          <p className="text-navy-600">
+          <p className="text-ink-caption">
             {confirmPending} {confirmPending === 1 ? 'change hasn\'t' : 'changes haven\'t'} been saved to your account yet
             (you may be offline). Sign out anyway and lose {confirmPending === 1 ? 'it' : 'them'}?
           </p>

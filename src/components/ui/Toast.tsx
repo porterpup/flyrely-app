@@ -22,18 +22,18 @@ const toastConfig: Record<
 > = {
   success: {
     icon: <CheckCircle className="w-5 h-5" />,
-    bgColor: 'bg-green-50 border-green-200',
-    iconColor: 'text-green-600',
+    bgColor: 'bg-status-success-bg border-status-success-text/20',
+    iconColor: 'text-status-success-text',
   },
   error: {
     icon: <AlertCircle className="w-5 h-5" />,
-    bgColor: 'bg-red-50 border-red-200',
-    iconColor: 'text-red-600',
+    bgColor: 'bg-status-error-bg border-status-error-text/20',
+    iconColor: 'text-status-error-text',
   },
   warning: {
     icon: <AlertTriangle className="w-5 h-5" />,
-    bgColor: 'bg-amber-50 border-amber-200',
-    iconColor: 'text-amber-600',
+    bgColor: 'bg-status-warning-bg border-status-warning-text/20',
+    iconColor: 'text-status-warning-text',
   },
   info: {
     icon: <Info className="w-5 h-5" />,
@@ -73,7 +73,7 @@ export function Toast({
     >
       <div
         className={cn(
-          'flex items-start gap-3 p-4 rounded-xl border shadow-lg',
+          'flex items-start gap-3 p-4 rounded-tile border shadow-lg',
           config.bgColor
         )}
       >
@@ -82,14 +82,14 @@ export function Toast({
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-navy-900">{title}</p>
+          <p className="font-medium text-ink">{title}</p>
           {message && (
-            <p className="text-sm text-navy-600 mt-0.5">{message}</p>
+            <p className="text-body-md text-ink-caption mt-0.5">{message}</p>
           )}
           {action && (
             <button
               onClick={action.onClick}
-              className="text-sm font-medium text-primary-600 hover:text-primary-700 mt-2"
+              className="text-body-md font-medium text-primary-600 hover:text-primary-700 mt-2"
             >
               {action.label}
             </button>
@@ -101,7 +101,7 @@ export function Toast({
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          className="flex-shrink-0 p-1 text-navy-400 hover:text-navy-600 rounded"
+          className="flex-shrink-0 p-1 text-ink-caption opacity-70 hover:text-ink-caption rounded"
         >
           <X className="w-4 h-4" />
         </button>

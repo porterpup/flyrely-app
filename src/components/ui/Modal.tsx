@@ -47,7 +47,7 @@ export function Modal({
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-t-3xl sm:rounded-2xl p-6',
+          'relative w-full bg-white rounded-t-3xl sm:rounded-tile p-6',
           'pb-[max(1.5rem,env(safe-area-inset-bottom))] motion-safe:animate-sheet-up sm:motion-safe:animate-pop-in',
           sizeClasses[size]
         )}
@@ -55,12 +55,12 @@ export function Modal({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between mb-4">
             {title && (
-              <h2 className="text-xl font-semibold text-navy-900">{title}</h2>
+              <h2 className="text-title-md font-semibold text-ink">{title}</h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 text-navy-400 hover:text-navy-600 rounded-lg hover:bg-navy-50"
+                className="p-2 -mr-2 text-ink-caption opacity-70 hover:text-ink-caption rounded-lg hover:bg-surface-muted"
               >
                 <X className="h-5 w-5" />
               </button>

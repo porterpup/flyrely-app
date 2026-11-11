@@ -4,6 +4,7 @@ import { ChevronRight, PlaneTakeoff, PlaneLanding, RefreshCw, SearchX } from 'lu
 import { Header, Button, IconButton, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
 import { cn, formatLongDate, formatTime, formatDelayChance, topReasons } from '~/lib/utils';
+import { formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
 import { MAX_LEGS, legsOf, tripTitle } from '~/lib/tripGrouping';
@@ -188,7 +189,7 @@ function FlightDetailsScreen() {
     <div className="app-container">
       <div className="screen">
         <Header
-          title="Flight Details"
+          title={`${flight.flightNumber} · ${formatDate(flight.scheduledDeparture)}`}
           showBack
           onBackClick={() => navigate({ to: '/' })}
           rightAction={

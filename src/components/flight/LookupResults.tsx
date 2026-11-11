@@ -32,24 +32,24 @@ export function LookupResults({
           aria-label={legLabel(flight, leg)}
           onClick={() => onPick(leg)}
           className={cn(
-            'w-full rounded-2xl border border-navy-stroke bg-white p-4 text-left hover:border-navy-300',
+            'w-full rounded-tile border border-surface-stroke bg-white p-4 text-left hover:border-surface-divider',
             disabled && 'opacity-60'
           )}
         >
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-navy-ink">{flight}</span>
-            <span className="text-sm text-navy-caption">{leg.operating_airline_name}</span>
+            <span className="font-semibold text-ink">{flight}</span>
+            <span className="text-body-md text-ink-caption">{leg.operating_airline_name}</span>
           </div>
-          <p className="mt-1 flex items-center gap-2 font-semibold text-navy-ink">
+          <p className="mt-1 flex items-center gap-2 font-semibold text-ink">
             {leg.origin} <ArrowRight className="h-4 w-4" aria-label="to" /> {leg.dest}
           </p>
-          <p className="mt-1 text-sm text-navy-caption">
+          <p className="mt-1 text-body-md text-ink-caption">
             {formatClock(leg.dep_time)} → {formatClock(leg.arr_time)}
             {leg.arr_next_day ? ' (+1 day)' : ''}
           </p>
         </button>
       ))}
-      {note && <p className="text-sm text-navy-caption">{note}</p>}
+      {note && <p className="text-body-md text-ink-caption">{note}</p>}
     </div>
   );
 }

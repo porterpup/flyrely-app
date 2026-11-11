@@ -78,7 +78,7 @@ export function FeedbackModal({ isOpen, onClose, pathname }: { isOpen: boolean; 
             ))}
           </Select>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="feedback-message" className="text-sm font-medium text-ink">Message</label>
+            <label htmlFor="feedback-message" className="text-body-md font-medium text-ink">Message</label>
             <textarea
               id="feedback-message"
               value={message}
@@ -88,9 +88,9 @@ export function FeedbackModal({ isOpen, onClose, pathname }: { isOpen: boolean; 
               placeholder="What happened, or what would help?"
               className="w-full rounded-btn border border-surface-stroke p-3 text-ink focus:outline-none focus:ring-2 focus:ring-surface-accent"
             />
-            <p className="text-xs text-ink-caption">We attach the screen you're on and any flight shown.</p>
+            <p className="text-body-sm text-ink-caption">We attach the screen you're on and any flight shown.</p>
           </div>
-          {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+          {error && <p className="text-body-md text-status-error-text" role="alert">{error}</p>}
           <Button fullWidth loading={sending} disabled={!canSend} onClick={submit}>Send</Button>
         </div>
       )}
