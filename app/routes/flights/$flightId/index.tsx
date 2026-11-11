@@ -139,7 +139,7 @@ function FlightDetailsScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Flight Details" showBack onBackClick={goBack} />
+          <Header title="Flight details" showBack onBackClick={goBack} />
           <EmptyState
             className="flex-1 justify-center"
             icon={<SearchX />}
@@ -156,7 +156,7 @@ function FlightDetailsScreen() {
     return (
       <div className="app-container">
         <div className="screen">
-          <Header title="Flight Details" showBack onBackClick={goBack} />
+          <Header title="Flight details" showBack onBackClick={goBack} />
           <div className="flex-1 rounded-t-4xl bg-surface-card px-2 pt-10" role="status" aria-label="Loading flight">
             <div className="mx-auto mb-8 flex flex-col items-center gap-3">
               <Skeleton onDark className="h-5 w-16" />
