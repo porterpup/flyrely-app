@@ -27,6 +27,18 @@ describe('flight <-> row', () => {
     expect(back).toEqual(f);
   });
 
+  it('keeps selfReport and reportPromptDismissed through the round trip', () => {
+    const f = makeFlight({
+      selfReport: { answer: 'late_45_119', answeredAt: '2026-11-09T10:00:00.000Z', sent: true },
+      reportPromptDismissed: true,
+    });
+    const back = rowToFlight(flightToRow(f, '2026-11-09T10:00:00.000Z'));
+    expect(back.selfReport).toEqual(f.selfReport);
+    expect(back.reportPromptDismissed).toBe(true);
+    const withdrawn = makeFlight({ selfReport: { answer: null, answeredAt: 'x', sent: false } });
+    expect(rowToFlight(flightToRow(withdrawn, 'x')).selfReport).toEqual({ answer: null, answeredAt: 'x', sent: false });
+  });
+
   it('uppercases flight number and airline code in columns', () => {
     const row = flightToRow(makeFlight({ flightNumber: 'ua648', airline: { code: 'ua', name: 'United' } }), 'x');
     expect(row.flight_number).toBe('UA648');

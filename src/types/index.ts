@@ -47,6 +47,9 @@ export interface AirportWeather {
   wx?: string | null;
 }
 
+/** What the traveller says happened. Sent to the API as `answer`. */
+export type SelfReportAnswer = 'on_time' | 'late_15_44' | 'late_45_119' | 'late_120_plus' | 'cancelled' | 'did_not_fly';
+
 export interface Flight {
   id: string;
   flightNumber: string;
@@ -75,6 +78,10 @@ export interface Flight {
   legIndex?: number;
   /** Minimum connect time in minutes needed before THIS leg (leg index > 0). */
   connectMctOverride?: number;
+  /** The traveller's "Were you delayed?" answer. `answer: null` is a withdrawal that has not been sent yet. */
+  selfReport?: { answer: SelfReportAnswer | null; answeredAt: string; sent: boolean };
+  /** The home-screen prompt for this flight was dismissed. */
+  reportPromptDismissed?: boolean;
 }
 
 /** A trip header. Legs live on the flights (tripId + legIndex). */

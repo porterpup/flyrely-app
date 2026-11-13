@@ -1,4 +1,4 @@
-import type { Flight, Trip } from '~/types';
+import type { Flight, SelfReportAnswer, Trip } from '~/types';
 import { dismissKeysFor, legsOf, tripErrorMessage, validateTripLegs, MAX_LEGS } from '~/lib/tripGrouping';
 import { newUuid } from '~/lib/utils';
 import { departureMs, isDeparted } from '~/lib/flightTime';
@@ -189,6 +189,32 @@ export function removeFlight(id: string): TripChange | null {
   enqueue({ type: 'deleteFlight', id, at: nowIso() });
   // Deleting a leg re-links the trip, or dissolves it.
   return gone?.tripId ? relinkTrip(gone.tripId) : null;
+}
+
+/** Record (or, with null, withdraw) the traveller's "Were you delayed?" answer. Queued to send; see flightReport.ts. */
+export function setSelfReport(id: string, answer: SelfReportAnswer | null): void {
+  requireUser();
+  const current = getFlightById(id);
+  if (!current) return;
+  if (answer === null && !current.selfReport) return; // nothing to withdraw
+  saveFlight({ ...current, selfReport: { answer, answeredAt: nowIso(), sent: false } });
+}
+
+/**
+ * The API accepted `sentAnswer`. Does nothing when the answer changed while the send was in flight.
+ * A sent withdrawal (null) removes the report entirely.
+ */
+export function markReportSent(id: string, sentAnswer: SelfReportAnswer | null): void {
+  requireUser();
+  const current = getFlightById(id);
+  if (!current?.selfReport || current.selfReport.answer !== sentAnswer) return;
+  if (sentAnswer === null) {
+    const { selfReport: _removed, ...rest } = current;
+    void _removed;
+    saveFlight(rest);
+  } else if (!current.selfReport.sent) {
+    saveFlight({ ...current, selfReport: { ...current.selfReport, sent: true } });
+  }
 }
 
 /**
