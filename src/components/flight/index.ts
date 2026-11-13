@@ -8,3 +8,4 @@ export { PredictionPanel } from './PredictionPanel';
 export * from './RiskPill';
 export { ConnectionRow } from './ConnectionRow';
 export { TripCard } from './TripCard';
+export { FlightReportPrompt } from './FlightReportPrompt';

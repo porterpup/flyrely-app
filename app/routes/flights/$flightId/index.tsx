@@ -3,7 +3,8 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ChevronRight, PlaneTakeoff, PlaneLanding, SearchX } from 'lucide-react';
 import { Header, Button, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
 import { AddedStrip } from '~/components/flight/AddedStrip';
-import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
+import { RemoveFlightModal, NoPredictionBanner, PredictionPanel, FlightReportPrompt } from '~/components/flight';
+import { reportEligibility } from '~/lib/flightReport';
 import { formatLongDate, formatTime, formatDelayChance, formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
@@ -13,7 +14,7 @@ import { emitNotice } from '~/lib/syncEngine';
 import { getFlightById, removeFlight, saveFlight, shouldRefreshFlight, stampFlightChecked } from '~/lib/flightStore';
 import { weatherCard } from '~/lib/weather';
 import { rescoreFlight, applyRescore } from '~/lib/prediction';
-import { isDeparted } from '~/lib/flightTime';
+import { departureMs, isDeparted } from '~/lib/flightTime';
 import { FeedbackLink } from '~/components/feedback';
 import { PredictionUnavailableError } from '~/lib/api';
 import type { Flight } from '~/types';
@@ -180,6 +181,12 @@ function FlightDetailsScreen() {
   const canAddConnection =
     !isDeparted(lastLeg, Date.now()) && (!trip || tripLegs.length < MAX_LEGS);
 
+  // Ask once the flight is done; keep the answered row for 30 days (reportEligibility has no upper limit for answered flights).
+  const nowMs = Date.now();
+  const eligibility = reportEligibility(flight, nowMs);
+  const showReport =
+    eligibility === 'ask' || (eligibility === 'answered' && nowMs - departureMs(flight) <= 30 * 24 * 3600_000);
+
   return (
     <div className="app-container">
       <main className="screen">
@@ -205,6 +212,8 @@ function FlightDetailsScreen() {
                 onRetry={handleRefresh}
               />
             )}
+
+            {showReport && <FlightReportPrompt flight={flight} onDark />}
 
             <Card tone="dark" padded={false} className="overflow-hidden">
               <div className="p-5">

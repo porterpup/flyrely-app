@@ -3,11 +3,12 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { Plus, History, Plane } from 'lucide-react';
 import { AppShell } from '~/components/layout';
 import { Button, SectionHeader, EmptyState, ListGroup, ListRow, Skeleton } from '~/components/ui';
-import { FlightCard } from '~/components/flight';
+import { FlightCard, FlightReportPrompt } from '~/components/flight';
 import { ConnectionRow } from '~/components/flight/ConnectionRow';
 import { splitNextTrip } from '~/lib/tripGrouping';
 import { FeedbackLink } from '~/components/feedback';
-import { selectUpcoming, autoCompleteOldFlights, shouldRefreshFlight, saveFlight, getFlightById } from '~/lib/flightStore';
+import { selectUpcoming, autoCompleteOldFlights, shouldRefreshFlight, saveFlight, getFlightById, markReportSent } from '~/lib/flightStore';
+import { pickHomePrompt, retryUnsentReports, sendReport } from '~/lib/flightReport';
 import { rescoreFlight, refreshDueFlights, applyRescore } from '~/lib/prediction';
 import { useFlights } from '~/hooks/useFlights';
 
@@ -59,6 +60,38 @@ function HomeScreen() {
     );
   }, [downloaded, allFlights]);
 
+  // Once per visit, resend answers that were saved but not accepted yet (after a real download, like the re-check above).
+  const retriedReports = useRef(false);
+  useEffect(() => {
+    if (!downloaded || retriedReports.current) return;
+    retriedReports.current = true;
+    void retryUnsentReports(allFlights, (f, answer) => sendReport(f, answer), (f, answer) => markReportSent(f.id, answer));
+  }, [downloaded, allFlights]);
+
+  // "Did it leave on time?" for the latest finished flight. Pinned while the thanks strip shows, because answering
+  // removes the flight from the picker.
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `now` re-runs the picker as flights depart
+  const picked = useMemo(() => pickHomePrompt(allFlights, now), [allFlights, now]);
+  const promptFlight = (pinnedId ? allFlights.find((f) => f.id === pinnedId) : undefined) ?? picked;
+  const handleNotNow = () => {
+    if (!promptFlight) return;
+    // Re-read so a download or edit that landed meanwhile is not overwritten.
+    const current = getFlightById(promptFlight.id);
+    if (current) saveFlight({ ...current, reportPromptDismissed: true });
+  };
+  const reportPrompt = promptFlight && (
+    <div className="mb-6">
+      <FlightReportPrompt
+        key={promptFlight.id}
+        flight={promptFlight}
+        variant="home"
+        onNotNow={handleNotNow}
+        onThanksChange={(showing) => setPinnedId(showing ? promptFlight.id : null)}
+      />
+    </div>
+  );
+
   const hasFlights = flights.length > 0;
   const { next: nextFlight, remainingLegs, rest: upcomingRest } = useMemo(() => splitNextTrip(flights, allFlights), [flights, allFlights]);
 
@@ -78,6 +111,7 @@ function HomeScreen() {
   if (!hasFlights) {
     return (
       <AppShell>
+        {reportPrompt && <div className="px-6 pt-10">{reportPrompt}</div>}
         <EmptyState
           className="flex-1 justify-center"
           icon={<Plane />}
@@ -107,6 +141,7 @@ function HomeScreen() {
   return (
     <AppShell>
       <div className="px-6 pt-10 pb-6">
+        {reportPrompt}
         <section className="mb-8">
           <SectionHeader
             as="h1"
