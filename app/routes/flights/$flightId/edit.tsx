@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Calendar, Clock, SearchX } from 'lucide-react';
 import { Alert, Button, EmptyState, Header, Input, Skeleton } from '~/components/ui';
-import { getFlightById, revalidateTrip, saveFlight, setSelfReport } from '~/lib/flightStore';
+import { getFlightById, revalidateTrip, saveFlight, withdrawSelfReport } from '~/lib/flightStore';
+import { reportNeedsWithdrawal } from '~/lib/flightReport';
 import { emitNotice } from '~/lib/syncEngine';
 import { normalizeLocal } from '~/lib/cloudFlights';
 import { useFlights } from '~/hooks/useFlights';
@@ -201,13 +202,8 @@ function EditFlightScreen() {
     }
 
     saveFlight(edited);
-    // A report about the old route or time no longer describes this flight: queue a withdrawal.
-    if (
-      flight.selfReport?.sent &&
-      (newOrigin !== flight.origin.code || newDestination !== flight.destination.code || newDeparture !== originalDeparture)
-    ) {
-      setSelfReport(flight.id, null);
-    }
+    // A report about the old flight no longer describes this one: withdraw it (or just drop it if it was never sent).
+    if (reportNeedsWithdrawal(flight, edited)) withdrawSelfReport(flight.id);
     // An edited leg may no longer connect (other airport, or a layover of 0 or more than 24 h): ungroup, as on delete.
     if (flight.tripId && revalidateTrip(flight.tripId) === 'ungrouped_not_connected') {
       emitNotice('Trip ungrouped because the flights no longer connect.', 'warning');

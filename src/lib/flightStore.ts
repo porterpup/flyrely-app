@@ -197,24 +197,55 @@ export function setSelfReport(id: string, answer: SelfReportAnswer | null): void
   const current = getFlightById(id);
   if (!current) return;
   if (answer === null && !current.selfReport) return; // nothing to withdraw
-  saveFlight({ ...current, selfReport: { answer, answeredAt: nowIso(), sent: false } });
+  let answeredAt = nowIso();
+  // answeredAt is the identity of an answer: two answers in the same millisecond must still differ.
+  if (current.selfReport && answeredAt <= current.selfReport.answeredAt) {
+    answeredAt = new Date(Date.parse(current.selfReport.answeredAt) + 1).toISOString();
+  }
+  saveFlight({ ...current, selfReport: { answer, answeredAt, sent: false } });
+}
+
+/** Drop the report locally with no network call (the server has nothing to delete). */
+export function clearSelfReport(id: string): void {
+  requireUser();
+  const current = getFlightById(id);
+  if (!current?.selfReport) return;
+  const { selfReport: _removed, ...rest } = current;
+  void _removed;
+  saveFlight(rest);
 }
 
 /**
- * The API accepted `sentAnswer`. Does nothing when the answer changed while the send was in flight.
- * A sent withdrawal (null) removes the report entirely.
+ * The flight changed, so the answer no longer applies. An accepted answer queues a withdrawal; an answer the server
+ * never got (unsent or rejected) is just removed. A withdrawal already queued is left alone.
  */
-export function markReportSent(id: string, sentAnswer: SelfReportAnswer | null): void {
-  requireUser();
+export function withdrawSelfReport(id: string): void {
+  const sr = getFlightById(id)?.selfReport;
+  if (!sr || sr.answer === null) return;
+  if (sr.sent && !sr.rejected) setSelfReport(id, null);
+  else clearSelfReport(id);
+}
+
+/**
+ * The API accepted the answer made at `answeredAt`. Does nothing when that answer was replaced meanwhile, even by an
+ * identical value (A, Undo, A: the first A's 200 must not mark the second A as sent). A sent withdrawal removes the
+ * report entirely. Quietly does nothing when signed out.
+ */
+export function markReportSent(id: string, answeredAt: string): void {
+  if (!activeUser) return;
   const current = getFlightById(id);
-  if (!current?.selfReport || current.selfReport.answer !== sentAnswer) return;
-  if (sentAnswer === null) {
-    const { selfReport: _removed, ...rest } = current;
-    void _removed;
-    saveFlight(rest);
-  } else if (!current.selfReport.sent) {
-    saveFlight({ ...current, selfReport: { ...current.selfReport, sent: true } });
-  }
+  if (!current?.selfReport || current.selfReport.answeredAt !== answeredAt) return;
+  if (current.selfReport.answer === null) clearSelfReport(id);
+  else if (!current.selfReport.sent) saveFlight({ ...current, selfReport: { ...current.selfReport, sent: true } });
+}
+
+/** The API will never accept the answer made at `answeredAt`: stop retrying it. Same matching rules as markReportSent. */
+export function markReportRejected(id: string, answeredAt: string): void {
+  if (!activeUser) return;
+  const current = getFlightById(id);
+  if (!current?.selfReport || current.selfReport.answeredAt !== answeredAt) return;
+  if (current.selfReport.answer === null) clearSelfReport(id);
+  else saveFlight({ ...current, selfReport: { ...current.selfReport, sent: true, rejected: true } });
 }
 
 /**

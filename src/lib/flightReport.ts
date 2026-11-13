@@ -24,7 +24,8 @@ export function reportEligibility(f: Flight, nowMs: number): ReportEligibility {
   if (Number.isNaN(dep)) return 'no_prediction';
   if (nowMs - dep > 30 * DAY) return 'too_old';
   const arr = arrivalMs(f);
-  const askFrom = arr !== undefined ? arr + HOUR : dep + 5 * HOUR;
+  // A bad manual arrival time (before departure) must not ask before the flight left.
+  const askFrom = arr !== undefined ? Math.max(arr, dep) + HOUR : dep + 5 * HOUR;
   return nowMs < askFrom ? 'too_early' : 'ask';
 }
 
@@ -58,11 +59,30 @@ function naiveLocal(value: string): string {
   return m ? `${m[1]}T${m[2]}:${m[3] ?? '00'}` : value;
 }
 
+/** The last send per flight id, so a later send always starts after the earlier one finishes. */
+const sendChains = new Map<string, Promise<unknown>>();
+
 /**
  * POST the answer (null withdraws). Returns the HTTP status: 200 is saved/withdrawn,
  * 0 means the request never got a response, 401 also covers a missing session.
+ * Sends for the same flight run one at a time, in call order.
  */
-export async function sendReport(
+export function sendReport(
+  flight: Flight,
+  answer: SelfReportAnswer | null,
+  fetchImpl: typeof fetch = fetch,
+  getToken: () => Promise<string> = accessToken
+): Promise<number> {
+  const previous = sendChains.get(flight.id) ?? Promise.resolve();
+  const run = previous.then(() => sendNow(flight, answer, fetchImpl, getToken));
+  sendChains.set(flight.id, run);
+  void run.finally(() => {
+    if (sendChains.get(flight.id) === run) sendChains.delete(flight.id);
+  });
+  return run;
+}
+
+async function sendNow(
   flight: Flight,
   answer: SelfReportAnswer | null,
   fetchImpl: typeof fetch = fetch,
@@ -94,23 +114,50 @@ export async function sendReport(
   }
 }
 
-/** Retry reports that were saved locally but not accepted yet (at most `max` per call). Errors are ignored. */
+/**
+ * Retry reports that were saved locally but not accepted yet (at most `max` sends per call). Errors are ignored.
+ * Entries whose flight left more than 30 days ago, and entries the API refuses with a 422, can never succeed:
+ * `onGiveUp` is called for them so they leave the queue. The caller identifies the entry by `f.selfReport.answeredAt`.
+ * Eligible entries are picked before `max` is applied, so stuck ones cannot starve the rest.
+ */
 export async function retryUnsentReports(
   flights: Flight[],
   send: (f: Flight, answer: SelfReportAnswer | null) => Promise<number>,
   onSent: (f: Flight, answer: SelfReportAnswer | null) => void,
-  max = 3
+  onGiveUp: (f: Flight) => void,
+  max = 3,
+  nowMs = Date.now()
 ): Promise<number> {
-  const pending = flights.filter((f) => f.selfReport && f.selfReport.sent === false).slice(0, max);
+  const eligible: Flight[] = [];
+  for (const f of flights) {
+    if (!f.selfReport || f.selfReport.sent !== false) continue;
+    if (nowMs - departureMs(f) > 30 * DAY) onGiveUp(f);
+    else eligible.push(f);
+  }
+  const pending = eligible.slice(0, max);
   for (const f of pending) {
     const answer = f.selfReport!.answer;
     try {
-      if ((await send(f, answer)) === 200) onSent(f, answer);
+      const status = await send(f, answer);
+      if (status === 200) onSent(f, answer);
+      else if (status === 422) onGiveUp(f);
     } catch {
       /* try again next time */
     }
   }
   return pending.length;
+}
+
+/** Editing the flight's identity makes an earlier answer describe a different flight. */
+export function reportNeedsWithdrawal(before: Flight, after: Flight): boolean {
+  return (
+    !!before.selfReport &&
+    (before.origin.code !== after.origin.code ||
+      before.destination.code !== after.destination.code ||
+      before.scheduledDeparture.slice(0, 16) !== after.scheduledDeparture.slice(0, 16) || // ignore a missing :00
+      before.flightNumber !== after.flightNumber ||
+      before.airline.code !== after.airline.code)
+  );
 }
 
 export function reportErrorMessage(status: number): string {

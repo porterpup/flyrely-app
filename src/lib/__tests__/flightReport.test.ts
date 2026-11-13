@@ -4,6 +4,7 @@ import {
   pickHomePrompt,
   reportEligibility,
   reportErrorMessage,
+  reportNeedsWithdrawal,
   retryUnsentReports,
   sendReport,
   showOnHome,
@@ -52,6 +53,12 @@ describe('reportEligibility', () => {
     const f = redEye({ scheduledDeparture: '2026-03-07T22:00:00', scheduledArrivalLocal: '2026-03-08T03:30:00' });
     expect(reportEligibility(f, utc('2026-03-08T08:29:00Z'))).toBe('too_early');
     expect(reportEligibility(f, utc('2026-03-08T08:30:00Z'))).toBe('ask');
+  });
+  it('never asks before departure plus one hour, even with a bad arrival time', () => {
+    // Departs 03:00Z; the manual arrival (00:00Z) is before that.
+    const f = redEye({ scheduledArrivalLocal: '2026-06-10T20:00:00' });
+    expect(reportEligibility(f, utc('2026-06-11T03:59:00Z'))).toBe('too_early');
+    expect(reportEligibility(f, utc('2026-06-11T04:00:00Z'))).toBe('ask');
   });
   it('falls back to departure + 5 h without an arrival time', () => {
     const f = redEye({ scheduledArrivalLocal: undefined });
@@ -122,20 +129,92 @@ describe('sendReport', () => {
 });
 
 describe('retryUnsentReports', () => {
-  const unsent = (id: string) => redEye({ id, selfReport: { answer: 'on_time', answeredAt: 'x', sent: false } });
+  const NOW = utc('2026-06-12T12:00:00Z');
+  const unsent = (id: string, extra: Partial<Flight> = {}) =>
+    redEye({ id, selfReport: { answer: 'on_time', answeredAt: 'x', sent: false }, ...extra });
+  const old = (id: string, answer: 'on_time' | null = 'on_time') =>
+    unsent(id, { scheduledDeparture: '2026-04-01T20:00:00', selfReport: { answer, answeredAt: 'x', sent: false } });
   it('sends at most 3 unsent entries and skips sent ones', async () => {
     const flights = [unsent('a'), unsent('b'), redEye({ id: 's', selfReport: { answer: 'on_time', answeredAt: 'x', sent: true } }), unsent('c'), unsent('d')];
     const send = vi.fn().mockResolvedValue(200);
     const onSent = vi.fn();
-    await retryUnsentReports(flights, send, onSent);
+    await retryUnsentReports(flights, send, onSent, vi.fn(), 3, NOW);
     expect(send).toHaveBeenCalledTimes(3);
     expect(onSent.mock.calls.map((c) => c[0].id)).toEqual(['a', 'b', 'c']);
   });
   it('swallows errors and does not mark failures as sent', async () => {
     const send = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(503);
     const onSent = vi.fn();
-    await expect(retryUnsentReports([unsent('a'), unsent('b')], send, onSent)).resolves.toBe(2);
+    const onGiveUp = vi.fn();
+    await expect(retryUnsentReports([unsent('a'), unsent('b')], send, onSent, onGiveUp, 3, NOW)).resolves.toBe(2);
     expect(onSent).not.toHaveBeenCalled();
+    expect(onGiveUp).not.toHaveBeenCalled();
+  });
+  it('drops entries for flights over 30 days old without sending, and they do not use up max', async () => {
+    const send = vi.fn().mockResolvedValue(200);
+    const onSent = vi.fn();
+    const onGiveUp = vi.fn();
+    const flights = [old('o1'), old('o2', null), old('o3'), old('o4'), unsent('a'), unsent('b')];
+    await retryUnsentReports(flights, send, onSent, onGiveUp, 2, NOW);
+    expect(onGiveUp.mock.calls.map((c) => c[0].id)).toEqual(['o1', 'o2', 'o3', 'o4']);
+    expect(send.mock.calls.map((c) => c[0].id)).toEqual(['a', 'b']);
+  });
+  it('gives up on a 422 and keeps going with the rest', async () => {
+    const send = vi.fn().mockResolvedValueOnce(422).mockResolvedValueOnce(200);
+    const onSent = vi.fn();
+    const onGiveUp = vi.fn();
+    await retryUnsentReports([unsent('a'), unsent('b')], send, onSent, onGiveUp, 3, NOW);
+    expect(onGiveUp.mock.calls.map((c) => c[0].id)).toEqual(['a']);
+    expect(onSent.mock.calls.map((c) => c[0].id)).toEqual(['b']);
+  });
+});
+
+describe('reportNeedsWithdrawal', () => {
+  const answered = redEye({ selfReport: { answer: 'on_time', answeredAt: 'x', sent: false } });
+  it('is false without a report or without a change', () => {
+    expect(reportNeedsWithdrawal(redEye(), { ...redEye(), flightNumber: 'UA1' })).toBe(false);
+    expect(reportNeedsWithdrawal(answered, { ...answered, scheduledDeparture: '2026-06-10T20:00' })).toBe(false);
+  });
+  it('is true when route, time, flight number or airline changes', () => {
+    expect(reportNeedsWithdrawal(answered, { ...answered, origin: { ...answered.origin, code: 'OAK' } })).toBe(true);
+    expect(reportNeedsWithdrawal(answered, { ...answered, destination: { ...answered.destination, code: 'EWR' } })).toBe(true);
+    expect(reportNeedsWithdrawal(answered, { ...answered, scheduledDeparture: '2026-06-10T21:00:00' })).toBe(true);
+    expect(reportNeedsWithdrawal(answered, { ...answered, flightNumber: 'UA649' })).toBe(true);
+    expect(reportNeedsWithdrawal(answered, { ...answered, airline: { code: 'DL', name: 'Delta' } })).toBe(true);
+  });
+});
+
+describe('sendReport ordering', () => {
+  const body = (call: unknown[]) => JSON.parse((call[1] as { body: string }).body).answer;
+  it('starts a later send for the same flight only after the earlier one finishes', async () => {
+    const order: string[] = [];
+    let releaseFirst!: () => void;
+    const fetchImpl = vi.fn(async (_u: unknown, init: { body: string }) => {
+      const a = JSON.parse(init.body).answer;
+      order.push(`start ${a}`);
+      if (a === 'on_time') await new Promise<void>((r) => (releaseFirst = r));
+      order.push(`end ${a}`);
+      return { status: 200 } as Response;
+    });
+    const f = redEye({ id: 'ord' });
+    const first = sendReport(f, 'on_time', fetchImpl as unknown as typeof fetch, async () => 't');
+    const second = sendReport(f, null, fetchImpl as unknown as typeof fetch, async () => 't');
+    await new Promise((r) => setTimeout(r, 10));
+    expect(order).toEqual(['start on_time']);
+    releaseFirst();
+    await Promise.all([first, second]);
+    expect(order).toEqual(['start on_time', 'end on_time', 'start null', 'end null']);
+    expect(fetchImpl.mock.calls.map(body)).toEqual(['on_time', null]);
+  });
+  it('does not block other flights, and a failed send does not block the next one', async () => {
+    const f1 = redEye({ id: 'x1' });
+    const f2 = redEye({ id: 'x2' });
+    const fetchImpl = vi.fn().mockRejectedValueOnce(new Error('net')).mockResolvedValue({ status: 200 });
+    const t = async () => 't';
+    const a = sendReport(f1, 'on_time', fetchImpl as unknown as typeof fetch, t);
+    const b = sendReport(f1, null, fetchImpl as unknown as typeof fetch, t);
+    const c = sendReport(f2, 'cancelled', fetchImpl as unknown as typeof fetch, t);
+    expect(await Promise.all([a, b, c])).toEqual([0, 200, 200]);
   });
 });
 

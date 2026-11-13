@@ -79,7 +79,11 @@ export interface Flight {
   /** Minimum connect time in minutes needed before THIS leg (leg index > 0). */
   connectMctOverride?: number;
   /** The traveller's "Were you delayed?" answer. `answer: null` is a withdrawal that has not been sent yet. */
-  selfReport?: { answer: SelfReportAnswer | null; answeredAt: string; sent: boolean };
+  /**
+   * `answeredAt` identifies this specific answer. `sent: true` with `rejected: true` means the API will never accept
+   * it (422, or the flight is over 30 days old): it is kept as the traveller's answer but never retried.
+   */
+  selfReport?: { answer: SelfReportAnswer | null; answeredAt: string; sent: boolean; rejected?: boolean };
   /** The home-screen prompt for this flight was dismissed. */
   reportPromptDismissed?: boolean;
 }
