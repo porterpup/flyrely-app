@@ -1,15 +1,22 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Flight } from '~/types';
 
 const m = vi.hoisted(() => ({
   setSelfReport: vi.fn(),
   markReportSent: vi.fn(),
+  markReportRejected: vi.fn(),
+  getFlightById: vi.fn(),
   sendReport: vi.fn(),
   emitNotice: vi.fn(),
 }));
-vi.mock('~/lib/flightStore', () => ({ setSelfReport: m.setSelfReport, markReportSent: m.markReportSent }));
+vi.mock('~/lib/flightStore', () => ({
+  setSelfReport: m.setSelfReport,
+  markReportSent: m.markReportSent,
+  markReportRejected: m.markReportRejected,
+  getFlightById: m.getFlightById,
+}));
 vi.mock('~/lib/syncEngine', () => ({ emitNotice: m.emitNotice }));
 vi.mock('~/lib/flightReport', async (orig) => ({ ...(await orig<typeof import('~/lib/flightReport')>()), sendReport: m.sendReport }));
 
@@ -30,6 +37,7 @@ const flight: Flight = {
 beforeEach(() => {
   vi.clearAllMocks();
   m.sendReport.mockResolvedValue(200);
+  m.getFlightById.mockReturnValue({ selfReport: { answeredAt: 'ts-1' } });
 });
 afterEach(cleanup);
 
@@ -49,9 +57,9 @@ describe('FlightReportPrompt', () => {
     render(<FlightReportPrompt flight={flight} />);
     fireEvent.click(screen.getByRole('button', { name: '15–44 min late' }));
     expect(m.setSelfReport).toHaveBeenCalledWith('f1', 'late_15_44');
-    expect(screen.getByText('Thanks. You said 15–44 min late.')).toBeTruthy();
+    expect(screen.getAllByText('Thanks. You said it was 15–44 min late.').length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: 'Undo' })).toBeTruthy();
-    await waitFor(() => expect(m.markReportSent).toHaveBeenCalledWith('f1', 'late_15_44'));
+    await waitFor(() => expect(m.markReportSent).toHaveBeenCalledWith('f1', 'ts-1'));
     expect(m.sendReport).toHaveBeenCalledWith(flight, 'late_15_44');
   });
 
@@ -68,7 +76,7 @@ describe('FlightReportPrompt', () => {
   it('Undo restores the previous answer after a change', async () => {
     const answered: Flight = { ...flight, selfReport: { answer: 'on_time', answeredAt: '2026-11-07T20:00:00Z', sent: true } };
     render(<FlightReportPrompt flight={answered} />);
-    expect(screen.getByText('You said: On time (under 15 min late)')).toBeTruthy();
+    expect(screen.getByText('You said: on time')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Change' }));
     fireEvent.click(screen.getByRole('button', { name: 'Over 2 h late' }));
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
@@ -107,9 +115,79 @@ describe('FlightReportPrompt', () => {
     for (const b of buttons) expect((b.textContent ?? '').trim().length).toBeGreaterThan(0);
   });
 
-  it('the Home variant renders nothing for an answered flight', () => {
+  it('the Home variant shows nothing visible for an answered flight', () => {
     const answered: Flight = { ...flight, selfReport: { answer: 'on_time', answeredAt: 'x', sent: true } };
     const { container } = render(<FlightReportPrompt flight={answered} variant="home" />);
-    expect(container.innerHTML).toBe('');
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(container.textContent).toBe('');
+  });
+
+  it('a 422 marks the answer rejected', async () => {
+    m.sendReport.mockResolvedValueOnce(422);
+    render(<FlightReportPrompt flight={flight} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelled' }));
+    await waitFor(() => expect(m.markReportRejected).toHaveBeenCalledWith('f1', 'ts-1'));
+  });
+
+  it('keeps one role=status region mounted and changes only its text', () => {
+    render(<FlightReportPrompt flight={flight} />);
+    const region = screen.getByRole('status');
+    expect(region.textContent).toBe('');
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelled' }));
+    expect(screen.getByRole('status')).toBe(region);
+    expect(region.textContent).toBe('Thanks. You said it was cancelled.');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(screen.getByRole('status')).toBe(region);
+    expect(region.textContent).toBe('');
+  });
+
+  it('names the question box and uses an h2 on the flight page but no heading on Home', () => {
+    const { unmount } = render(<FlightReportPrompt flight={flight} />);
+    expect(screen.getByRole('region', { name: 'Did UA648 leave on time?' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2 })).toBeTruthy();
+    unmount();
+    render(<FlightReportPrompt flight={flight} variant="home" />);
+    expect(screen.getByRole('region', { name: 'Did UA648 leave on time?' })).toBeTruthy();
+    expect(screen.queryAllByRole('heading')).toHaveLength(0);
+  });
+
+  it('moves focus: Undo after a tap, the question after Undo, the first option after Change', () => {
+    render(<FlightReportPrompt flight={flight} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelled' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Undo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(document.activeElement).toBe(screen.getByText('Did UA648 leave on time?'));
+    cleanup();
+    const answered: Flight = { ...flight, selfReport: { answer: 'on_time', answeredAt: 'x', sent: true } };
+    render(<FlightReportPrompt flight={answered} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Change' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'On time (under 15 min late)' }));
+  });
+
+  it('Cancel after Change returns to the answered row with focus on Change', () => {
+    const answered: Flight = { ...flight, selfReport: { answer: 'late_15_44', answeredAt: 'x', sent: true } };
+    render(<FlightReportPrompt flight={answered} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Change' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByText('You said: 15–44 min late')).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Change' }));
+  });
+
+  it('pauses the 8 s auto-hide while the strip is hovered or focused', () => {
+    vi.useFakeTimers();
+    try {
+      render(<FlightReportPrompt flight={flight} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelled' }));
+      const undo = screen.getByRole('button', { name: 'Undo' }); // focused by the component
+      act(() => void vi.advanceTimersByTime(20_000));
+      expect(screen.getByRole('button', { name: 'Undo' })).toBe(undo);
+      fireEvent.blur(undo);
+      act(() => void vi.advanceTimersByTime(7_900));
+      expect(screen.queryByRole('button', { name: 'Undo' })).not.toBeNull();
+      act(() => void vi.advanceTimersByTime(200));
+      expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

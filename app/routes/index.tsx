@@ -7,8 +7,9 @@ import { FlightCard, FlightReportPrompt } from '~/components/flight';
 import { ConnectionRow } from '~/components/flight/ConnectionRow';
 import { splitNextTrip } from '~/lib/tripGrouping';
 import { FeedbackLink } from '~/components/feedback';
-import { selectUpcoming, autoCompleteOldFlights, shouldRefreshFlight, saveFlight, getFlightById, markReportSent } from '~/lib/flightStore';
-import { pickHomePrompt, retryUnsentReports, sendReport } from '~/lib/flightReport';
+import { selectUpcoming, autoCompleteOldFlights, shouldRefreshFlight, saveFlight, getFlightById } from '~/lib/flightStore';
+import { pickHomePrompt } from '~/lib/flightReport';
+import { retryQueuedReports } from '~/lib/reportRetry';
 import { rescoreFlight, refreshDueFlights, applyRescore } from '~/lib/prediction';
 import { useFlights } from '~/hooks/useFlights';
 
@@ -65,7 +66,7 @@ function HomeScreen() {
   useEffect(() => {
     if (!downloaded || retriedReports.current) return;
     retriedReports.current = true;
-    void retryUnsentReports(allFlights, (f, answer) => sendReport(f, answer), (f, answer) => markReportSent(f.id, answer));
+    void retryQueuedReports(allFlights);
   }, [downloaded, allFlights]);
 
   // "Did it leave on time?" for the latest finished flight. Pinned while the thanks strip shows, because answering

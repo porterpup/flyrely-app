@@ -5,6 +5,7 @@ import { Header, Button, Card, Duration, SectionHeader, EmptyState, Skeleton } f
 import { AddedStrip } from '~/components/flight/AddedStrip';
 import { RemoveFlightModal, NoPredictionBanner, PredictionPanel, FlightReportPrompt } from '~/components/flight';
 import { reportEligibility } from '~/lib/flightReport';
+import { retryQueuedReports } from '~/lib/reportRetry';
 import { formatLongDate, formatTime, formatDelayChance, formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
@@ -39,7 +40,7 @@ function FlightDetailsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [predictionUnavailable, setPredictionUnavailable] = useState(false);
-  const { flights: storedFlights, trips, ready } = useFlights();
+  const { flights: storedFlights, trips, ready, downloaded } = useFlights();
   const inStore = storedFlights.some((x) => x.id === flightId);
   const loadedId = useRef<string | null>(null);
 
@@ -88,6 +89,18 @@ function FlightDetailsScreen() {
       }
     })();
   }, [flightId, ready, inStore]);
+
+  // Once per visit to this flight (signed in, after a real download, online): resend its queued answer or withdrawal,
+  // so it does not wait for a Home visit.
+  const retriedId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!downloaded || retriedId.current === flightId) return;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    const f = getFlightById(flightId);
+    if (!f) return;
+    retriedId.current = flightId;
+    void retryQueuedReports([f]);
+  }, [flightId, downloaded, inStore]);
 
   const handleRefresh = async () => {
     if (!flight) return;
