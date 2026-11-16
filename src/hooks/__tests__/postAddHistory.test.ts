@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryHistory } from '@tanstack/history';
+import { createMemoryHistory } from '@tanstack/react-router';
 
 // Mirrors how the app navigates: Home -> Add flight (push) -> tracked flight (replace).
 describe('post-add history stack', () => {
