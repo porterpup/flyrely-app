@@ -4,7 +4,6 @@ import { cn } from '~/lib/utils';
 import { Button, Modal } from '~/components/ui';
 
 export interface IosInstallHelpProps {
-  onDark?: boolean;
   className?: string;
   /** Start with the steps sheet open (gallery and tests). */
   defaultOpen?: boolean;
@@ -41,15 +40,15 @@ export function IosInstallSteps() {
 }
 
 /** Shown instead of the "Alert me" button on iPhone and iPad when FlyRely is open in a Safari tab. */
-export function IosInstallHelp({ onDark = true, className, defaultOpen = false }: IosInstallHelpProps) {
+export function IosInstallHelp({ className, defaultOpen = false }: IosInstallHelpProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const muted = onDark ? 'text-white/80' : 'text-ink-caption';
+  const muted = 'text-ink-caption';
   return (
     <>
       <div
         className={cn(
           'flex items-start gap-3 rounded-btn p-inset',
-          onDark ? 'bg-white/10 text-white' : 'bg-surface-muted text-ink',
+          'bg-surface-card text-ink',
           className
         )}
       >
@@ -62,7 +61,6 @@ export function IosInstallHelp({ onDark = true, className, defaultOpen = false }
           <Button
             size="sm"
             onClick={() => setOpen(true)}
-            className={onDark ? '!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed' : undefined}
           >
             Show me how
           </Button>

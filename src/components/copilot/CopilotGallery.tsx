@@ -113,7 +113,7 @@ function Frame({ label, children, light = false }: { label: string; children: Re
   return (
     <div data-sample={label} className="space-y-1">
       <p className="text-body-sm text-ink-caption">SAMPLE: {label}</p>
-      <div className={light ? 'rounded-btn bg-surface-muted p-3 text-ink ring-1 ring-surface-stroke' : 'rounded-ticket bg-surface-card p-3 text-white'}>
+      <div className={light ? 'rounded-btn bg-surface-muted p-3 text-ink ring-1 ring-surface-stroke' : 'rounded-ticket bg-surface-panel p-3 text-ink'}>
         {children}
       </div>
     </div>
@@ -156,8 +156,8 @@ export default function CopilotGallery() {
             state="cancelled"
             actions={
               <>
-                <Button size="sm" className="!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed">I&apos;ve been rebooked</Button>
-                <Button size="sm" variant="text" className="!text-white hover:!bg-white/10">Not cancelled after all</Button>
+                <Button size="sm">I&apos;ve been rebooked</Button>
+                <Button size="sm" variant="text">Not cancelled after all</Button>
               </>
             }
           >
@@ -244,14 +244,14 @@ export default function CopilotGallery() {
           <div className="space-y-2">{SAMPLE_ALTS.map((a) => <AltFlightRow key={a.flight_number} item={a} />)}</div>
         </Frame>
         <Frame label="AltFlightRow on a light surface" light>
-          <AltFlightRow item={SAMPLE_ALTS[0]} onDark={false} />
+          <AltFlightRow item={SAMPLE_ALTS[0]} />
         </Frame>
 
         <Frame label="PartnerButton (affiliate = sponsored rel, plain, primary, small)">
           <div className="flex flex-wrap gap-2">
-            <PartnerButton handoff={h('a', 'Affiliate link', true)} onDark />
-            <PartnerButton handoff={h('b', 'Plain link')} onDark />
-            <PartnerButton handoff={h('c', 'Primary')} onDark variant="primary" />
+            <PartnerButton handoff={h('a', 'Affiliate link', true)} />
+            <PartnerButton handoff={h('b', 'Plain link')} />
+            <PartnerButton handoff={h('c', 'Primary')} variant="primary" />
           </div>
         </Frame>
         <Frame label="PartnerButton on a light surface" light>
@@ -264,12 +264,12 @@ export default function CopilotGallery() {
         <Frame label="RefundRightsNote (cancelled)"><RefundRightsNote refund={base.refund_rights} /></Frame>
         <Frame label="RefundRightsNote (Plan B, conditional)"><RefundRightsNote refund={base.refund_rights} conditional /></Frame>
         <Frame label="RefundRightsNote (non-US, light)" light>
-          <RefundRightsNote refund={{ applies: false, jurisdiction: null, content_key: null }} onDark={false} />
+          <RefundRightsNote refund={{ applies: false, jurisdiction: null, content_key: null }} />
         </Frame>
 
         <Frame label="AirlineContact (known)"><AirlineContact airline={SAMPLE_AIRLINE} /></Frame>
         <Frame label="AirlineContact (unknown airline)"><AirlineContact airline={null} /></Frame>
-        <Frame label="AirlineContact (light)" light><AirlineContact airline={SAMPLE_AIRLINE} onDark={false} /></Frame>
+        <Frame label="AirlineContact (light)" light><AirlineContact airline={SAMPLE_AIRLINE} /></Frame>
 
         <Frame label="HotelOffer"><HotelOffer hotel={base.hotel!} /></Frame>
         <Frame label="RideOffer: to hotel / RideButton"><RideOffer ride={base.ride} /></Frame>

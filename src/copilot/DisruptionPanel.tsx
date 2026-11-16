@@ -26,10 +26,6 @@ export interface DisruptionPanelProps {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const onDarkSecondary = '!border-white/40 !text-white hover:!bg-white/10';
-const onDarkSolid = '!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed';
-const onDarkText = '!text-white hover:!bg-white/10';
-
 /** Which card to show, from the user's own report first, then the flight's risk. null = hide the card. */
 export function derivePanelState(
   userState: UserFlightState | null,
@@ -168,32 +164,32 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
   let actions: React.ReactNode = null;
   if (panelState === 'at_risk') {
     actions = (
-      <Button size="sm" variant="secondary" className={onDarkSecondary} onClick={() => changeUserState('cancelled')}>
+      <Button size="sm" variant="secondary" onClick={() => changeUserState('cancelled')}>
         My flight was cancelled
       </Button>
     );
   } else if (panelState === 'cancelled') {
     actions = askRebooked ? (
       <div role="group" aria-label="When were you rebooked for?" className="space-y-2">
-        <p className="text-body-md text-white">When is your new flight?</p>
+        <p className="text-body-md text-ink">When is your new flight?</p>
         <div className="flex gap-2">
-          <Button size="sm" className={onDarkSolid} onClick={() => changeUserState('rebooked_today')}>
+          <Button size="sm" onClick={() => changeUserState('rebooked_today')}>
             Today
           </Button>
-          <Button size="sm" className={onDarkSolid} onClick={() => changeUserState('rebooked_later')}>
+          <Button size="sm" onClick={() => changeUserState('rebooked_later')}>
             Tomorrow or later
           </Button>
-          <Button size="sm" variant="text" className={onDarkText} onClick={() => setAskRebooked(false)}>
+          <Button size="sm" variant="text" onClick={() => setAskRebooked(false)}>
             Back
           </Button>
         </div>
       </div>
     ) : (
       <>
-        <Button size="sm" className={onDarkSolid} onClick={() => setAskRebooked(true)}>
+        <Button size="sm" onClick={() => setAskRebooked(true)}>
           I&apos;ve been rebooked
         </Button>
-        <Button size="sm" variant="text" className={onDarkText} onClick={() => changeUserState('not_cancelled')}>
+        <Button size="sm" variant="text" onClick={() => changeUserState('not_cancelled')}>
           Not cancelled after all
         </Button>
       </>
@@ -204,12 +200,12 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
         {userState === 'rebooked_today' && (
           <a
             href="/flights/add"
-            className="inline-flex items-center justify-center rounded-btn-sm bg-surface-accent-fill px-3.5 py-3 text-action-md text-white hover:bg-surface-accent-fill-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="inline-flex items-center justify-center rounded-btn-sm bg-surface-accent-fill px-3.5 py-3 text-action-md text-white hover:bg-surface-accent-fill-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
           >
             Add your new flight
           </a>
         )}
-        <Button size="sm" variant="text" className={onDarkText} onClick={() => changeUserState('not_cancelled')}>
+        <Button size="sm" variant="text" onClick={() => changeUserState('not_cancelled')}>
           Not cancelled after all
         </Button>
       </>

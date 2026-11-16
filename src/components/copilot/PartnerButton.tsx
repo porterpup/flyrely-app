@@ -7,24 +7,16 @@ export interface PartnerButtonProps {
   /** The hand-off to open. `label` is the visible text. */
   handoff: Handoff;
   size?: ButtonSize;
-  /** Style for the dark card surface. */
-  onDark?: boolean;
   /** Filled (primary) or outlined (secondary). */
   variant?: 'primary' | 'secondary';
   fullWidth?: boolean;
   className?: string;
 }
 
-const darkClasses = {
-  primary: 'bg-surface-accent-fill text-white hover:bg-surface-accent-fill-pressed active:bg-surface-accent-fill-pressed',
-  secondary: 'border border-white/40 text-white hover:bg-white/10 active:bg-white/20',
-};
-
 /** External partner link styled as a button. Opens a new tab; `sponsored` only when the link is an affiliate link. */
 export function PartnerButton({
   handoff,
   size = 'sm',
-  onDark = false,
   variant = 'secondary',
   fullWidth = false,
   className,
@@ -37,7 +29,7 @@ export function PartnerButton({
       className={cn(
         'inline-flex items-center justify-center transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent focus-visible:ring-offset-2',
-        onDark ? darkClasses[variant] : buttonVariantClasses[variant],
+        buttonVariantClasses[variant],
         buttonSizeClasses[size],
         fullWidth && 'w-full',
         className

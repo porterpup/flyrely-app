@@ -9,7 +9,6 @@ export interface AirlineContactProps {
   airline: AirlineInfo | null;
   /** Carrier note and status page, used instead of the fallback when `airline` is null. */
   notice?: AirlineNotice | null;
-  onDark?: boolean;
   className?: string;
 }
 
@@ -17,10 +16,9 @@ export interface AirlineContactProps {
 export function AirlineContact({
   airline,
   notice,
-  onDark = true,
   className,
 }: AirlineContactProps) {
-  const muted = onDark ? "text-white/80" : "text-ink-caption";
+  const muted = "text-ink-caption";
   if (!airline && notice && (notice.note || notice.status_url)) {
     return (
       <div className={cn("space-y-3", className)}>
@@ -31,7 +29,7 @@ export function AirlineContact({
             size="default"
             variant="primary"
             fullWidth
-            onDark={onDark}
+           
             handoff={{
               partner: notice.code,
               label: `Check ${notice.name} flight status`,
@@ -63,7 +61,7 @@ export function AirlineContact({
         size="default"
         variant="primary"
         fullWidth
-        onDark={onDark}
+       
         handoff={{
           partner: airline.code,
           label: `Manage booking with ${airline.name}`,
@@ -77,9 +75,7 @@ export function AirlineContact({
           className={cn(
             "flex items-center justify-center gap-2 rounded-btn py-3 text-action-lg",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent focus-visible:ring-offset-2",
-            onDark
-              ? "text-white hover:bg-white/10"
-              : "text-ink hover:bg-surface-muted",
+            "text-ink hover:bg-surface-card",
           )}
         >
           <Phone className="h-5 w-5" aria-hidden />
