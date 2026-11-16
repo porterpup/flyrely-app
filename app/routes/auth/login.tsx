@@ -38,7 +38,7 @@ function LoginRoute() {
   return (
     <AuthLayout title="Sign in">
       {!configured && (
-        <Alert status="warning" lineOne={friendlyAuthError("Sign-in isn't configured")} />
+        <Alert status="info" lineOne={friendlyAuthError("Sign-in isn't configured")} />
       )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Input

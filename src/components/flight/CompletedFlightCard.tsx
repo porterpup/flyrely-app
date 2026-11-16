@@ -27,7 +27,7 @@ export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProp
         <span>{flight.origin.code}</span>
         <Plane className="h-4 w-4 rotate-45" aria-hidden />
         <span>{flight.destination.code}</span>
-        <Check className="h-4 w-4 text-status-success-text" aria-label="Completed" />
+        <Check className="h-4 w-4 text-surface-accent" aria-label="Completed" />
         <span>·</span>
         <span>{formatDate(flight.scheduledDeparture)}</span>
         <span>·</span>

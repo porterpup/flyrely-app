@@ -147,7 +147,7 @@ function UsageDashboardScreen() {
                 </div>
                 <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <DollarSign className="w-4 h-4 text-status-success-text" />
+                    <DollarSign className="w-4 h-4 text-surface-accent" />
                     <span className="text-body-sm text-ink-caption font-medium">Est. Cost</span>
                   </div>
                   <p className="text-title-lg font-semibold text-ink">${data.estimated_cost_usd.toFixed(3)}</p>
@@ -155,7 +155,7 @@ function UsageDashboardScreen() {
                 </div>
                 <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <BarChart3 className="w-4 h-4 text-status-warning-text" />
+                    <BarChart3 className="w-4 h-4 text-surface-accent" />
                     <span className="text-body-sm text-ink-caption font-medium">Risk breakdown</span>
                   </div>
                   <div className="space-y-1 mt-1">

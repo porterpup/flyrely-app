@@ -87,7 +87,7 @@ export function AirportAutocomplete({
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1.5">
       <FieldLabel>{label}</FieldLabel>
-      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-status-success-text bg-status-success-bg')}>
+      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-surface-accent')}>
         <input
           type="text"
           value={query}

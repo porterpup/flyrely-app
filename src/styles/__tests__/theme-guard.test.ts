@@ -100,6 +100,20 @@ describe('navy theme guard', () => {
     expect(hits).toEqual([]);
   });
 
+  // Rule: green, amber and red mean delay risk only. Notices, toasts and confirmations are neutral navy; red also marks real errors.
+  it('uses success and warning status colours only in the risk components', () => {
+    const RISK_FILES = [
+      'src/components/ui/Pill.tsx', // tones; RiskPill is the only app caller
+      'src/components/flight/PredictionPanel.tsx',
+      'src/components/flight/ConnectionRow.tsx',
+      'app/routes/flights/history.tsx', // predicted low / at-risk counts
+      'app/routes/account/usage.tsx', // risk breakdown bars
+      'app/routes/design-system.tsx',
+    ];
+    expect(offenders(/-status-(success|warning)\b/, (rel) => RISK_FILES.includes(rel))).toEqual([]);
+    expect(offenders(/\btone=["'{]+(success|warning)/, (rel) => RISK_FILES.includes(rel))).toEqual([]);
+  });
+
   it('has no onDark, ink-on-dark, tone="dark" or emphasis= leftovers', () => {
     expect(offenders(/\bonDark\b|ink-on-dark|tone=["'{]+dark|\bemphasis=/)).toEqual([]);
   });

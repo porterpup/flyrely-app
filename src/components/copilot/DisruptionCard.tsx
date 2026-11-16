@@ -56,7 +56,7 @@ export function DisruptionCard({
         Cancelled
       </Pill>
     ) : state === 'rebooked' ? (
-      <Pill tone="success" size="small">
+      <Pill tone="info" size="small">
         Rebooked
       </Pill>
     ) : null;

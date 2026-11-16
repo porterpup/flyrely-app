@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle, AlertCircle, Info, X, AlertTriangle } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import { cn } from '~/lib/utils';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+/** Only `error` is red. Success and info are neutral navy (green, amber and red mean delay risk). */
+type ToastType = 'success' | 'error' | 'info';
 
 interface ToastProps {
   type?: ToastType;
@@ -16,29 +17,26 @@ interface ToastProps {
   };
 }
 
+const NEUTRAL = 'bg-surface-panel border-surface-stroke';
+
 const toastConfig: Record<
   ToastType,
   { icon: React.ReactNode; bgColor: string; iconColor: string }
 > = {
   success: {
     icon: <CheckCircle className="w-5 h-5" />,
-    bgColor: 'bg-status-success-bg border-status-success-text/20',
-    iconColor: 'text-status-success-text',
+    bgColor: NEUTRAL,
+    iconColor: 'text-surface-accent',
   },
   error: {
     icon: <AlertCircle className="w-5 h-5" />,
     bgColor: 'bg-status-error-bg border-status-error-text/20',
     iconColor: 'text-status-error-text',
   },
-  warning: {
-    icon: <AlertTriangle className="w-5 h-5" />,
-    bgColor: 'bg-status-warning-bg border-status-warning-text/20',
-    iconColor: 'text-status-warning-text',
-  },
   info: {
     icon: <Info className="w-5 h-5" />,
-    bgColor: 'bg-status-info-bg border-status-info-text/20',
-    iconColor: 'text-status-info-text',
+    bgColor: NEUTRAL,
+    iconColor: 'text-surface-accent',
   },
 };
 
@@ -73,7 +71,7 @@ export function Toast({
     >
       <div
         className={cn(
-          'flex items-start gap-3 p-4 rounded-tile border bg-surface-panel shadow-lg',
+          'flex items-start gap-3 p-4 rounded-tile border shadow-lg',
           config.bgColor
         )}
       >
@@ -130,8 +128,6 @@ export function useToast() {
     show({ type: 'success', title, message });
   const error = (title: string, message?: string) =>
     show({ type: 'error', title, message });
-  const warning = (title: string, message?: string) =>
-    show({ type: 'warning', title, message });
   const info = (title: string, message?: string) =>
     show({ type: 'info', title, message });
 
@@ -141,7 +137,6 @@ export function useToast() {
     hide,
     success,
     error,
-    warning,
     info,
   };
 }

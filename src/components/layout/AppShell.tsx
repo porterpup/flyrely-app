@@ -11,7 +11,7 @@ export function AppShell({ children, hideNav = false }: AppShellProps) {
   return (
     <div className="app-container">
       {!online && (
-        <div role="status" className="bg-status-warning-bg px-gutter py-2 text-center text-body-sm font-medium text-ink">
+        <div role="status" className="border-b border-surface-stroke bg-surface-panel px-gutter py-2 text-center text-body-sm font-medium text-ink">
           You&apos;re offline
         </div>
       )}
