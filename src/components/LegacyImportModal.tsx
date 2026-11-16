@@ -61,7 +61,7 @@ export function LegacyImportModal() {
           </div>
         </div>
       </Modal>
-      {message && <Toast type="warning" title="Some flights were skipped" message={message} onClose={() => setMessage(null)} />}
+      {message && <Toast type="info" title="Some flights were skipped" message={message} onClose={() => setMessage(null)} />}
     </>
   )
 }
@@ -71,6 +71,7 @@ export function SyncNotices() {
   const [shown, setShown] = useState<{ id: number; message: string; kind: NoticeKind } | null>(null)
   useEffect(() => onNotice((message, kind) => setShown((s) => ({ id: (s?.id ?? 0) + 1, message, kind }))), [])
   if (!shown) return null
+  // Sync notices are not about delay risk, so a 'warning' notice renders as neutral info.
   // key restarts the timer when a new notice replaces one that is still showing.
-  return <Toast key={shown.id} type={shown.kind} title={shown.message} duration={4000} onClose={() => setShown((s) => (s?.id === shown.id ? null : s))} />
+  return <Toast key={shown.id} type={shown.kind === 'warning' ? 'info' : shown.kind} title={shown.message} duration={4000} onClose={() => setShown((s) => (s?.id === shown.id ? null : s))} />
 }

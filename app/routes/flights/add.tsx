@@ -435,7 +435,7 @@ function AddFlightScreen() {
                   leftIcon={<Clock />}
                 />}
               </div>
-              {timeWarning && <Alert status="warning" showIcon={false} lineOne={timeWarning} />}
+              {timeWarning && <Alert status="info" showIcon={false} lineOne={timeWarning} />}
             </div>
           )}
 
@@ -456,13 +456,13 @@ function AddFlightScreen() {
               </Button>
 
               {lookupMiss && (
-                <Alert className="mt-4" status="warning" showIcon={false} lineOne={lookupMiss} />
+                <Alert className="mt-4" status="info" showIcon={false} lineOne={lookupMiss} />
               )}
 
               {notFound && (
                 <Alert
                   className="mt-4"
-                  status="warning"
+                  status="info"
                   showIcon={false}
                   lineOne={`We couldn't find ${(typedParsed ? `${typedParsed.airlineCode}${typedParsed.number}` : flightNumber.trim()).toUpperCase()} on ${formatDate(`${date}T12:00:00`)}. We cover US domestic flights, and we don't have every schedule yet. Try searching by route instead.`}
                   lineTwo={

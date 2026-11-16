@@ -244,7 +244,7 @@ function DesignSystemGallery() {
         </Section>
 
         <Section title="Pill">
-          <Label>Tones: default, success, warning, error, info. Rows are default size then small.</Label>
+          <Label>Tones: default, success, warning, error, info (success and warning are for delay risk only; RiskPill uses them). Rows are default size then small.</Label>
           <>
               <div className="flex flex-wrap items-center gap-2">
                 {(['default', 'success', 'warning', 'error', 'info'] as const).map((t) => (
@@ -266,18 +266,12 @@ function DesignSystemGallery() {
         </Section>
 
         <Section title="Alert">
-          <Label>Status: success, warning, error, info</Label>
+          <Label>Status: success and info (neutral navy), error (red)</Label>
           <Alert status="success" lineOne="Line one of text goes here" lineTwo="A secondary supporting line of text goes here" />
-          <Alert status="warning" lineOne="Line one of text goes here" lineTwo="A secondary supporting line of text goes here" />
           <Alert status="error" lineOne="Line one of text goes here" lineTwo="A secondary supporting line of text goes here" />
           <Alert status="info" lineOne="Line one of text goes here" lineTwo="A secondary supporting line of text goes here" />
           <Label>Without icon, with right icon</Label>
-          <Alert status="warning" showIcon={false} showRightIcon lineOne="Line one of text goes here" lineTwo="Supporting line" />
-          <Label>Solid (on dark ticket)</Label>
-          <div className="space-y-2 rounded-ticket bg-surface-card p-4">
-            <Alert solid status="warning" lineOne={<>At risk: <b>Sample</b></>} lineTwo="Sample supporting line" />
-            <Alert solid status="success" lineOne="On track" lineTwo="Sample supporting line" />
-          </div>
+          <Alert status="info" showIcon={false} showRightIcon lineOne="Line one of text goes here" lineTwo="Supporting line" />
         </Section>
 
         <Section title="Input">
@@ -359,13 +353,13 @@ function DesignSystemGallery() {
           <Label>Sample data only. Original times (struck through) are a Figma option the app does not use.</Label>
           <Ticket
             flightNumber="XX0000"
-            badge={<Pill tone="warning">Sample</Pill>}
+            badge={<Pill tone="info">Sample</Pill>}
             departure={{ originalTime: '0:00 AM', primary: '1:00 PM', date: 'Sample date', place: 'AAA · Sample city' }}
             arrival={{ originalTime: '0:00 AM', primary: '3:00 PM', date: 'Sample date', place: 'BBB · Sample city' }}
             middle={<Duration kind="text" label="Sample" />}
             footer="Operated by Sample Airlines"
           >
-            <Alert solid status="warning" lineOne="Sample alert line" lineTwo="Sample supporting line" />
+            <Alert status="info" lineOne="Sample alert line" lineTwo="Sample supporting line" />
           </Ticket>
           <Ticket
             title="Sample title"

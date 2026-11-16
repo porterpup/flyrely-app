@@ -73,7 +73,7 @@ function ResetPasswordRoute() {
 
   return (
     <AuthLayout title="Set a new password">
-      {!configured && <Alert status="warning" lineOne="Sign-in isn't configured" />}
+      {!configured && <Alert status="info" lineOne="Sign-in isn't configured" />}
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <PasswordInput
           label="New password"

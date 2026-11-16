@@ -125,7 +125,7 @@ export function RouteSearch({
       <Button fullWidth className="mt-6" onClick={handleSearch} loading={busy && !result} icon={<Search className="w-4 h-4" />}>
         Find flights
       </Button>
-      {miss && <Alert className="mt-4" status="warning" showIcon={false} lineOne={miss} />}
+      {miss && <Alert className="mt-4" status="info" showIcon={false} lineOne={miss} />}
       {result && (
         <div className="mt-6">
           <RouteResults

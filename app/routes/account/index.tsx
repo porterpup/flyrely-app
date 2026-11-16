@@ -136,7 +136,7 @@ function AccountScreen() {
                     Save
                   </Button>
                   {saveMsg?.ok && !dirty && (
-                    <span className="text-body-md text-status-success-text" role="status">
+                    <span className="text-body-md text-surface-accent" role="status">
                       Saved
                     </span>
                   )}

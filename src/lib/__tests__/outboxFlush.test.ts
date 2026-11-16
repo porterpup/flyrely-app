@@ -68,14 +68,27 @@ describe('flushOutbox', () => {
     const h = host();
     configureEngine({ api, host: h, autoFlush: false });
     const notices: string[] = [];
-    onNotice((m) => notices.push(m));
+    const kinds: string[] = [];
+    onNotice((m, k) => { notices.push(m); kinds.push(k); });
     setEngineUser('u1');
     enqueue({ type: 'upsertFlight', flight: makeFlight(), at: 't' });
     await flushOutbox();
     expect(pendingCount()).toBe(0);
     expect(notices).toEqual(['You already track this flight.']);
+    expect(kinds).toEqual(['info']);
     expect(calls).toContain('fetchAll');
     expect(h.applyCloud).toHaveBeenCalled();
+  });
+
+  it('a permanently rejected change raises an error notice (red toast), not a warning', async () => {
+    const { api } = makeApi({ upsertFlight: vi.fn(async () => { throw new CloudError('rejected', '23514'); }) });
+    configureEngine({ api, host: host(), autoFlush: false });
+    const seen: Array<[string, string]> = [];
+    onNotice((m, k) => seen.push([m, k]));
+    setEngineUser('u1');
+    enqueue({ type: 'upsertFlight', flight: makeFlight(), at: 't' });
+    await flushOutbox();
+    expect(seen).toEqual([["Couldn't save one change.", 'error']]);
   });
 
   it('on a CHECK error drops the change so the queue cannot get stuck', async () => {

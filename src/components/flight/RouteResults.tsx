@@ -100,7 +100,7 @@ function times(f: SearchFlight): string {
 function BestBet({ flight: f, tied, disabled, onPick }: { flight: SearchFlight; tied: boolean; disabled?: boolean; onPick: (f: SearchFlight) => void }) {
   return (
     <Card data-testid="best-bet">
-      <p className="text-body-md font-semibold text-status-success-text">{tied ? 'Best bet (tied on risk)' : 'Best bet'}</p>
+      <p className="text-body-md font-semibold text-surface-accent">{tied ? 'Best bet (tied on risk)' : 'Best bet'}</p>
       <div className="mt-1 flex items-center justify-between">
         <span className="font-semibold text-ink">{f.flight}</span>
         <span className="text-body-md text-ink-caption">{f.airline_name}</span>

@@ -54,10 +54,10 @@ export function RemoveFlightModal({
         </div>
 
         {/* Warning */}
-        <div className="bg-status-warning-bg border border-status-warning-text/20 rounded-lg p-3 mb-6 text-left">
+        <div className="bg-surface-panel border border-surface-stroke rounded-lg p-3 mb-6 text-left">
           <div className="flex items-start gap-2">
-            <BellOff className="w-5 h-5 text-status-warning-text flex-shrink-0 mt-0.5" />
-            <p className="text-body-md text-status-warning-text">
+            <BellOff className="w-5 h-5 text-surface-accent flex-shrink-0 mt-0.5" />
+            <p className="text-body-md text-ink">
               This flight and its prediction will be removed from your list.
             </p>
           </div>

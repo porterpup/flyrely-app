@@ -53,7 +53,7 @@ function SignupRoute() {
   return (
     <AuthLayout title="Create account" subtitle="Free while we are in private beta.">
       {!configured && (
-        <Alert status="warning" lineOne={friendlyAuthError("Sign-in isn't configured")} />
+        <Alert status="info" lineOne={friendlyAuthError("Sign-in isn't configured")} />
       )}
       {confirmationSent ? (
         <>
@@ -94,7 +94,7 @@ function SignupRoute() {
               required
             />
             <p
-              className={`flex items-center gap-1.5 px-1 text-body-sm ${passwordOk ? 'text-status-success-text' : 'text-ink-caption'}`}
+              className={`flex items-center gap-1.5 px-1 text-body-sm ${passwordOk ? 'text-surface-accent' : 'text-ink-caption'}`}
             >
               {passwordOk && <Check className="h-4 w-4" aria-hidden />}
               At least 6 characters

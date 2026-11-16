@@ -71,8 +71,8 @@ export function RefundRightsNote({
       {lead}
       {!rebooked && (
         <Alert
-          solid
-          status="warning"
+          onPanel
+          status="info"
           lineOne={
             <>
               <strong className="font-semibold">

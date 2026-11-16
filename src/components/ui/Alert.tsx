@@ -1,7 +1,8 @@
-import { ThumbsUp, AlertTriangle, XCircle, Info, ChevronRight } from 'lucide-react';
+import { ThumbsUp, XCircle, Info, ChevronRight } from 'lucide-react';
 import { cn } from '~/lib/utils';
 
-export type AlertStatus = 'success' | 'warning' | 'error' | 'info';
+/** Only `error` is red. Success and info are neutral navy: green, amber and red otherwise mean delay risk. */
+export type AlertStatus = 'success' | 'error' | 'info';
 
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   status?: AlertStatus;
@@ -12,40 +13,33 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   showIcon?: boolean;
   /** Trailing chevron, for alerts that link somewhere. */
   showRightIcon?: boolean;
-  /** Solid high-emphasis fill, used on the dark ticket (warning is the amber fill). */
-  solid?: boolean;
+  /** Use inside a panel or card: a darker fill and an accent edge so it stays visible. Still neutral. */
+  onPanel?: boolean;
   /** Trailing control, e.g. an Undo button. */
   action?: React.ReactNode;
 }
 
 const icons = {
   success: ThumbsUp,
-  warning: AlertTriangle,
   error: XCircle,
   info: Info,
 } as const;
 
-const softClasses: Record<AlertStatus, string> = {
-  success: 'border border-status-success-text/40 bg-status-success-bg text-status-success-text',
-  warning: 'border border-status-warning-text/40 bg-status-warning-bg text-status-warning-text',
-  error: 'border border-status-error-text/40 bg-status-error-bg text-status-error-text',
-  info: 'border border-status-info-text/40 bg-status-info-bg text-status-info-text',
-};
+const neutral = 'border border-surface-stroke bg-surface-panel text-ink';
 
-export const alertSolidClasses: Record<AlertStatus, string> = {
-  success: 'bg-status-success-solid text-white',
-  warning: 'bg-status-warning-solid text-ink-inverse',
-  error: 'bg-status-error-solid text-white',
-  info: 'bg-status-info-solid text-white',
+const statusClasses: Record<AlertStatus, string> = {
+  success: neutral,
+  info: neutral,
+  error: 'border border-status-error-text/40 bg-status-error-bg text-status-error-text',
 };
 
 export function Alert({
-  status = 'success',
+  status = 'info',
   lineOne,
   lineTwo,
   showIcon = true,
   showRightIcon = false,
-  solid = false,
+  onPanel = false,
   action,
   className,
   ...props
@@ -56,12 +50,13 @@ export function Alert({
       role={status === 'error' ? 'alert' : undefined}
       className={cn(
         'flex items-center gap-3 rounded-alert p-inset',
-        solid ? alertSolidClasses[status] : softClasses[status],
+        statusClasses[status],
+        onPanel && status !== 'error' && 'border-surface-accent/50 bg-surface-field',
         className
       )}
       {...props}
     >
-      {showIcon && <Icon className="h-6 w-6 shrink-0" aria-hidden />}
+      {showIcon && <Icon className={cn('h-6 w-6 shrink-0', status !== 'error' && 'text-surface-accent')} aria-hidden />}
       <div className="min-w-0 flex-1">
         <p className="text-body-md">{lineOne}</p>
         {lineTwo && <p className="mt-0.5 text-body-sm">{lineTwo}</p>}

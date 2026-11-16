@@ -18,26 +18,26 @@ export function NoPredictionBanner({
     return (
       <div
         className={cn(
-          'bg-status-warning-bg border border-status-warning-text/40 rounded-tile p-4',
+          'bg-surface-panel border border-surface-stroke rounded-tile p-4',
           className
         )}
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 bg-status-warning-bg rounded-full flex items-center justify-center flex-shrink-0">
-            <Clock className="w-5 h-5 text-status-warning-text" />
+          <div className="w-10 h-10 bg-surface-muted rounded-full flex items-center justify-center flex-shrink-0">
+            <Clock className="w-5 h-5 text-surface-accent" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-status-warning-text">
+            <h3 className="font-semibold text-ink">
               Prediction temporarily unavailable
             </h3>
-            <p className="text-body-md text-status-warning-text mt-1">
+            <p className="text-body-md text-ink-caption mt-1">
               {reason ||
                 "We're having trouble generating a prediction right now. The airline's official status is shown below."}
             </p>
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 mt-2 text-body-md font-medium text-status-warning-text hover:text-status-warning-text"
+                className="inline-flex items-center gap-1.5 mt-2 text-body-md font-medium text-surface-accent hover:text-ink"
               >
                 <RefreshCw className="w-4 h-4" />
                 Try again

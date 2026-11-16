@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { fieldControlClass } from '~/components/ui/Field';
 import { FieldBox, FieldLabel } from '~/components/ui';
@@ -87,7 +87,7 @@ export function AirportAutocomplete({
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1.5">
       <FieldLabel>{label}</FieldLabel>
-      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-status-success-text bg-status-success-bg')}>
+      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-surface-accent ring-2 ring-surface-accent')}>
         <input
           type="text"
           value={query}
@@ -102,6 +102,7 @@ export function AirportAutocomplete({
           aria-label={label}
           className={cn(fieldControlClass, leftIcon && 'pl-2')}
         />
+        {confirmed && <Check className="mr-1 h-5 w-5 shrink-0 self-center text-surface-accent" aria-label="Selected" />}
         {query && (
           <IconButton aria-label="Clear" kind="text" onClick={clear} className="self-center">
             <X className="h-4 w-4" aria-hidden />
