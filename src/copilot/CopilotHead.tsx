@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import { COPILOT_PUSH_ENABLED } from './flags';
 import { registerServiceWorker } from './push';
+import { palette } from '~/styles/tokens';
 
 type HeadLink = { rel: string; href: string; sizes?: string };
 type HeadMeta = { name: string; content: string };
 
 /** Brand navy, shown in the browser toolbar and the installed app's status area. */
-export const THEME_COLOR = '#123A75';
+export const THEME_COLOR = palette.surface.DEFAULT;
 
 /**
  * Head links for the installable PWA: manifest and the iOS home-screen icon. Always emitted, so "Add to Home Screen"
@@ -23,6 +24,7 @@ export function pwaHeadLinks(): HeadLink[] {
 export function pwaMeta(): HeadMeta[] {
   return [
     { name: 'theme-color', content: THEME_COLOR },
+    { name: 'color-scheme', content: 'dark' },
     { name: 'mobile-web-app-capable', content: 'yes' },
     { name: 'apple-mobile-web-app-capable', content: 'yes' },
     { name: 'apple-mobile-web-app-title', content: 'FlyRely' },

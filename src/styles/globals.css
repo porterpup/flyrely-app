@@ -24,17 +24,19 @@
   :root {
     --background: 255 255 255;
     --foreground: 15 23 42;
+    /* Native date/time pickers, select popups, scrollbars and autofill render dark. */
+    color-scheme: dark;
   }
 
   html {
-    /* Shows in overscroll and beside the phone-width column on desktop. */
-    background-color: #f8fafc;
+    /* Shows in overscroll and beside the phone-width column on desktop (darker than the app so the column stands out). */
+    background-color: #06142f;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply bg-white text-ink antialiased;
+    @apply bg-surface text-ink antialiased;
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
   }
@@ -54,6 +56,16 @@
     cursor: pointer;
   }
 
+  /* Autofilled fields keep the navy field fill instead of the browser's pale yellow or blue. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px theme('colors.surface.field') inset;
+    -webkit-text-fill-color: theme('colors.ink.DEFAULT');
+    caret-color: theme('colors.ink.DEFAULT');
+  }
+
   /* Numbers line up (times, percents, flight numbers). */
   h1, h2, h3, time {
     font-variant-numeric: tabular-nums;
@@ -63,10 +75,10 @@
 @layer components {
   /* Mobile app container - mimics phone screen */
   .app-container {
-    @apply mx-auto max-w-[430px] bg-white relative;
+    @apply mx-auto max-w-[430px] bg-surface relative;
     min-height: 100vh;
     min-height: 100dvh;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
   }
 
   /* Screen transitions */
