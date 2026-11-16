@@ -12,20 +12,17 @@ export const riskTone: Record<RiskLevel, PillTone> = {
 export function RiskPill({
   risk,
   detail,
-  emphasis = 'solid',
   size = 'default',
   className,
 }: {
   risk: RiskLevel;
   /** Optional trailing text, e.g. "33% chance of a 15+ min delay". */
   detail?: string | null;
-  /** solid for dark surfaces (the ticket), soft for white surfaces. */
-  emphasis?: 'soft' | 'solid';
   size?: 'default' | 'small';
   className?: string;
 }) {
   return (
-    <Pill tone={riskTone[risk]} emphasis={emphasis} size={size} className={className}>
+    <Pill tone={riskTone[risk]} size={size} className={className}>
       {getRiskLabel(risk)}
       {detail && (
         <>

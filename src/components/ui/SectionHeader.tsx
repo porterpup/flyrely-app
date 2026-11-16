@@ -7,8 +7,6 @@ export interface SectionHeaderProps {
   /** Optional trailing action (e.g. a small text Button or Link). */
   action?: React.ReactNode;
   as?: 'h1' | 'h2' | 'h3';
-  /** Use on dark surfaces. */
-  onDark?: boolean;
   className?: string;
 }
 
@@ -17,7 +15,6 @@ export function SectionHeader({
   kind = 'default',
   action,
   as: Tag = 'h2',
-  onDark = false,
   className,
 }: SectionHeaderProps) {
   return (
@@ -28,7 +25,7 @@ export function SectionHeader({
         className
       )}
     >
-      <Tag className={cn('text-title-md', onDark ? 'text-white' : 'text-ink')}>{title}</Tag>
+      <Tag className={'text-title-md text-ink'}>{title}</Tag>
       {action}
     </div>
   );

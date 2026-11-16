@@ -39,13 +39,13 @@ function End({ end, align }: { end: TicketEnd; align: 'left' | 'right' }) {
   return (
     <div className={cn('flex w-[104px] max-[359px]:w-24 min-w-0 shrink flex-col', align === 'right' && 'items-end text-right')}>
       {end.originalTime ? (
-        <p className="text-body-sm text-ink-on-dark-muted line-through">{end.originalTime}</p>
+        <p className="text-body-sm text-ink-caption line-through">{end.originalTime}</p>
       ) : (
-        <p className="text-body-sm text-ink-on-dark-muted">{end.label ?? ' '}</p>
+        <p className="text-body-sm text-ink-caption">{end.label ?? ' '}</p>
       )}
       <p className="whitespace-nowrap text-title-lg tabular-nums text-white">{end.primary}</p>
-      <p className="text-body-sm text-ink-on-dark-muted">{end.date ?? ' '}</p>
-      {end.place && <p className="truncate text-body-sm text-ink-on-dark-muted">{end.place}</p>}
+      <p className="text-body-sm text-ink-caption">{end.date ?? ' '}</p>
+      {end.place && <p className="truncate text-body-sm text-ink-caption">{end.place}</p>}
     </div>
   );
 }
@@ -71,7 +71,7 @@ export function Ticket({
       className={cn('flex w-full flex-col gap-4 rounded-ticket bg-surface-card p-4 text-left text-white', className)}
       {...(props as React.HTMLAttributes<HTMLElement>)}
     >
-      {eyebrow && <p className="-mb-2 text-body-sm text-ink-on-dark-muted">{eyebrow}</p>}
+      {eyebrow && <p className="-mb-2 text-body-sm text-ink-caption">{eyebrow}</p>}
       {title && <p className="text-title-sm text-white">{title}</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-title-md tabular-nums">{flightNumber}</span>
@@ -79,13 +79,13 @@ export function Ticket({
       </div>
       <div className="flex items-start gap-2.5">
         <End end={departure} align="left" />
-        <div className="flex min-w-0 flex-1 pt-[27px]">{middle ?? <Duration onDark />}</div>
+        <div className="flex min-w-0 flex-1 pt-[27px]">{middle ?? <Duration />}</div>
         <End end={arrival} align="right" />
       </div>
-      {footer && <p className={cn('text-center text-body-sm text-ink-on-dark-muted', footerClassName)}>{footer}</p>}
+      {footer && <p className={cn('text-center text-body-sm text-ink-caption', footerClassName)}>{footer}</p>}
       {children && (
         <>
-          <Divider tone="dark" dashed />
+          <Divider dashed />
           {children}
         </>
       )}

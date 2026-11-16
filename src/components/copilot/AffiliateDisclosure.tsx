@@ -44,7 +44,7 @@ export function AffiliateDisclosure({ required, className }: AffiliateDisclosure
           className={cn(
             'underline underline-offset-2 rounded-sm',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent',
-            'text-ink'
+            'text-surface-accent'
           )}
         >
           How we choose these

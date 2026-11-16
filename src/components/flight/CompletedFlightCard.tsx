@@ -21,7 +21,7 @@ export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProp
           <span className="text-ink-caption">·</span>
           <span className="truncate text-body-md text-ink-caption">{flight.airline.name}</span>
         </div>
-        <RiskPill risk={flight.riskLevel} emphasis="soft" className="shrink-0" />
+        <RiskPill risk={flight.riskLevel} className="shrink-0" />
       </div>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-md text-ink-caption">
         <span>{flight.origin.code}</span>

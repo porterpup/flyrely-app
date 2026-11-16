@@ -49,10 +49,10 @@ function isUnknownAirport(error: unknown): boolean {
 function OptionsSkeleton() {
   return (
     <div role="status" aria-label="Loading your options" className="space-y-3">
-      <Skeleton onDark className="h-5 w-2/3 rounded" />
-      <Skeleton onDark className="h-16 rounded-btn" />
-      <Skeleton onDark className="h-16 rounded-btn" />
-      <Skeleton onDark className="h-16 rounded-btn" />
+      <Skeleton className="h-5 w-2/3 rounded" />
+      <Skeleton className="h-16 rounded-btn" />
+      <Skeleton className="h-16 rounded-btn" />
+      <Skeleton className="h-16 rounded-btn" />
     </div>
   );
 }

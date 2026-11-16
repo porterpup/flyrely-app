@@ -52,11 +52,11 @@ export function DisruptionCard({
         detail={typeof chancePercent === 'number' ? `${chancePercent}% chance of a 15+ min delay` : null}
       />
     ) : state === 'cancelled' ? (
-      <Pill tone="error" emphasis="solid" size="small">
+      <Pill tone="error" size="small">
         Cancelled
       </Pill>
     ) : state === 'rebooked' ? (
-      <Pill tone="success" emphasis="solid" size="small">
+      <Pill tone="success" size="small">
         Rebooked
       </Pill>
     ) : null;
@@ -78,7 +78,7 @@ export function DisruptionCard({
   );
 
   return (
-    <Card tone="dark" className={cn('space-y-5', className)}>
+    <Card tone="raised" className={cn('space-y-5', className)}>
       {collapsible ? (
         <button
           type="button"

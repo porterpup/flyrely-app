@@ -109,11 +109,11 @@ const noAlts: OptionsResponse = {
   disclosure: { required: false },
 };
 
-function Frame({ label, children, light = false }: { label: string; children: React.ReactNode; light?: boolean }) {
+function Frame({ label, children, muted = false }: { label: string; children: React.ReactNode; muted?: boolean }) {
   return (
     <div data-sample={label} className="space-y-1">
       <p className="text-body-sm text-ink-caption">SAMPLE: {label}</p>
-      <div className={light ? 'rounded-btn bg-surface-muted p-3 text-ink ring-1 ring-surface-stroke' : 'rounded-ticket bg-surface-panel p-3 text-ink'}>
+      <div className={muted ? 'rounded-btn bg-surface-muted p-3 text-ink ring-1 ring-surface-stroke' : 'rounded-ticket bg-surface-panel p-3 text-ink'}>
         {children}
       </div>
     </div>
@@ -200,7 +200,7 @@ export default function CopilotGallery() {
           </DisruptionCard>
         </Frame>
 
-        <Frame label="Low-risk flight: quiet 'Flight cancelled?' link" light>
+        <Frame label="Low-risk flight: quiet 'Flight cancelled?' link" muted>
           <FlightCancelledLink onClick={noop} />
         </Frame>
 
@@ -243,7 +243,7 @@ export default function CopilotGallery() {
         <Frame label="AltFlightRow (low risk, medium risk operated by a partner, no estimate)">
           <div className="space-y-2">{SAMPLE_ALTS.map((a) => <AltFlightRow key={a.flight_number} item={a} />)}</div>
         </Frame>
-        <Frame label="AltFlightRow on a light surface" light>
+        <Frame label="AltFlightRow on a muted surface" muted>
           <AltFlightRow item={SAMPLE_ALTS[0]} />
         </Frame>
 
@@ -254,7 +254,7 @@ export default function CopilotGallery() {
             <PartnerButton handoff={h('c', 'Primary')} variant="primary" />
           </div>
         </Frame>
-        <Frame label="PartnerButton on a light surface" light>
+        <Frame label="PartnerButton on a muted surface" muted>
           <div className="flex flex-wrap gap-2">
             <PartnerButton handoff={h('a', 'Secondary')} />
             <PartnerButton handoff={h('c', 'Primary')} variant="primary" />
@@ -263,13 +263,13 @@ export default function CopilotGallery() {
 
         <Frame label="RefundRightsNote (cancelled)"><RefundRightsNote refund={base.refund_rights} /></Frame>
         <Frame label="RefundRightsNote (Plan B, conditional)"><RefundRightsNote refund={base.refund_rights} conditional /></Frame>
-        <Frame label="RefundRightsNote (non-US, light)" light>
+        <Frame label="RefundRightsNote (non-US, muted)" muted>
           <RefundRightsNote refund={{ applies: false, jurisdiction: null, content_key: null }} />
         </Frame>
 
         <Frame label="AirlineContact (known)"><AirlineContact airline={SAMPLE_AIRLINE} /></Frame>
         <Frame label="AirlineContact (unknown airline)"><AirlineContact airline={null} /></Frame>
-        <Frame label="AirlineContact (light)" light><AirlineContact airline={SAMPLE_AIRLINE} /></Frame>
+        <Frame label="AirlineContact (muted)" muted><AirlineContact airline={SAMPLE_AIRLINE} /></Frame>
 
         <Frame label="HotelOffer"><HotelOffer hotel={base.hotel!} /></Frame>
         <Frame label="RideOffer: to hotel / RideButton"><RideOffer ride={base.ride} /></Frame>
@@ -282,7 +282,7 @@ export default function CopilotGallery() {
         <Frame label="AffiliateDisclosure (required; tap 'How we choose these' to open the sheet)">
           <AffiliateDisclosure required />
         </Frame>
-        <Frame label="AffiliateDisclosure sheet content (static preview)" light>
+        <Frame label="AffiliateDisclosure sheet content (static preview)" muted>
           <HowWeChooseBody required />
         </Frame>
 
@@ -297,7 +297,7 @@ export default function CopilotGallery() {
         <Frame label="IosInstallHelp: shown instead of 'Alert me' in an iPhone Safari tab">
           <IosInstallHelp />
         </Frame>
-        <Frame label="IosInstallHelp sheet content (static preview)" light>
+        <Frame label="IosInstallHelp sheet content (static preview)" muted>
           <IosInstallSteps />
         </Frame>
 

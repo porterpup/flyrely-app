@@ -47,7 +47,7 @@ export function Modal({
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full bg-surface-card border-t border-surface-stroke rounded-t-3xl sm:rounded-tile p-6',
+          'relative w-full max-h-[calc(100dvh-env(safe-area-inset-top)-1rem)] overflow-y-auto bg-surface-card border-t border-surface-stroke rounded-t-3xl sm:rounded-tile p-6',
           'pb-[max(1.5rem,env(safe-area-inset-bottom))] motion-safe:animate-sheet-up sm:motion-safe:animate-pop-in',
           sizeClasses[size]
         )}

@@ -22,15 +22,13 @@
 
 @layer base {
   :root {
-    --background: 255 255 255;
-    --foreground: 15 23 42;
     /* Native date/time pickers, select popups, scrollbars and autofill render dark. */
     color-scheme: dark;
   }
 
   html {
     /* Shows in overscroll and beside the phone-width column on desktop (darker than the app so the column stands out). */
-    background-color: #06142f;
+    background-color: theme('colors.surface.side');
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
