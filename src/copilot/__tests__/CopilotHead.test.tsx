@@ -26,6 +26,8 @@ describe('CopilotHead', () => {
     const { CopilotBootstrap, pwaHeadLinks, pwaMeta } = await load(copilot, push);
     expect(pwaHeadLinks().map((l) => l.rel)).toEqual(['manifest', 'apple-touch-icon']);
     expect(pwaMeta().map((m) => m.name)).toContain('theme-color');
+    expect(pwaMeta()).toContainEqual({ name: 'theme-color', content: '#0B2350' });
+    expect(pwaMeta()).toContainEqual({ name: 'color-scheme', content: 'dark' });
     render(<CopilotBootstrap />);
     expect(register).not.toHaveBeenCalled();
   });

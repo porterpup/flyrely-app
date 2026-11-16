@@ -244,7 +244,7 @@ function FlightDetailsScreen() {
                 {flight.warnings && flight.warnings.length > 0 && (
                   <ul className="mt-4 space-y-1">
                     {flight.warnings.map((w, i) => (
-                      <li key={`${i}-${w}`} className="text-body-sm opacity-80">
+                      <li key={`${i}-${w}`} className="text-body-sm">
                         {w}
                       </li>
                     ))}

@@ -12,7 +12,7 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   showIcon?: boolean;
   /** Trailing chevron, for alerts that link somewhere. */
   showRightIcon?: boolean;
-  /** Solid high-emphasis fill, used on the dark ticket (warning is the #FFB400 yellow). */
+  /** Solid high-emphasis fill, used on the dark ticket (warning is the amber fill). */
   solid?: boolean;
   /** Trailing control, e.g. an Undo button. */
   action?: React.ReactNode;

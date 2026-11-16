@@ -72,7 +72,7 @@ function AccountScreen() {
         <PageTitle title="Account" />
 
         <div className="mb-6 flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-card">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface-panel">
             <span className="text-title-lg text-white">{initial}</span>
           </div>
           <div className="min-w-0">

@@ -66,7 +66,6 @@ export default {
           ...palette.status,
           'info-text': palette.surface.accent,
           // Solid fills used on the ticket / prediction panel and the usage chart
-          'success-solid': '#0E9F4A',
           'info-solid': palette.surface['accent-fill'],
         },
       },
