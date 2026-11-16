@@ -60,3 +60,38 @@ describe('canGoBackInApp (browser history)', () => {
     expect(canGoBackInApp(createMemoryHistory({ initialEntries: ['/', '/a'] }))).toBe(false);
   });
 });
+
+describe('same-URL navigation through a real router', () => {
+  it('does not add an entry, and Back still goes to the previous page', async () => {
+    const { createRouter, createRootRoute, createRoute } = await import('@tanstack/react-router');
+    window.history.replaceState({}, '', '/');
+    const history = createBrowserHistory();
+    trackInAppHistory(history);
+    const root = createRootRoute();
+    const routeTree = root.addChildren([
+      createRoute({ getParentRoute: () => root, path: '/' }),
+      createRoute({ getParentRoute: () => root, path: '/explore' }),
+    ]);
+    const router = createRouter({ routeTree, history });
+    await router.load();
+    await router.navigate({ to: '/explore' });
+    await tick();
+    const length = window.history.length;
+    await router.navigate({ to: '/explore' });
+    await router.navigate({ to: '/explore' });
+    await tick();
+    expect(window.history.length).toBe(length);
+    expect(canGoBackInApp(history)).toBe(true);
+    await popped(history, 'back');
+    expect(history.location.pathname).toBe('/');
+  });
+  it('treats search and hash as part of the URL', async () => {
+    const h = await setup();
+    h.push('/a?x=1#h'); await tick();
+    const length = window.history.length;
+    h.push('/a?x=1#h'); await tick();
+    expect(window.history.length).toBe(length);
+    h.push('/a?x=2#h'); await tick();
+    expect(window.history.length).toBe(length + 1);
+  });
+});

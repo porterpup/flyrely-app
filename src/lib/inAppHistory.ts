@@ -26,6 +26,12 @@ export function trackInAppHistory(history: RouterHistory) {
   tracked.add(history);
   const push = history.push.bind(history);
   const replace = history.replace.bind(history);
-  history.push = (path, state, opts) => push(path, { ...state, [KEY]: indexOf(history) + 1 }, opts);
+  history.push = (path, state, opts) => {
+    // The router skips a same-URL navigation only when the state is also equal. Our index makes the
+    // states differ, so do the skip here: re-navigating to the current URL (e.g. tapping the active
+    // tab) must not add an entry. `path` is the router's href (path + search + hash), as is location.href.
+    if (path === history.location.href) return replace(path, { ...state, [KEY]: indexOf(history) }, opts);
+    return push(path, { ...state, [KEY]: indexOf(history) + 1 }, opts);
+  };
   history.replace = (path, state, opts) => replace(path, { ...state, [KEY]: indexOf(history) }, opts);
 }
