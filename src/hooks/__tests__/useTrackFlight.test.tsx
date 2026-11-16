@@ -52,7 +52,7 @@ describe('autoTrackSingle', () => {
     expect(p).not.toBeNull();
     expect(await p).toBeNull();
     expect(saveFlight).toHaveBeenCalledTimes(1);
-    expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/flights/$flightId', search: { added: '1' } }));
+    expect(navigate).toHaveBeenCalledWith(expect.objectContaining({ to: '/flights/$flightId', search: { added: '1' }, replace: true }));
   });
   it('does nothing when there is a choice to make', () => {
     const track = vi.fn();
@@ -72,7 +72,7 @@ describe('useTrackFlight', () => {
     expect(await result.current(input)).toBeNull();
     expect(saveFlight).not.toHaveBeenCalled();
     expect(emitNotice).toHaveBeenCalledWith('You already track AA100.', 'info');
-    expect(navigate).toHaveBeenCalledWith({ to: '/flights/$flightId', params: { flightId: saved.id } });
+    expect(navigate).toHaveBeenCalledWith({ to: '/flights/$flightId', params: { flightId: saved.id }, replace: true });
   });
   it('goes to the trip with a notice when added as a connecting flight', async () => {
     const prev = {
@@ -85,7 +85,7 @@ describe('useTrackFlight', () => {
     expect(await result.current({ airline: 'AA', number: '200', depISO: '2030-01-02T07:00:00', origin: 'JFK', dest: 'LAX', after: 'prev' })).toBeNull();
     expect(createTrip).toHaveBeenCalled();
     expect(emitNotice).toHaveBeenCalledWith('Added to your trip.', 'success');
-    expect(navigate).toHaveBeenCalledWith({ to: '/trips/$tripId', params: { tripId: 'trip-1' } });
+    expect(navigate).toHaveBeenCalledWith({ to: '/trips/$tripId', params: { tripId: 'trip-1' }, replace: true });
   });
   it('returns a message instead of throwing when the prediction fails', async () => {
     rescoreFlight.mockRejectedValue(new Error('boom'));

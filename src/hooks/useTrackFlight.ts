@@ -77,6 +77,8 @@ export function autoTrackSingle(
 
 /**
  * One-step "track this flight": score it, save it, and open its page.
+ * Navigation REPLACES the current history entry (the add form / compare screen), so Back from the
+ * flight page goes to where the user started instead of reopening the form.
  * Resolves to an error message to show inline, or null on success. Never throws.
  */
 export function useTrackFlight() {
@@ -88,7 +90,7 @@ export function useTrackFlight() {
       const existing = getFlights().find((f) => naturalKey(f) === key);
       if (existing) {
         emitNotice(`You already track ${existing.flightNumber}.`, 'info');
-        navigate({ to: '/flights/$flightId', params: { flightId: existing.id } });
+        navigate({ to: '/flights/$flightId', params: { flightId: existing.id }, replace: true });
         return null;
       }
       let flight: Flight;
@@ -110,12 +112,12 @@ export function useTrackFlight() {
         const result = prev.tripId ? appendLeg(prev.tripId, flight.id) : createTrip([prev.id, flight.id]);
         if (result.ok) {
           emitNotice('Added to your trip.', 'success');
-          navigate({ to: '/trips/$tripId', params: { tripId: result.tripId } });
+          navigate({ to: '/trips/$tripId', params: { tripId: result.tripId }, replace: true });
           return null;
         }
         emitNotice(result.reason, 'warning');
       }
-      navigate({ to: '/flights/$flightId', params: { flightId: flight.id }, search: { added: '1' } });
+      navigate({ to: '/flights/$flightId', params: { flightId: flight.id }, search: { added: '1' }, replace: true });
       return null;
     },
     [navigate]
