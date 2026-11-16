@@ -12,7 +12,7 @@ export function HotelAddressField({ value, onChange, className }: HotelAddressFi
   const id = useId();
   return (
     <div className={cn('space-y-1.5', className)}>
-      <label htmlFor={id} className="text-body-md font-medium text-white">
+      <label htmlFor={id} className="text-body-md font-medium text-ink">
         Paste your hotel address (optional)
       </label>
       <input
@@ -23,9 +23,9 @@ export function HotelAddressField({ value, onChange, className }: HotelAddressFi
         maxLength={200}
         autoComplete="off"
         placeholder="Fills the Uber drop-off"
-        className="w-full rounded-btn border border-white/40 bg-white/10 px-4 py-3 text-body-md text-white placeholder:text-white/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="w-full rounded-btn border border-surface-field-border bg-surface-field px-4 py-3 text-body-md text-ink placeholder:text-ink-placeholder focus-visible:border-surface-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
       />
-      <p className="text-body-sm text-white/80">Stays on this device. We never send it to FlyRely.</p>
+      <p className="text-body-sm text-ink-caption">Stays on this device. We never send it to FlyRely.</p>
     </div>
   );
 }

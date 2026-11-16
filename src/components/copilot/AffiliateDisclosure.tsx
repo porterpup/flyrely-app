@@ -5,7 +5,6 @@ import { Modal } from '~/components/ui';
 export interface AffiliateDisclosureProps {
   /** `disclosure.required` from the API: true when at least one link on the card carries an affiliate ID. */
   required: boolean;
-  onDark?: boolean;
   className?: string;
 }
 
@@ -27,9 +26,9 @@ export function HowWeChooseBody({ required }: { required: boolean }) {
 }
 
 /** One-line disclosure (only when required) plus a "How we choose these" sheet. */
-export function AffiliateDisclosure({ required, onDark = true, className }: AffiliateDisclosureProps) {
+export function AffiliateDisclosure({ required, className }: AffiliateDisclosureProps) {
   const [open, setOpen] = useState(false);
-  const muted = onDark ? 'text-white/80' : 'text-ink-caption';
+  const muted = 'text-ink-caption';
   return (
     <div className={cn('space-y-1', className)}>
       {required && (
@@ -45,7 +44,7 @@ export function AffiliateDisclosure({ required, onDark = true, className }: Affi
           className={cn(
             'underline underline-offset-2 rounded-sm',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent',
-            onDark ? 'text-white' : 'text-surface-accent'
+            'text-ink'
           )}
         >
           How we choose these

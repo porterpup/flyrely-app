@@ -13,7 +13,6 @@ import { PushPermissionPrompt } from './PushPermissionPrompt';
 
 export interface PushToggleProps {
   flight: Flight;
-  onDark?: boolean;
   className?: string;
 }
 
@@ -29,7 +28,7 @@ const ERRORS = {
  * Safari tab it shows Add to Home Screen help instead, and renders nothing where push is unsupported.
  * Callers mount it only behind COPILOT_PUSH_ENABLED.
  */
-export function PushToggle({ flight, onDark = true, className }: PushToggleProps) {
+export function PushToggle({ flight, className }: PushToggleProps) {
   const [env, setEnv] = useState<PushEnvironment | null>(null);
   const [status, setStatus] = useState<PushStatus>('prompt');
   const [busy, setBusy] = useState(false);
@@ -70,13 +69,13 @@ export function PushToggle({ flight, onDark = true, className }: PushToggleProps
   }, [busy, flight.id]);
 
   if (env === null || env === 'unsupported') return null;
-  if (env === 'ios_needs_install') return <IosInstallHelp onDark={onDark} className={className} />;
+  if (env === 'ios_needs_install') return <IosInstallHelp className={className} />;
 
   return (
     <div className={className}>
-      <PushPermissionPrompt status={status} onEnable={() => void onEnable()} onDisable={() => void onDisable()} onDark={onDark} />
+      <PushPermissionPrompt status={status} onEnable={() => void onEnable()} onDisable={() => void onDisable()} />
       {error && (
-        <p role="alert" className={onDark ? 'mt-2 text-body-md text-white' : 'mt-2 text-body-md text-ink'}>
+        <p role="alert" className="mt-2 text-body-md text-ink">
           {error}
         </p>
       )}

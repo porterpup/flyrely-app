@@ -64,13 +64,13 @@ export function DisruptionCard({
   const headerInner = (
     <>
       <div className="min-w-0 flex-1 text-left">
-        <p className="text-title-md text-white">{title}</p>
-        <p className="mt-0.5 text-body-md text-white/80">{subtitle}</p>
+        <p className="text-title-md text-ink">{title}</p>
+        <p className="mt-0.5 text-body-md text-ink-caption">{subtitle}</p>
         {pill && <div className="mt-2">{pill}</div>}
       </div>
       {collapsible && (
         <ChevronDown
-          className={cn('mt-1 h-6 w-6 shrink-0 text-white transition-transform', open && 'rotate-180')}
+          className={cn('mt-1 h-6 w-6 shrink-0 text-ink transition-transform', open && 'rotate-180')}
           aria-hidden
         />
       )}
@@ -85,7 +85,7 @@ export function DisruptionCard({
           onClick={onToggle}
           aria-expanded={open}
           aria-controls={bodyId}
-          className="-m-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-btn p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          className="-m-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-btn p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
         >
           {headerInner}
         </button>

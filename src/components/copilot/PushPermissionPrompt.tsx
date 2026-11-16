@@ -8,19 +8,18 @@ export interface PushPermissionPromptProps {
   /** Called on tap only. The browser permission is never requested before this. */
   onEnable: () => void;
   onDisable?: () => void;
-  onDark?: boolean;
   className?: string;
 }
 
 /** "Alert me" prompt for the 24-hour heads-up push. */
-export function PushPermissionPrompt({ status, onEnable, onDisable, onDark = true, className }: PushPermissionPromptProps) {
-  const muted = onDark ? 'text-white/80' : 'text-ink-caption';
+export function PushPermissionPrompt({ status, onEnable, onDisable, className }: PushPermissionPromptProps) {
+  const muted = 'text-ink-caption';
   const Icon = status === 'enabled' ? BellRing : status === 'denied' ? BellOff : Bell;
   return (
     <div
       className={cn(
         'flex items-start gap-3 rounded-btn p-inset',
-        onDark ? 'bg-white/10 text-white' : 'bg-surface-muted text-ink',
+        'bg-surface-card text-ink',
         className
       )}
     >
@@ -40,13 +39,12 @@ export function PushPermissionPrompt({ status, onEnable, onDisable, onDark = tru
           <Button
             size="sm"
             onClick={onEnable}
-            className={onDark ? '!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed' : undefined}
           >
             Alert me
           </Button>
         )}
         {status === 'enabled' && onDisable && (
-          <Button size="sm" variant="text" onClick={onDisable} className={onDark ? '!text-white hover:!bg-white/10' : undefined}>
+          <Button size="sm" variant="text" onClick={onDisable}>
             Turn off
           </Button>
         )}

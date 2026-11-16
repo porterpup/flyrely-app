@@ -10,7 +10,6 @@ export interface RefundRightsNoteProps {
   rebooked?: boolean;
   /** An airline-specific notice is shown (e.g. Spirit): do not promise an automatic refund. */
   airlineNotice?: boolean;
-  onDark?: boolean;
   className?: string;
 }
 
@@ -22,10 +21,9 @@ export function RefundRightsNote({
   conditional = false,
   rebooked = false,
   airlineNotice = false,
-  onDark = true,
   className,
 }: RefundRightsNoteProps) {
-  const muted = onDark ? 'text-white/80' : 'text-ink-caption';
+  const muted = 'text-ink-caption';
   const otherCountries =
     refund.international === true || refund.eu_possible === true ? (
       <p className={cn('text-body-md', muted)}>Other countries&apos; rules (for example EU261) may give you more.</p>
@@ -99,7 +97,7 @@ export function RefundRightsNote({
           className={cn(
             'underline underline-offset-2 rounded-sm',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent',
-            onDark ? 'text-white' : 'text-surface-accent'
+            'text-ink'
           )}
         >
           US DOT refunds page<span className="sr-only"> (opens in a new tab)</span>

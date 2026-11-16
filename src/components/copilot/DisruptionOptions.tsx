@@ -37,14 +37,14 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
       {header}
 
       <section aria-label="Your airline">
-        <SectionHeader title="Your airline" as="h3" kind="no-space" onDark />
+        <SectionHeader title="Your airline" as="h3" kind="no-space" />
         <AirlineContact airline={airline} notice={airline_notice} className="mt-2" />
       </section>
 
       <Divider tone="dark" />
 
       <section aria-label="Your refund rights">
-        <SectionHeader title="Your refund rights" as="h3" kind="no-space" onDark />
+        <SectionHeader title="Your refund rights" as="h3" kind="no-space" />
         <RefundRightsNote
           refund={refund_rights}
           conditional={conditional}
@@ -76,7 +76,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
             {alternatives.items.map((item) => (
               <AltFlightRow key={`${item.marketing_airline}${item.flight_number}${item.dep_local}`} item={item} />
             ))}
-            <p className="pt-1 text-body-sm text-white/80">
+            <p className="pt-1 text-body-sm text-ink-caption">
               Usually scheduled on this day of the week.
               {alternatives.schedule_as_of && <> Schedule as of {formatMonthYear(alternatives.schedule_as_of)} (US DOT data).</>}{' '}
               Check times, seats and prices on the partner site.
@@ -84,7 +84,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
             {alternatives.search_handoffs.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {alternatives.search_handoffs.map((h) => (
-                  <PartnerButton key={h.partner} handoff={h} onDark />
+                  <PartnerButton key={h.partner} handoff={h} />
                 ))}
               </div>
             )}
@@ -99,7 +99,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
           <Divider tone="dark" />
           <NeedHelpTonight defaultOpen={helpDefaultOpen}>
             {hotel && (
-              <p className="text-body-md text-white">
+              <p className="text-body-md text-ink">
                 Ask your airline for a hotel and meal voucher first. Many airlines provide them when they cancel.
               </p>
             )}
@@ -130,10 +130,10 @@ export function NeedHelpTonight({ children, defaultOpen = false }: { children: R
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls={id}
-        className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between rounded-btn px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="-mx-2 flex w-[calc(100%+1rem)] items-center justify-between rounded-btn px-2 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
       >
-        <span className="text-title-md text-white">Need help tonight?</span>
-        <ChevronDown className={`h-6 w-6 shrink-0 text-white transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+        <span className="text-title-md text-ink">Need help tonight?</span>
+        <ChevronDown className={`h-6 w-6 shrink-0 text-ink transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
       </button>
       {open && (
         <div id={id} className="mt-3 space-y-5">
