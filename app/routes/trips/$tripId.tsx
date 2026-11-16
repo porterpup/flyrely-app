@@ -25,7 +25,8 @@ function TripScreen() {
   const trip = trips.find((t) => t.id === tripId);
   const legs = trip ? legsOf(trip, flights) : [];
   const goBack = useGoBack('/trips');
-  const goToTrips = () => navigate({ to: '/trips' });
+  // After removing/ungrouping, this trip page is gone: replace it so Back does not return to it.
+  const goToTrips = () => navigate({ to: '/trips', replace: true });
 
   if (!trip || legs.length === 0) {
     return (
@@ -38,7 +39,7 @@ function TripScreen() {
               icon={<SearchX />}
               title="Trip not found"
               description="This trip may have been removed."
-              action={<Button onClick={goToTrips}>Back to trips</Button>}
+              action={<Button onClick={goBack}>Back to trips</Button>}
             />
           ) : (
             <div className="flex-1 space-y-3 px-6 py-4" role="status" aria-label="Loading trip">

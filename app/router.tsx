@@ -2,6 +2,7 @@ import { createRouter as createTanStackRouter, useRouter, useRouterState } from 
 import { routeTree } from './routeTree.gen';
 import { ErrorState } from '~/components/ui';
 import { RouteErrorView } from '~/components/RouteErrorView';
+import { trackInAppHistory } from '~/lib/inAppHistory';
 import { useOnline } from '~/hooks/useOnline';
 
 // TanStack Router catches lazy-route chunk failures itself, so they never reach window-level handlers.
@@ -34,12 +35,14 @@ function NotFound() {
 }
 
 export function createRouter() {
-  return createTanStackRouter({
+  const router = createTanStackRouter({
     routeTree,
     defaultPreload: 'intent',
     defaultErrorComponent: RouteError,
     defaultNotFoundComponent: NotFound,
   });
+  trackInAppHistory(router.history);
+  return router;
 }
 
 export const router = createRouter();
