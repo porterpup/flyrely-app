@@ -4,7 +4,7 @@ import { Search, Calendar, Plane, Clock, Loader2 } from 'lucide-react';
 import { Header, Button, Input, Select, SegmentedTabs, Alert } from '~/components/ui';
 import { AirportAutocomplete } from '~/components/flight/AirportAutocomplete';
 import { LookupResults } from '~/components/flight/LookupResults';
-import { RouteResults } from '~/components/flight/RouteResults';
+import { RouteResults, filterAfterArrival } from '~/components/flight/RouteResults';
 import { lookupFlight, searchFlights, LookupError, scheduleWarning } from '~/lib/flightLookup';
 import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
 import { planAddFlight, shiftClock } from '~/lib/addFlightForm';
@@ -176,14 +176,19 @@ function AddFlightScreen() {
         day.before = shiftClock(plan.departureTime, 60);
       }
       try {
+        let res: SearchResponse | null = null;
         try {
-          setRouteResult(await searchFlights(plan.origin, plan.dest, date, day));
+          res = await searchFlights(plan.origin, plan.dest, date, day);
         } catch (e) {
-          if (!(day.after && e instanceof LookupError && e.status === 404)) throw e;
-          // Nothing near that time: show the whole day instead of a dead end.
-          setRouteResult(await searchFlights(plan.origin, plan.dest, date));
+          if (!(day.after && e instanceof LookupError && e.reason === 'not_found')) throw e;
+        }
+        // Nothing near that time (or, when connecting, nothing near it that leaves after the arrival): show the whole day.
+        const arrival = prevFlight?.scheduledArrivalLocal;
+        if (day.after && (!res || (arrival && filterAfterArrival(res.flights, date, arrival).length === 0))) {
+          res = await searchFlights(plan.origin, plan.dest, date);
           setRouteNote('Nothing leaves near that time, so here is the whole day.');
         }
+        setRouteResult(res);
       } catch (e) {
         setLookupMiss(e instanceof LookupError ? e.message : "We couldn't search flights right now.");
       }

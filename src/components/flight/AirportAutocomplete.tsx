@@ -4,8 +4,8 @@ import { fieldControlClass } from '~/components/ui/Field';
 import { FieldBox, FieldLabel } from '~/components/ui';
 import { IconButton } from '~/components/ui/IconButton';
 import { InputError } from '~/components/ui/InputError';
-import { getAirport, searchAirports } from '~/lib/airports';
-import { getAirportRef } from '~/lib/airportRef';
+import { AIRPORTS, getAirport, searchAirports } from '~/lib/airports';
+import { AIRPORT_REF, getAirportRef } from '~/lib/airportRef';
 import type { AirportInfo } from '~/lib/airports';
 import { cn } from '~/lib/utils';
 
@@ -16,18 +16,32 @@ function labelFor(code: string): string | null {
   return getAirport(code) || getAirportRef(code) ? (city ? `${code} – ${city}` : code) : null;
 }
 
+let cityList: { code: string; city: string }[] | null = null;
+/** Real city names only (never the airport-name fallback), lowercased. */
+function cities() {
+  if (!cityList) {
+    const byCode = new Map<string, string>();
+    for (const [code, r] of Object.entries(AIRPORT_REF)) if (r.city) byCode.set(code, r.city.toLowerCase());
+    for (const a of AIRPORTS) if (a.city) byCode.set(a.code, a.city.toLowerCase());
+    cityList = [...byCode].map(([code, city]) => ({ code, city }));
+  }
+  return cityList;
+}
+
 /**
- * Typed text counts as a chosen code only when it is exactly 3 letters, is a known code, and is not the start of
- * another airport's city ("San" is San Diego's code but also San Francisco, San Antonio...: pick from the list).
+ * What to report upward for typed text. Three letters that are a known code select it ("SEA", "atl", "bos"),
+ * except lower/mixed-case text that is also the start of another airport's city ("San" -> pick from the list;
+ * "SAN" in capitals is the code). Three letters that are not a known code are passed on as typed so the form can
+ * say "We don't recognise XYZ". Anything else is not a code yet.
  */
-function autoCode(text: string): string {
+export function autoCode(text: string): string {
   const t = text.trim();
   if (!/^[A-Za-z]{3}$/.test(t)) return '';
   const code = t.toUpperCase();
-  if (!labelFor(code)) return '';
+  if (!labelFor(code)) return code;
+  if (t === code) return code;
   const lower = t.toLowerCase();
-  const other = searchAirports(t, 100).some((a) => a.code !== code && a.city.toLowerCase().startsWith(lower));
-  return other ? '' : code;
+  return cities().some((c) => c.code !== code && c.city.startsWith(lower)) ? '' : code;
 }
 
 export function AirportAutocomplete({

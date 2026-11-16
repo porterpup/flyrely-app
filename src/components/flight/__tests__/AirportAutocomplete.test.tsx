@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { AirportAutocomplete } from '../AirportAutocomplete';
+import { AirportAutocomplete, autoCode } from '../AirportAutocomplete';
+import { AIRPORTS } from '~/lib/airports';
+import { AIRPORT_REF } from '~/lib/airportRef';
 
 afterEach(cleanup);
 
@@ -106,5 +108,47 @@ describe('AirportAutocomplete', () => {
     render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={onChange} />);
     fireEvent.change(screen.getByLabelText('From'), { target: { value: 'bos' } });
     expect(onChange).toHaveBeenLastCalledWith('BOS');
+  });
+});
+
+describe('autoCode sweep', () => {
+  it('selects ATL, SEA, AUS and BOS in any case', () => {
+    for (const code of ['ATL', 'SEA', 'AUS', 'BOS']) {
+      expect(autoCode(code)).toBe(code);
+      expect(autoCode(code.toLowerCase())).toBe(code);
+    }
+  });
+
+  it('selects every known code typed in capitals; lower-case rejects only real city-prefix clashes', () => {
+    const rejected: string[] = [];
+    for (const [code] of Object.entries(AIRPORT_REF)) {
+      expect(autoCode(code)).toBe(code);
+      if (autoCode(code.toLowerCase()) !== code) rejected.push(code);
+    }
+    // Every rejected one must really be a prefix of another airport's city (e.g. "san", "new", "bal").
+    for (const code of rejected) {
+      const t = code.toLowerCase();
+      const clash = [...AIRPORTS.map((a) => a), ...Object.entries(AIRPORT_REF).map(([c, r]) => ({ code: c, city: r.city ?? '' }))]
+        .some((a) => a.code !== code && a.city.toLowerCase().startsWith(t));
+      expect(clash).toBe(true);
+    }
+    expect(rejected).toContain('SAN');
+    expect(rejected).not.toContain('ATL');
+    expect(rejected).not.toContain('SEA');
+    expect(rejected).not.toContain('AUS');
+  });
+
+  it('reports "San" as no code but "SAN" as San Diego', () => {
+    expect(autoCode('San')).toBe('');
+    expect(autoCode('SAN')).toBe('SAN');
+  });
+
+  it('passes an unknown 3-letter code up as typed so the form can say it is not recognised', () => {
+    expect(autoCode('xyz')).toBe('XYZ');
+    const onChange = vi.fn();
+    render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: 'XYZ' } });
+    expect(onChange).toHaveBeenLastCalledWith('XYZ');
+    expect(screen.queryByLabelText('Selected')).toBeNull();
   });
 });
