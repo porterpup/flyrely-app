@@ -30,7 +30,7 @@ describe('AirportAutocomplete', () => {
   it('takes a prefilled value arriving later', () => {
     const { rerender } = render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={() => {}} />);
     rerender(<AirportAutocomplete label="From" placeholder="x" value="SFO" onChange={() => {}} />);
-    expect((screen.getByLabelText('From') as HTMLInputElement).value).toBe('SFO');
+    expect((screen.getByLabelText('From') as HTMLInputElement).value).toBe('SFO – San Francisco');
   });
 
   it('selects the prefilled value on focus so typing replaces it', () => {
@@ -52,5 +52,44 @@ describe('AirportAutocomplete', () => {
   it('hides the clear button when empty', () => {
     render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={() => {}} />);
     expect(screen.queryByRole('button', { name: 'Clear' })).toBeNull();
+  });
+
+  it('shows the selected state for a typed code the same as for a picked one', () => {
+    render(<Harness />);
+    const input = screen.getByLabelText('From') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'ewr' } });
+    expect(screen.getByLabelText('Selected')).toBeTruthy();
+    fireEvent.blur(input);
+    expect(input.value).toBe('EWR – Newark');
+    expect(screen.getByLabelText('Selected')).toBeTruthy();
+  });
+
+  it('is not selected for a partial code or a city being typed', () => {
+    render(<Harness />);
+    const input = screen.getByLabelText('From') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'EW' } });
+    expect(screen.queryByLabelText('Selected')).toBeNull();
+    fireEvent.change(input, { target: { value: 'San Fran' } });
+    expect(screen.queryByLabelText('Selected')).toBeNull();
+    expect(input.value).toBe('San Fran');
+  });
+
+  it('reports no code for free text longer than a code', () => {
+    const onChange = vi.fn();
+    render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: 'San Fran' } });
+    expect(onChange).toHaveBeenLastCalledWith('');
+  });
+
+  it('does not add a second ring when selected (the focus ring is the only ring)', () => {
+    render(<AirportAutocomplete label="From" placeholder="x" value="EWR" onChange={() => {}} />);
+    const box = screen.getByLabelText('From').parentElement as HTMLElement;
+    expect(box.className).toContain('border-surface-accent');
+    expect(box.className).not.toMatch(/(^|\s)ring-2(\s|$)/);
+  });
+
+  it('truncates long selected text with an ellipsis', () => {
+    render(<AirportAutocomplete label="To" placeholder="x" value="SFO" onChange={() => {}} />);
+    expect(screen.getByLabelText('To').className).toContain('truncate');
   });
 });
