@@ -1,21 +1,12 @@
 import { cn } from '~/lib/utils';
 
-export function Divider({
-  tone = 'light',
-  dashed = false,
-  className,
-}: {
-  tone?: 'light' | 'dark';
-  dashed?: boolean;
-  className?: string;
-}) {
+export function Divider({ dashed = false, className }: { dashed?: boolean; className?: string }) {
   return (
     <hr
       role="separator"
       className={cn(
-        'w-full border-0 border-t',
+        'w-full border-0 border-t border-white/20',
         dashed ? 'border-dashed' : 'border-solid',
-        tone === 'light' ? 'border-surface-divider' : 'border-white/20',
         className
       )}
     />

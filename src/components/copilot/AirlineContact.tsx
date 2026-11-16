@@ -29,7 +29,6 @@ export function AirlineContact({
             size="default"
             variant="primary"
             fullWidth
-           
             handoff={{
               partner: notice.code,
               label: `Check ${notice.name} flight status`,
@@ -61,7 +60,6 @@ export function AirlineContact({
         size="default"
         variant="primary"
         fullWidth
-       
         handoff={{
           partner: airline.code,
           label: `Manage booking with ${airline.name}`,

@@ -41,7 +41,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
         <AirlineContact airline={airline} notice={airline_notice} className="mt-2" />
       </section>
 
-      <Divider tone="dark" />
+      <Divider />
 
       <section aria-label="Your refund rights">
         <SectionHeader title="Your refund rights" as="h3" kind="no-space" />
@@ -54,14 +54,13 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
         />
       </section>
 
-      <Divider tone="dark" />
+      <Divider />
 
       <section aria-label="Other flights">
         <SectionHeader
           title={`Other flights ${formatAlternativesWhen(alternatives.date)}, ${flight.origin} to ${flight.destination}`}
           as="h3"
           kind="no-space"
-          onDark
         />
         {alternatives.items.length === 0 ? (
           <NoAlternatives
@@ -96,7 +95,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
 
       {(hotel || (ride.purpose && ride.links.length > 0)) && (
         <>
-          <Divider tone="dark" />
+          <Divider />
           <NeedHelpTonight defaultOpen={helpDefaultOpen}>
             {hotel && (
               <p className="text-body-md text-ink">
@@ -113,7 +112,7 @@ export function DisruptionOptions({ options, flight, conditional = false, onChan
         <HomeAirportPrompt homeAirport={context.home_airport} onChange={onChangeHomeAirport} />
       )}
 
-      <Divider tone="dark" />
+      <Divider />
       <AffiliateDisclosure required={disclosure.required} />
     </div>
   );

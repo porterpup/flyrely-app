@@ -11,16 +11,48 @@ const sources = import.meta.glob(
   { query: '?raw', import: 'default', eager: true },
 ) as Record<string, string>;
 
+// The stylesheet is scanned too (raw text, same hex rules).
+const cssSources = import.meta.glob('/src/styles/globals.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+
 const files = Object.entries(sources)
   .map(([key, text]) => ({ rel: key.replace(/^\//, ''), text }))
   .filter(({ rel }) => !SKIP_FILES.some((f) => rel.endsWith(f)));
 
+const cssFiles = Object.entries(cssSources).map(([key, text]) => ({ rel: key.replace(/^\//, ''), text }));
+
+/** The text of every className={...} / cn(...) / quoted-class expression, so a rule can look across a whole expression. */
+function classExpressions(text: string): string[] {
+  const out: string[] = [];
+  const re = /(?:\bcn\(|\bclassName=\{|\bclassName=(?=["'`]))/g;
+  for (let m = re.exec(text); m; m = re.exec(text)) {
+    const start = m.index + m[0].length;
+    if (m[0].endsWith('=')) {
+      // className="..." with a plain quoted string
+      const q = text[start];
+      const end = text.indexOf(q, start + 1);
+      out.push(text.slice(start + 1, end < 0 ? undefined : end));
+      continue;
+    }
+    // Balanced scan to the closing bracket, so nested ternaries and && stay inside one expression.
+    let depth = 1;
+    let i = start;
+    for (; i < text.length && depth > 0; i++) {
+      const c = text[i];
+      if (c === '(' || c === '{') depth++;
+      else if (c === ')' || c === '}') depth--;
+    }
+    out.push(text.slice(start, i));
+  }
+  return out;
+}
+
 /** Every `file:line: text` where the line matches. */
-function offenders(re: RegExp, skip: (rel: string) => boolean = () => false): string[] {
+function offenders(re: RegExp, skip: (rel: string) => boolean = () => false, skipComments = false): string[] {
   const hits: string[] = [];
   for (const { rel, text } of files) {
     if (skip(rel)) continue;
     text.split('\n').forEach((line: string, i: number) => {
+      if (skipComments && /^\s*(\*|\/\/|\/\*)/.test(line)) return;
       if (re.test(line)) hits.push(`${rel}:${i + 1}: ${line.trim()}`);
     });
   }
@@ -48,19 +80,37 @@ describe('navy theme guard', () => {
     expect(offenders(/-(warn|ok|brand)\b/)).toEqual([]);
   });
 
-  it('has no hard-coded six-digit hex outside tokens.ts and the logo', () => {
-    expect(offenders(/#[0-9A-Fa-f]{6}\b/, (rel) => HEX_ALLOWED.includes(rel))).toEqual([]);
+  it('has no hard-coded hex (3 or 6 digit) outside tokens.ts and the logo', () => {
+    expect(offenders(/#(?:[0-9A-Fa-f]{3}){1,2}\b/, (rel) => HEX_ALLOWED.includes(rel), true)).toEqual([]);
+  });
+
+  it('has no rgb( / hsl( colour literals (rgba shadows with black or white are fine)', () => {
+    expect(offenders(/\b(?:rgb|hsl)a?\((?!\s*(?:0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)\s*[,)])/, (rel) => HEX_ALLOWED.includes(rel), true)).toEqual([]);
+  });
+
+  it('globals.css has no hard-coded colours (use theme(...) tokens)', () => {
+    const hits: string[] = [];
+    for (const { rel, text } of cssFiles) {
+      text.split('\n').forEach((line, i) => {
+        if (/#(?:[0-9A-Fa-f]{3}){1,2}\b/.test(line.replace(/url\([^)]*\)/g, '')) || /\b(?:rgb|hsl)a?\((?!\s*0\s*,\s*0\s*,\s*0)/.test(line)) {
+          hits.push(`${rel}:${i + 1}: ${line.trim()}`);
+        }
+      });
+    }
+    expect(hits).toEqual([]);
+  });
+
+  it('has no onDark, ink-on-dark, tone="dark" or emphasis= leftovers', () => {
+    expect(offenders(/\bonDark\b|ink-on-dark|tone=["'{]+dark|\bemphasis=/)).toEqual([]);
   });
 
   // opacity-0 / opacity-100 are show-hide toggles, not dimmed text.
-  it('has no dimming opacity utility on the same element as a text-ink class', () => {
+  it('has no dimming opacity utility anywhere in a className / cn() expression that sets a text-ink class', () => {
     const hits: string[] = [];
     for (const { rel, text } of files) {
-      // A className string or template: a quoted run of classes.
-      for (const m of text.matchAll(/(["'`])((?:(?!\1)[^\n])*)\1/g)) {
-        const cls = m[2];
-        if (/(^|[\s:!])text-ink(-[a-z-]+)?(\s|$)/.test(cls) && /(^|[\s:!])opacity-(?!0\b|100\b)\d+/.test(cls)) {
-          hits.push(`${rel}: ${cls}`);
+      for (const expr of classExpressions(text)) {
+        if (/(^|[\s:!'"`])text-ink(-[a-z-]+)?(?=[\s'"`]|$)/.test(expr) && /(^|[\s:!'"`])opacity-(?!0\b|100\b)\d+/.test(expr)) {
+          hits.push(`${rel}: ${expr.replace(/\s+/g, ' ').slice(0, 160)}`);
         }
       }
     }

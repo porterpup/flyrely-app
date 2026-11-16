@@ -1,6 +1,8 @@
 export const palette = {
   surface: {
     DEFAULT: '#0B2350',
+    /** Desktop gutter beside the phone-width column and overscroll; darker than the app. */
+    side: '#06142F',
     muted: '#102C5E',
     card: '#123A75',
     panel: '#1A4A8F',

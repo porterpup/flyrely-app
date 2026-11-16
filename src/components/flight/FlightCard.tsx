@@ -36,7 +36,7 @@ export function FlightCard({ flight, onClick, variant = 'default', now = Date.no
             <span className="text-ink-caption max-[359px]:hidden">·</span>
             <span className="min-w-0 truncate text-body-md text-ink-caption max-[359px]:hidden">{flight.airline.name}</span>
           </div>
-          <RiskPill risk={flight.riskLevel} emphasis="soft" detail={formatDelayPercent(flight.delayProbability)} />
+          <RiskPill risk={flight.riskLevel} detail={formatDelayPercent(flight.delayProbability)} />
         </div>
         <div className="flex min-w-0 items-center gap-2 whitespace-nowrap max-[359px]:gap-1 text-body-md tabular-nums text-ink-caption">
           <span>{flight.origin.code}</span>

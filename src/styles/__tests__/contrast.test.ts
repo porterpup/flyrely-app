@@ -46,6 +46,7 @@ const nonTextPairs: Pair[] = [
   ['surface.field-border on surface.field', surface['field-border'], surface.field],
   ['surface.field-border on surface.DEFAULT', surface['field-border'], surface.DEFAULT],
   ['surface.field-border on surface.card', surface['field-border'], surface.card],
+  ['surface.field-border on surface.panel', surface['field-border'], surface.panel],
   ['surface.accent on surface.DEFAULT', surface.accent, surface.DEFAULT],
   ['surface.accent on surface.card', surface.accent, surface.card],
 ];

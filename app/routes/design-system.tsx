@@ -57,8 +57,6 @@ const colorGroups: { title: string; swatches: { name: string; cls: string; hex: 
       { name: 'ink', cls: 'bg-ink', hex: p.ink.DEFAULT },
       { name: 'ink-sub', cls: 'bg-ink-sub', hex: p.ink.sub },
       { name: 'ink-caption', cls: 'bg-ink-caption', hex: p.ink.caption },
-      { name: 'ink-on-dark', cls: 'bg-ink-on-dark border border-surface-stroke', hex: p.ink.DEFAULT },
-      { name: 'ink-on-dark-muted', cls: 'bg-ink-on-dark-muted', hex: p.ink.caption },
     ],
   },
   {
@@ -240,15 +238,13 @@ function DesignSystemGallery() {
         <Section title="Duration">
           <Label>Kind: text and icon</Label>
           <div className="rounded-ticket bg-surface-card p-4">
-            <div className="flex"><Duration kind="text" label="Sample 2h 6m" onDark /></div>
-            <div className="mt-4 flex"><Duration kind="icon" onDark /></div>
+            <div className="flex"><Duration kind="text" label="Sample 2h 6m" /></div>
+            <div className="mt-4 flex"><Duration kind="icon" /></div>
           </div>
-          <div className="flex"><Duration kind="text" label="Sample 2h 6m" /></div>
-          <div className="flex"><Duration kind="icon" /></div>
         </Section>
 
         <Section title="Pill">
-          <Label>Soft: default, success, warning, error, info. Rows are default size then small.</Label>
+          <Label>Tones: default, success, warning, error, info. Rows are default size then small.</Label>
           <>
               <div className="flex flex-wrap items-center gap-2">
                 {(['default', 'success', 'warning', 'error', 'info'] as const).map((t) => (
@@ -260,20 +256,9 @@ function DesignSystemGallery() {
                   <Pill key={t} tone={t} size="small">{t}</Pill>
                 ))}
               </div>
-              <Label>Solid, for the dark ticket</Label>
-              <div className="flex flex-wrap items-center gap-2 rounded-btn bg-surface-card p-3">
-                {(['default', 'success', 'warning', 'error', 'info'] as const).map((t) => (
-                  <Pill key={t} tone={t} emphasis="solid">{t}</Pill>
-                ))}
-              </div>
           </>
           <Label>RiskPill (maps risk level to tone)</Label>
           <div className="flex flex-wrap items-center gap-2">
-            <RiskPill risk="low" emphasis="soft" />
-            <RiskPill risk="medium" emphasis="soft" />
-            <RiskPill risk="high" emphasis="soft" />
-          </div>
-          <div className="flex flex-wrap items-center gap-2 rounded-btn bg-surface-card p-3">
             <RiskPill risk="low" />
             <RiskPill risk="medium" detail="Sample 20% chance of a 15+ min delay" />
             <RiskPill risk="high" />
@@ -361,23 +346,23 @@ function DesignSystemGallery() {
 
         <Section title="Divider">
           <Divider />
-          <div className="rounded-btn bg-surface-card p-4"><Divider tone="dark" dashed /></div>
+          <div className="rounded-btn bg-surface-card p-4"><Divider dashed /></div>
         </Section>
 
         <Section title="Card">
-          <Card tone="light">Light card</Card>
+          <Card>Default card</Card>
           <Card tone="muted">Muted card</Card>
-          <Card tone="dark" className="bg-surface-panel">Dark panel (on a dark surface)</Card>
+          <Card tone="raised">Raised panel</Card>
         </Section>
 
         <Section title="Ticket">
           <Label>Sample data only. Original times (struck through) are a Figma option the app does not use.</Label>
           <Ticket
             flightNumber="XX0000"
-            badge={<Pill tone="warning" emphasis="solid">Sample</Pill>}
+            badge={<Pill tone="warning">Sample</Pill>}
             departure={{ originalTime: '0:00 AM', primary: '1:00 PM', date: 'Sample date', place: 'AAA · Sample city' }}
             arrival={{ originalTime: '0:00 AM', primary: '3:00 PM', date: 'Sample date', place: 'BBB · Sample city' }}
-            middle={<Duration kind="text" label="Sample" onDark />}
+            middle={<Duration kind="text" label="Sample" />}
             footer="Operated by Sample Airlines"
           >
             <Alert solid status="warning" lineOne="Sample alert line" lineTwo="Sample supporting line" />

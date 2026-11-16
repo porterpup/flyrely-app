@@ -14,7 +14,7 @@ export function HomeAirportPrompt({ homeAirport, onChange, className }: HomeAirp
   const link = cn(
     'font-medium underline underline-offset-2 rounded-sm',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent',
-    'text-ink'
+    'text-surface-accent'
   );
   return (
     <div

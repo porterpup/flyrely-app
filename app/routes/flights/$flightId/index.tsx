@@ -159,12 +159,12 @@ function FlightDetailsScreen() {
           <Header title="Flight details" showBack onBackClick={goBack} />
           <div className="flex-1 rounded-t-4xl bg-surface-card px-2 pt-10" role="status" aria-label="Loading flight">
             <div className="mx-auto mb-8 flex flex-col items-center gap-3">
-              <Skeleton onDark className="h-5 w-16" />
-              <Skeleton onDark className="h-7 w-64 max-w-full" />
+              <Skeleton className="h-5 w-16" />
+              <Skeleton className="h-7 w-64 max-w-full" />
             </div>
             <div className="space-y-2">
-              <Skeleton onDark className="h-56 rounded-panel" />
-              <Skeleton onDark className="h-48 rounded-panel" />
+              <Skeleton className="h-56 rounded-panel" />
+              <Skeleton className="h-48 rounded-panel" />
             </div>
           </div>
         </main>
@@ -193,7 +193,7 @@ function FlightDetailsScreen() {
           <div className="px-4 pt-8 pb-4 text-center">
             <p className="text-title-sm tabular-nums">{flight.flightNumber}</p>
             <h2 className="text-title-lg mt-3">Your trip to {getCityLabel(flight.destination.code)}</h2>
-            <p className="text-body-sm text-ink-on-dark-muted mt-2">{formatLongDate(flight.scheduledDeparture)}</p>
+            <p className="text-body-sm text-ink-caption mt-2">{formatLongDate(flight.scheduledDeparture)}</p>
           </div>
 
           <div className="px-2 space-y-2">
@@ -206,7 +206,7 @@ function FlightDetailsScreen() {
               />
             )}
 
-            <Card tone="dark" padded={false} className="overflow-hidden">
+            <Card tone="raised" padded={false} className="overflow-hidden">
               <div className="p-5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
@@ -215,15 +215,15 @@ function FlightDetailsScreen() {
                   </div>
                   <p className="text-heading-sm">{formatTime(flight.scheduledDeparture)}</p>
                 </div>
-                <p className="text-body-sm text-ink-on-dark-muted mt-1 ml-9">{getAirportName(flight.origin.code)}</p>
+                <p className="text-body-sm text-ink-caption mt-1 ml-9">{getAirportName(flight.origin.code)}</p>
 
-                <Duration onDark className="my-5" />
+                <Duration className="my-5" />
 
                 <div className="flex items-center gap-3">
                   <PlaneLanding className="w-6 h-6 flex-shrink-0" />
                   <p className="text-heading-sm">{flight.destination.code}</p>
                 </div>
-                <p className="text-body-sm text-ink-on-dark-muted mt-1 ml-9">
+                <p className="text-body-sm text-ink-caption mt-1 ml-9">
                   {getAirportName(flight.destination.code)}
                 </p>
               </div>
@@ -256,8 +256,8 @@ function FlightDetailsScreen() {
             <DisruptionSlot flight={flight} onFlightChange={setFlight} />
 
             {weather.kind === 'lines' && (
-              <Card tone="dark">
-                <SectionHeader as="h3" kind="no-space" onDark title="Weather" className="mb-3" />
+              <Card tone="raised">
+                <SectionHeader as="h3" kind="no-space" title="Weather" className="mb-3" />
                 <ul className="space-y-2 text-body-sm">
                   {weather.lines.map((l) => <li key={l}>{l}</li>)}
                 </ul>
@@ -273,7 +273,7 @@ function FlightDetailsScreen() {
                 <span>
                   Part of trip {tripTitle(trip, tripLegs)} (leg {(flight.legIndex ?? 0) + 1} of {tripLegs.length})
                 </span>
-                <ChevronRight className="w-5 h-5 text-ink-on-dark-muted" />
+                <ChevronRight className="w-5 h-5 text-ink-caption" />
               </Link>
             )}
 
@@ -294,15 +294,15 @@ function FlightDetailsScreen() {
               className="flex items-center justify-between rounded-tile bg-surface-panel px-5 py-4 text-body-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <span>Edit flight</span>
-              <ChevronRight className="w-5 h-5 text-ink-on-dark-muted" />
+              <ChevronRight className="w-5 h-5 text-ink-caption" />
             </Link>
 
             <div className="flex items-center justify-center gap-6 pt-4">
-              <FeedbackLink onDark />
+              <FeedbackLink />
               <button
                 type="button"
                 onClick={() => setShowRemoveModal(true)}
-                className="inline-flex min-h-11 items-center rounded px-2 text-body-sm text-ink-on-dark-muted underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="inline-flex min-h-11 items-center rounded px-2 text-body-sm text-ink-caption underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Remove this flight
               </button>

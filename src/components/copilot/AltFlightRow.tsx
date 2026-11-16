@@ -42,11 +42,10 @@ export function AltFlightRow({ item, className }: AltFlightRowProps) {
           <RiskPill
             risk={item.risk_level}
             size="small"
-            emphasis={'solid'}
             className="shrink-0"
           />
         ) : (
-          <Pill size="small" emphasis={'solid'} className="shrink-0">
+          <Pill size="small" className="shrink-0">
             Risk unavailable
           </Pill>
         )}

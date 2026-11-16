@@ -6,7 +6,6 @@ describe('RiskPill', () => {
   it('low and medium are never solid fills', () => {
     for (const risk of ['low', 'medium'] as const) {
       expect(renderToStaticMarkup(<RiskPill risk={risk} />)).not.toMatch(/bg-status-\w+-solid/);
-      expect(renderToStaticMarkup(<RiskPill risk={risk} emphasis="soft" />)).not.toMatch(/bg-status-\w+-solid/);
     }
   });
   it('low and medium are outlined in the risk colour', () => {

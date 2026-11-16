@@ -13,7 +13,7 @@ describe('PredictionPanel', () => {
   });
   it('medium has the warning band and label', () => {
     const h = html('medium', 25);
-    expect(h).toContain('border-status-warning-solid');
+    expect(h).toContain('border-t-status-warning-solid');
     expect(h).toContain('Some risk');
     expect(h).not.toContain('Looks good');
   });

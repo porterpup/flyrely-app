@@ -99,7 +99,7 @@ function times(f: SearchFlight): string {
 /** The most reliable flight on the route, with a Track button. */
 function BestBet({ flight: f, tied, disabled, onPick }: { flight: SearchFlight; tied: boolean; disabled?: boolean; onPick: (f: SearchFlight) => void }) {
   return (
-    <Card tone="light" data-testid="best-bet">
+    <Card data-testid="best-bet">
       <p className="text-body-md font-semibold text-status-success-text">{tied ? 'Best bet (tied on risk)' : 'Best bet'}</p>
       <div className="mt-1 flex items-center justify-between">
         <span className="font-semibold text-ink">{f.flight}</span>
@@ -107,7 +107,7 @@ function BestBet({ flight: f, tied, disabled, onPick }: { flight: SearchFlight; 
       </div>
       <p className="mt-1 text-body-md text-ink-caption">{times(f)}</p>
       <div className="mt-2 flex items-center justify-between gap-2">
-        <RiskPill risk={f.risk_level} emphasis="soft" size="small" detail={formatDelayPercent(f.delay_probability)} />
+        <RiskPill risk={f.risk_level} size="small" detail={formatDelayPercent(f.delay_probability)} />
         <Button size="sm" disabled={disabled} onClick={() => onPick(f)} aria-label={`Track ${f.flight}`}>Track</Button>
       </div>
       {f.risk_factors && f.risk_factors.length > 0 && (
@@ -201,7 +201,7 @@ export function RouteResults({
                 </span>
                 {isPreferred(f) && <span className="block text-body-md font-medium text-surface-accent">Your airline</span>}
               </span>
-              <RiskPill risk={f.risk_level} emphasis="soft" size="small" detail={formatDelayPercent(f.delay_probability)} />
+              <RiskPill risk={f.risk_level} size="small" detail={formatDelayPercent(f.delay_probability)} />
             </button>
           ))}
         </section>
