@@ -84,9 +84,7 @@ function HomeScreen() {
           title="No upcoming flights"
           description={
             <>
-              <span className="block">Add a flight and we&apos;ll tell you the chance it leaves 15+ minutes late.</span>
-              <span className="mt-2 block">We check it until you fly.</span>
-              <span className="mt-2 block">Low means under 20%. Some risk is 20–30%. High is over 30%.</span>
+              <span className="block">Add a flight to see the chance it leaves 15+ minutes late.</span>
             </>
           }
           action={
