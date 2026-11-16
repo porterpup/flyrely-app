@@ -16,7 +16,7 @@ export interface PartnerButtonProps {
 }
 
 const darkClasses = {
-  primary: 'bg-white text-ink hover:bg-white/90 active:bg-white/80',
+  primary: 'bg-surface-accent-fill text-white hover:bg-surface-accent-fill-pressed active:bg-surface-accent-fill-pressed',
   secondary: 'border border-white/40 text-white hover:bg-white/10 active:bg-white/20',
 };
 

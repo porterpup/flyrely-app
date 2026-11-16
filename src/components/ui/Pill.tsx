@@ -20,9 +20,10 @@ const soft: Record<PillTone, string> = {
 };
 
 const solid: Record<PillTone, string> = {
-  default: 'bg-white/15 text-white',
-  success: 'bg-status-success-bg text-status-success-text',
-  warning: 'bg-status-warning-solid text-ink',
+  default: 'bg-surface-muted text-ink-caption',
+  // Rule 1: a solid fill means high risk only, so low and medium are outlined.
+  success: 'border border-status-success-text text-status-success-text',
+  warning: 'border border-status-warning-text text-status-warning-text',
   error: 'bg-status-error-solid text-white',
   info: 'bg-status-info-solid text-white',
 };

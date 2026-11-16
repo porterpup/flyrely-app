@@ -24,7 +24,7 @@ export function BottomNav({ activePath, fixed = true }: { activePath?: string; f
     <nav
       aria-label="Primary"
       className={cn(
-        'z-40 border-t-[0.5px] border-surface-stroke bg-white shadow-elevation-1',
+        'z-40 border-t-[0.5px] border-surface-stroke bg-surface shadow-elevation-1',
         fixed && 'fixed bottom-0 left-0 right-0'
       )}
     >

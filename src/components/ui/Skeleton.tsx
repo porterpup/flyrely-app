@@ -5,7 +5,7 @@ export function Skeleton({ onDark = false, className, ...props }: { onDark?: boo
   return (
     <div
       aria-hidden
-      className={cn('rounded-lg motion-safe:animate-pulse', onDark ? 'bg-white/10' : 'bg-surface-stroke', className)}
+      className={cn('rounded-lg motion-safe:animate-pulse', onDark ? 'bg-white/10' : 'bg-surface-muted', className)}
       {...props}
     />
   );

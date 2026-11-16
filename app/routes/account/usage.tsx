@@ -118,7 +118,7 @@ function UsageDashboardScreen() {
                 key={d}
                 onClick={() => setPeriod(d)}
                 className={`flex-1 py-2 rounded-lg text-body-md font-medium transition-all ${
-                  period === d ? 'bg-white text-ink shadow-sm' : 'text-ink-caption'
+                  period === d ? 'bg-surface-panel text-ink shadow-sm' : 'text-ink-caption'
                 }`}
               >
                 {d === 7 ? '7 days' : d === 30 ? '30 days' : '90 days'}
@@ -137,23 +137,23 @@ function UsageDashboardScreen() {
             <>
               {/* Summary cards */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white border border-surface-stroke rounded-tile p-4">
+                <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                   <div className="flex items-center gap-2 mb-1">
-                    <Zap className="w-4 h-4 text-primary-500" />
+                    <Zap className="w-4 h-4 text-ink-caption" />
                     <span className="text-body-sm text-ink-caption font-medium">Predictions</span>
                   </div>
                   <p className="text-title-lg font-semibold text-ink">{data.total_predictions}</p>
-                  <p className="text-body-sm text-ink-caption opacity-70 mt-0.5">{data.avg_predictions_per_day}/day avg</p>
+                  <p className="text-body-sm text-ink-caption mt-0.5">{data.avg_predictions_per_day}/day avg</p>
                 </div>
-                <div className="bg-white border border-surface-stroke rounded-tile p-4">
+                <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <DollarSign className="w-4 h-4 text-status-success-text" />
                     <span className="text-body-sm text-ink-caption font-medium">Est. Cost</span>
                   </div>
                   <p className="text-title-lg font-semibold text-ink">${data.estimated_cost_usd.toFixed(3)}</p>
-                  <p className="text-body-sm text-ink-caption opacity-70 mt-0.5">{data.total_weather_calls} weather calls</p>
+                  <p className="text-body-sm text-ink-caption mt-0.5">{data.total_weather_calls} weather calls</p>
                 </div>
-                <div className="bg-white border border-surface-stroke rounded-tile p-4">
+                <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                   <div className="flex items-center gap-2 mb-1">
                     <BarChart3 className="w-4 h-4 text-status-warning-text" />
                     <span className="text-body-sm text-ink-caption font-medium">Risk breakdown</span>
@@ -175,19 +175,19 @@ function UsageDashboardScreen() {
                     })}
                   </div>
                 </div>
-                <div className="bg-white border border-surface-stroke rounded-tile p-4">
+                <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-blue-500" />
+                    <TrendingUp className="w-4 h-4 text-ink-caption" />
                     <span className="text-body-sm text-ink-caption font-medium">Top routes</span>
                   </div>
                   {data.top_routes.length === 0 ? (
-                    <p className="text-body-sm text-ink-caption opacity-70">No data yet</p>
+                    <p className="text-body-sm text-ink-caption">No data yet</p>
                   ) : (
                     <div className="space-y-1">
                       {data.top_routes.slice(0, 3).map((r) => (
                         <div key={r.route} className="flex items-center justify-between">
                           <span className="text-body-sm font-medium text-ink">{r.route}</span>
-                          <span className="text-body-sm text-ink-caption opacity-70">{r.predictions}x</span>
+                          <span className="text-body-sm text-ink-caption">{r.predictions}x</span>
                         </div>
                       ))}
                     </div>
@@ -201,30 +201,30 @@ function UsageDashboardScreen() {
                   <h3 className="text-body-md font-medium text-ink-caption mb-3">
                     Daily predictions
                   </h3>
-                  <div className="bg-white border border-surface-stroke rounded-tile p-4">
+                  <div className="bg-surface-card border border-surface-stroke rounded-tile p-4">
                     <div className="flex items-end gap-1 h-24">
                       {data.daily.slice(0, 30).reverse().map((d) => {
                         const heightPct = (d.predictions / maxDailyPredictions) * 100;
                         return (
                           <div key={d.date} className="flex-1 flex flex-col items-center gap-1 group relative">
                             <div
-                              className="w-full bg-primary-400 rounded-sm transition-all group-hover:bg-primary-600"
+                              className="w-full bg-surface-accent rounded-sm transition-all group-hover:bg-surface-accent-fill"
                               style={{ height: `${Math.max(heightPct, 4)}%` }}
                             />
-                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-ink text-white text-body-sm px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-panel text-ink text-body-sm px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                               {d.date.slice(5)}: {d.predictions}
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    <p className="text-body-sm text-ink-caption opacity-70 mt-2 text-center">Last {Math.min(data.daily.length, 30)} days</p>
+                    <p className="text-body-sm text-ink-caption mt-2 text-center">Last {Math.min(data.daily.length, 30)} days</p>
                   </div>
                 </section>
               )}
 
               {/* Note */}
-              <p className="text-body-sm text-ink-caption opacity-70 text-center">{data.note}</p>
+              <p className="text-body-sm text-ink-caption text-center">{data.note}</p>
 
               {/* Empty state */}
               {data.total_predictions === 0 && (

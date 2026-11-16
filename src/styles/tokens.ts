@@ -27,6 +27,7 @@ export const palette = {
     'error-text': '#FFA3AE',
     'error-solid': '#DC2F48',
     'warning-solid': '#FFB400',
+    'success-solid': '#0E9F4A',
     'success-bg': '#123F4A',
     'warning-bg': '#3A3526',
     'error-bg': '#3D2445',

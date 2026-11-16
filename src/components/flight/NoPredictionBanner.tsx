@@ -18,7 +18,7 @@ export function NoPredictionBanner({
     return (
       <div
         className={cn(
-          'bg-status-warning-bg border border-status-warning-text/20 rounded-tile p-4',
+          'bg-status-warning-bg border border-status-warning-text/40 rounded-tile p-4',
           className
         )}
       >

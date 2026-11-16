@@ -13,7 +13,7 @@ export function CompletedFlightCard({ flight, onClick }: CompletedFlightCardProp
   return (
     <button
       onClick={onClick}
-      className="w-full rounded-tile border border-surface-stroke bg-white p-4 text-left transition duration-150 hover:border-surface-divider motion-safe:active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
+      className="w-full rounded-tile border border-surface-stroke bg-surface-card p-4 text-left transition duration-150 hover:border-surface-divider motion-safe:active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">

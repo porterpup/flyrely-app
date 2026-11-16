@@ -269,7 +269,7 @@ function EditFlightScreen() {
           {error && <Alert status="error" showIcon={false} lineOne={error} />}
         </div>
 
-        <div className="sticky bottom-0 p-4 bg-white border-t border-surface-stroke flex gap-3">
+        <div className="sticky bottom-0 p-4 bg-surface border-t border-surface-stroke flex gap-3">
           <Button variant="secondary" fullWidth onClick={goBack}>
             Cancel
           </Button>

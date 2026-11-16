@@ -6,7 +6,7 @@ export function ListGroup({ title, children, className }: { title?: string; chil
   return (
     <section className={className}>
       {title && <h2 className="mb-2 px-1 text-body-md font-medium text-ink-caption">{title}</h2>}
-      <div className="divide-y divide-surface-stroke overflow-hidden rounded-panel border border-surface-stroke bg-white">
+      <div className="divide-y divide-surface-stroke overflow-hidden rounded-panel border border-surface-stroke bg-surface-card">
         {children}
       </div>
     </section>

@@ -26,28 +26,28 @@ const errorConfigs: Record<
   { icon: React.ReactNode; title: string; message: string }
 > = {
   network: {
-    icon: <WifiOff className="w-8 h-8 text-ink-caption opacity-70" />,
+    icon: <WifiOff className="w-8 h-8 text-ink-caption" />,
     title: 'No internet connection',
     message: "Please check your connection and try again.",
   },
   not_found: {
-    icon: <Search className="w-8 h-8 text-ink-caption opacity-70" />,
+    icon: <Search className="w-8 h-8 text-ink-caption" />,
     title: 'Flight not found',
     message:
       "We couldn't find a flight matching your search. Please check the details and try again.",
   },
   server: {
-    icon: <ServerCrash className="w-8 h-8 text-ink-caption opacity-70" />,
+    icon: <ServerCrash className="w-8 h-8 text-ink-caption" />,
     title: 'Something went wrong',
     message: "We're having trouble connecting to our servers. Please try again later.",
   },
   search_no_results: {
-    icon: <Search className="w-8 h-8 text-ink-caption opacity-70" />,
+    icon: <Search className="w-8 h-8 text-ink-caption" />,
     title: 'No flights found',
     message: "We couldn't find any flights matching your search. Try different dates or airports.",
   },
   generic: {
-    icon: <AlertCircle className="w-8 h-8 text-ink-caption opacity-70" />,
+    icon: <AlertCircle className="w-8 h-8 text-ink-caption" />,
     title: 'Something went wrong',
     message: "An unexpected error occurred. Please try again.",
   },

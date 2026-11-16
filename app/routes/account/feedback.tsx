@@ -38,19 +38,19 @@ function FeedbackAdminScreen() {
             </div>
           )}
           {error && <div className="py-16 text-center text-status-error-text">{error}</div>}
-          {items && items.length === 0 && <div className="py-16 text-center text-ink-caption opacity-70">No feedback yet</div>}
+          {items && items.length === 0 && <div className="py-16 text-center text-ink-caption">No feedback yet</div>}
           {items?.map((it) => {
             const f = it.context?.flight;
             return (
-              <article key={it.id} className="rounded-tile border border-surface-stroke bg-white p-4">
+              <article key={it.id} className="rounded-tile border border-surface-stroke bg-surface-card p-4">
                 <div className="flex items-center justify-between gap-2 text-body-sm text-ink-caption">
                   <span className="truncate font-medium">{it.email}</span>
                   <time dateTime={it.ts_utc}>{new Date(it.ts_utc).toLocaleString()}</time>
                 </div>
-                {it.category && <p className="mt-1 text-body-sm font-semibold text-primary-600">{it.category}</p>}
+                {it.category && <p className="mt-1 text-body-sm font-semibold text-ink-caption">{it.category}</p>}
                 <p className="mt-2 whitespace-pre-wrap text-body-md text-ink">{it.message}</p>
                 {it.context && (
-                  <p className="mt-2 break-words text-body-sm text-ink-caption opacity-70">
+                  <p className="mt-2 break-words text-body-sm text-ink-caption">
                     {it.context.route}
                     {f && ` · ${f.airline ?? ''}${f.flight_number ?? ''} ${f.origin ?? ''}→${f.destination ?? ''}`}
                     {f?.delay_probability != null && ` · ${Math.round(f.delay_probability * 100)}% ${f.risk_level ?? ''}`}

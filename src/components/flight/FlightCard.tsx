@@ -28,7 +28,7 @@ export function FlightCard({ flight, onClick, variant = 'default', now = Date.no
     return (
       <button
         onClick={onClick}
-        className="w-full rounded-tile border border-surface-stroke bg-white p-4 text-left transition-colors hover:border-surface-divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
+        className="w-full rounded-tile border border-surface-stroke bg-surface-card p-4 text-left transition-colors hover:border-surface-divider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent"
       >
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">

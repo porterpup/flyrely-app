@@ -19,6 +19,7 @@ import {
   FieldBox,
 } from '~/components/ui';
 import { BottomNav } from '~/components/layout';
+import { palette } from '~/styles/tokens';
 import { PredictionPanel, RiskPill, Ticket } from '~/components/flight';
 
 // Dev-only: `import.meta.env.DEV` is a build-time false in production, so the copilot gallery is dropped from the bundle.
@@ -34,50 +35,52 @@ export const Route = createFileRoute('/design-system')({
 
 // Everything on this page is a clearly-labelled sample. None of it is real flight data.
 
+const p = palette;
+
 const colorGroups: { title: string; swatches: { name: string; cls: string; hex: string }[] }[] = [
   {
     title: 'Surface',
     swatches: [
-      { name: 'surface', cls: 'bg-surface border border-surface-stroke', hex: '#FFFFFF' },
-      { name: 'surface-card', cls: 'bg-surface-card', hex: '#123A75' },
-      { name: 'surface-panel', cls: 'bg-surface-panel', hex: '#1A4A8F' },
-      { name: 'surface-muted', cls: 'bg-surface-muted', hex: '#F2F3F6' },
-      { name: 'surface-divider', cls: 'bg-surface-divider', hex: '#DDE1E8' },
-      { name: 'surface-stroke', cls: 'bg-surface-stroke', hex: '#EBEDF1' },
-      { name: 'surface-accent', cls: 'bg-surface-accent', hex: '#276EF1' },
-      { name: 'surface-icon', cls: 'bg-surface-icon', hex: '#000006' },
+      { name: 'surface', cls: 'bg-surface border border-surface-stroke', hex: p.surface.DEFAULT },
+      { name: 'surface-card', cls: 'bg-surface-card', hex: p.surface.card },
+      { name: 'surface-panel', cls: 'bg-surface-panel', hex: p.surface.panel },
+      { name: 'surface-muted', cls: 'bg-surface-muted', hex: p.surface.muted },
+      { name: 'surface-divider', cls: 'bg-surface-divider', hex: p.surface.divider },
+      { name: 'surface-stroke', cls: 'bg-surface-stroke', hex: p.surface.stroke },
+      { name: 'surface-accent', cls: 'bg-surface-accent', hex: p.surface.accent },
+      { name: 'surface-icon', cls: 'bg-surface-icon', hex: p.surface.icon },
     ],
   },
   {
     title: 'Type',
     swatches: [
-      { name: 'ink', cls: 'bg-ink', hex: '#000006' },
-      { name: 'ink-sub', cls: 'bg-ink-sub', hex: '#0A1220' },
-      { name: 'ink-caption', cls: 'bg-ink-caption', hex: '#3D4553' },
-      { name: 'ink-on-dark', cls: 'bg-ink-on-dark border border-surface-stroke', hex: '#FFFFFF' },
-      { name: 'ink-on-dark-muted', cls: 'bg-surface-card', hex: 'white 50%' },
+      { name: 'ink', cls: 'bg-ink', hex: p.ink.DEFAULT },
+      { name: 'ink-sub', cls: 'bg-ink-sub', hex: p.ink.sub },
+      { name: 'ink-caption', cls: 'bg-ink-caption', hex: p.ink.caption },
+      { name: 'ink-on-dark', cls: 'bg-ink-on-dark border border-surface-stroke', hex: p.ink.DEFAULT },
+      { name: 'ink-on-dark-muted', cls: 'bg-ink-on-dark-muted', hex: p.ink.caption },
     ],
   },
   {
     title: 'Status (soft: background + text)',
     swatches: [
-      { name: 'status-success-bg', cls: 'bg-status-success-bg', hex: '#EAFFF3' },
-      { name: 'status-success-text', cls: 'bg-status-success-text', hex: '#008344' },
-      { name: 'status-warning-bg', cls: 'bg-status-warning-bg', hex: '#FFF7E2' },
-      { name: 'status-warning-text', cls: 'bg-status-warning-text', hex: '#966A00' },
-      { name: 'status-error-bg', cls: 'bg-status-error-bg', hex: '#FFE3E9' },
-      { name: 'status-error-text', cls: 'bg-status-error-text', hex: '#CD1A3B' },
-      { name: 'status-info-bg', cls: 'bg-status-info-bg', hex: '#DBE7FF' },
-      { name: 'status-info-text', cls: 'bg-status-info-text', hex: '#2F5DB2' },
+      { name: 'status-success-bg', cls: 'bg-status-success-bg', hex: p.status['success-bg'] },
+      { name: 'status-success-text', cls: 'bg-status-success-text', hex: p.status['success-text'] },
+      { name: 'status-warning-bg', cls: 'bg-status-warning-bg', hex: p.status['warning-bg'] },
+      { name: 'status-warning-text', cls: 'bg-status-warning-text', hex: p.status['warning-text'] },
+      { name: 'status-error-bg', cls: 'bg-status-error-bg', hex: p.status['error-bg'] },
+      { name: 'status-error-text', cls: 'bg-status-error-text', hex: p.status['error-text'] },
+      { name: 'status-info-bg', cls: 'bg-status-info-bg', hex: p.status['info-bg'] },
+      { name: 'status-info-text', cls: 'bg-status-info-text', hex: p.surface.accent },
     ],
   },
   {
-    title: 'Status (solid, for dark surfaces)',
+    title: 'Status (solid fills)',
     swatches: [
-      { name: 'status-success-solid', cls: 'bg-status-success-solid', hex: '#0E9F4A' },
-      { name: 'status-warning-solid', cls: 'bg-status-warning-solid', hex: '#FFB400' },
-      { name: 'status-error-solid', cls: 'bg-status-error-solid', hex: '#CD1A3B' },
-      { name: 'status-info-solid', cls: 'bg-status-info-solid', hex: '#276EF1' },
+      { name: 'status-success-solid', cls: 'bg-status-success-solid', hex: p.status['success-solid'] },
+      { name: 'status-warning-solid', cls: 'bg-status-warning-solid', hex: p.status['warning-solid'] },
+      { name: 'status-error-solid', cls: 'bg-status-error-solid', hex: p.status['error-solid'] },
+      { name: 'status-info-solid', cls: 'bg-status-info-solid', hex: p.surface['accent-fill'] },
     ],
   },
 ];
@@ -191,7 +194,7 @@ function DesignSystemGallery() {
         </Section>
 
         <Section title="Shadow">
-          <div className="rounded-btn bg-white p-4 text-body-md shadow-elevation-1">shadow-elevation-1 (0 -1 20 at 5% ink)</div>
+          <div className="rounded-btn bg-surface-card p-4 text-body-md shadow-elevation-1">shadow-elevation-1 (0 -1 20 at 5% ink)</div>
         </Section>
 
         <Section title="Button">

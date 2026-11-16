@@ -13,7 +13,7 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
 }
 
 const kindClasses: Record<IconButtonKind, string> = {
-  primary: 'bg-surface-card text-white hover:bg-surface-panel',
+  primary: 'bg-surface-accent-fill text-white hover:bg-surface-accent-fill-pressed active:bg-surface-accent-fill-pressed',
   secondary: 'border border-surface-icon text-ink hover:bg-surface-muted',
   text: 'text-ink hover:bg-surface-muted',
 };

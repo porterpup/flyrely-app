@@ -62,7 +62,7 @@ export function IosInstallHelp({ onDark = true, className, defaultOpen = false }
           <Button
             size="sm"
             onClick={() => setOpen(true)}
-            className={onDark ? '!bg-white !text-ink hover:!bg-white/90' : undefined}
+            className={onDark ? '!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed' : undefined}
           >
             Show me how
           </Button>

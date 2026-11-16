@@ -122,7 +122,7 @@ function FlightHistoryScreen() {
                     className={cn(
                       'px-4 py-2 rounded-full text-body-md font-medium whitespace-nowrap transition-colors',
                       filter === option.value
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-surface-accent-fill text-white'
                         : 'bg-surface-muted text-ink-caption hover:bg-surface-stroke'
                     )}
                   >

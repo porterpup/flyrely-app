@@ -21,9 +21,9 @@ export interface PredictionPanelProps {
 }
 
 const panelClasses: Record<RiskLevel, string> = {
-  low: 'bg-white text-ink',
+  low: 'bg-surface-panel text-ink',
   // 4 px band in the warning fill; the border follows the panel's rounded top corners.
-  medium: 'border-t-4 border-status-warning-solid bg-white text-ink',
+  medium: 'border-t-4 border-status-warning-solid bg-surface-panel text-ink',
   high: 'bg-status-error-solid text-white',
 };
 

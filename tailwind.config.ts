@@ -1,4 +1,5 @@
 import type { Config } from 'tailwindcss';
+import { palette } from './src/styles/tokens';
 
 export default {
   content: ['./app/**/*.{js,ts,jsx,tsx}', './src/**/*.{js,ts,jsx,tsx}'],
@@ -53,39 +54,24 @@ export default {
         },
         // ── Semantic tokens (Figma "Aviato" variables) ───────────────────
         // Use these in components. Raw scales above are legacy / palette only.
-        surface: {
-          DEFAULT: '#FFFFFF', // Surface/background
-          card: '#123A75', // Brand/primary, dark ticket + screen surfaces
-          panel: '#1A4A8F', // raised panel on a dark card
-          muted: '#F2F3F6', // Surface/card-dark, tiles and default pill
-          divider: '#DDE1E8', // Surface/divider, field borders
-          stroke: '#EBEDF1', // Surface/stroke, hairlines, nav border
-          accent: '#276EF1', // Surface/accent, active tab, links, plane
-          icon: '#000006', // Surface/icon, outline button border
-        },
+        surface: { ...palette.surface },
         ink: {
-          DEFAULT: '#000006', // Type/heading
-          sub: '#0A1220', // Type/subheading
-          caption: '#3D4553', // Type/caption
-          'on-dark': '#FFFFFF',
-          'on-dark-muted': 'rgba(255, 255, 255, 0.72)',
+          ...palette.ink,
+          // Aliases kept until the onDark cleanup (step 5).
+          'on-dark': palette.ink.DEFAULT,
+          'on-dark-muted': palette.ink.caption,
         },
-        // Alert + pill status pairs (Status/*-text on Status/*-background)
+        // Alert + pill status pairs. Text colours are the risk colours; info uses the accent.
         status: {
-          'success-bg': '#EAFFF3',
-          'success-text': '#008344',
-          'warning-bg': '#FFF7E2',
-          'warning-text': '#966A00',
-          'error-bg': '#FFE3E9',
-          'error-text': '#CD1A3B',
-          'info-bg': '#DBE7FF',
-          'info-text': '#2F5DB2',
-          // Solid, high-emphasis fills used on the dark ticket / prediction panel
-          'warning-solid': '#FFB400',
-          'success-solid': '#0E9F4A',
-          'error-solid': '#CD1A3B',
-          'info-solid': '#276EF1',
+          ...palette.status,
+          'info-text': palette.surface.accent,
+          // Solid fills used on the ticket / prediction panel and the usage chart
+          'info-solid': palette.surface['accent-fill'],
         },
+      },
+      // The ring offset is never white on the navy theme.
+      ringOffsetColor: {
+        DEFAULT: palette.surface.DEFAULT,
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

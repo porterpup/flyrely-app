@@ -40,7 +40,7 @@ export function RemoveFlightModal({
         {/* Flight info */}
         <div className="bg-surface-muted rounded-tile p-4 mb-4 text-left">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-ink-caption"><Plane className="h-5 w-5 rotate-45" aria-hidden /></div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-panel text-ink-caption"><Plane className="h-5 w-5 rotate-45" aria-hidden /></div>
             <div>
               <p className="font-semibold text-ink">{flight.flightNumber}</p>
               <p className="text-body-md text-ink-caption">

@@ -13,7 +13,7 @@ export function NavigationTab({ icon, label, active = false, className }: Naviga
     <span
       className={cn(
         'relative flex flex-1 flex-col items-center gap-0.5 p-2',
-        active ? 'text-surface-accent' : 'text-ink-caption',
+        active ? 'font-medium text-surface-accent' : 'text-ink-subtle',
         '[&_svg]:h-6 [&_svg]:w-6',
         className
       )}

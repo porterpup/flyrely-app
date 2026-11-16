@@ -6,6 +6,7 @@ import { AuthGate } from '~/components/AuthGate';
 import { FeedbackHost } from '~/components/feedback';
 import { LegacyImportModal, SyncNotices } from '~/components/LegacyImportModal';
 import { CopilotBootstrap, pwaHeadLinks, pwaMeta } from '~/copilot/CopilotHead';
+import { palette } from '~/styles/tokens';
 import globalsCss from '~/styles/globals.css?url';
 
 const queryClient = new QueryClient({
@@ -46,14 +47,14 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <html lang="en">
+    <html lang="en" style={{ backgroundColor: palette.surface.DEFAULT, colorScheme: 'dark' }}>
       <head>
         <Meta />
       </head>
       <body>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <div className="min-h-dvh bg-surface-muted">
+            <div className="min-h-dvh bg-surface">
               <AuthGate>
                 <Outlet />
                 <FeedbackHost />
