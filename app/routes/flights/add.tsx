@@ -86,6 +86,7 @@ function AddFlightScreen() {
   const [manualLookup, setManualLookup] = useState<LookupResponse | null>(null);
   // Route path: B (From, To, departure time) -> the flights near that time, each with a delay chance.
   const [routeResult, setRouteResult] = useState<SearchResponse | null>(null);
+  const [routeNote, setRouteNote] = useState('');
 
   const [error, setError] = useState('');
   const [airportErrors, setAirportErrors] = useState<{ origin?: string; dest?: string }>({});
@@ -105,7 +106,7 @@ function AddFlightScreen() {
   const handleTrackManual = async () => {
     setError('');
     setAirportErrors({});
-    const plan = planAddFlight({ flightNumber, airlineCode, date, origin: originCode, dest: destCode, departureTime });
+    const plan = planAddFlight({ ...formFields(), timeOptional: false });
     if (plan.kind === 'error') {
       setError(plan.message);
       return;
@@ -133,21 +134,27 @@ function AddFlightScreen() {
   };
 
   const validateDate = (): string | null => {
-    if (!date) return 'Pick the flight date';
+    if (!date) return 'Pick the flight date.';
     const [y, m, d] = date.split('-').map(Number);
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     return new Date(y, m - 1, d) < startOfToday ? 'Cannot track flights in the past' : null;
   };
 
-  const resetResults = () => { setError(''); setLookup(null); setLookupMiss(''); setNotFound(false); setRouteResult(null); };
+  const formFields = (over: { flightNumber?: string } = {}) => ({
+    flightNumber: over.flightNumber ?? flightNumber, airlineCode, date, origin: originCode, dest: destCode, departureTime,
+    otherAirline, timeOptional: !!afterFlightId,
+  });
+  const routeReady = originCode.length === 3 && destCode.length === 3 && (!!departureTime || !!afterFlightId);
+
+  const resetResults = () => { setError(''); setLookup(null); setLookupMiss(''); setNotFound(false); setRouteResult(null); setRouteNote(''); };
 
   /** Either-or search: a flight number (lookup), or From + To + departure time (route search). Flight number wins when both are filled. */
-  const handleFind = async () => {
+  const handleFind = async (over?: { flightNumber?: string }) => {
     setError('');
     resetResults();
     setAirportErrors({});
-    const plan = planAddFlight({ flightNumber, airlineCode, date, origin: originCode, dest: destCode, departureTime });
+    const plan = planAddFlight(formFields(over));
     if (plan.kind === 'error') {
       setError(plan.message);
       return;
@@ -162,11 +169,21 @@ function AddFlightScreen() {
       setAirportErrors(problems);
       if (problems.origin || problems.dest) return;
       setIsFinding(true);
+      const day = { after: '', before: '' };
+      if (plan.departureTime) {
+        // Flights leaving within an hour either side of the time entered.
+        day.after = shiftClock(plan.departureTime, -60);
+        day.before = shiftClock(plan.departureTime, 60);
+      }
       try {
-        // Show flights leaving within an hour either side of the time entered.
-        setRouteResult(await searchFlights(plan.origin, plan.dest, date, {
-          after: shiftClock(plan.departureTime, -60), before: shiftClock(plan.departureTime, 60),
-        }));
+        try {
+          setRouteResult(await searchFlights(plan.origin, plan.dest, date, day));
+        } catch (e) {
+          if (!(day.after && e instanceof LookupError && e.status === 404)) throw e;
+          // Nothing near that time: show the whole day instead of a dead end.
+          setRouteResult(await searchFlights(plan.origin, plan.dest, date));
+          setRouteNote('Nothing leaves near that time, so here is the whole day.');
+        }
       } catch (e) {
         setLookupMiss(e instanceof LookupError ? e.message : "We couldn't search flights right now.");
       }
@@ -319,9 +336,13 @@ function AddFlightScreen() {
 
           {tab === 'number' && (
             <div className="space-y-4">
-              <p id="either-or-hint" className="px-1 text-body-md text-ink-sub">
-                Enter a flight number, or the route and departure time. You don't need both.
-              </p>
+              {manual ? (
+                <p className="px-1 text-body-md text-ink-sub">Fill in everything to track this flight by hand.</p>
+              ) : (
+                <p id="either-or-hint" className="px-1 text-body-md text-ink-sub">
+                  Enter a flight number, or the route and time.
+                </p>
+              )}
 
               <div>
                 <Input
@@ -331,7 +352,6 @@ function AddFlightScreen() {
                   value={date}
                   onChange={(e) => { setDate(e.target.value); resetResults(); }}
                   leftIcon={<Calendar />}
-                  hint="Used for both ways of searching"
                 />
                 <div className="flex gap-2 pt-2" role="group" aria-label="Quick dates">
                   {([['Today', today], ['Tomorrow', tomorrow]] as const).map(([label, value]) => (
@@ -340,7 +360,7 @@ function AddFlightScreen() {
                       size="sm"
                       variant="secondary"
                       aria-pressed={date === value}
-                      className={date === value ? 'bg-surface-muted' : undefined}
+                      className={date === value ? 'border-surface-accent bg-surface-panel' : undefined}
                       onClick={() => { setDate(value); resetResults(); }}
                     >
                       {label}
@@ -410,11 +430,13 @@ function AddFlightScreen() {
                 )}
               </section>
 
-              <div role="separator" aria-label="or" className="flex items-center gap-3 text-body-md font-semibold text-ink-sub">
-                <span className="h-px flex-1 bg-surface-divider" aria-hidden />
-                or
-                <span className="h-px flex-1 bg-surface-divider" aria-hidden />
-              </div>
+              {!manual && (
+                <div role="separator" aria-label="or" className="flex items-center gap-3 text-body-md font-semibold text-ink-sub">
+                  <span className="h-px flex-1 bg-surface-divider" aria-hidden />
+                  or
+                  <span className="h-px flex-1 bg-surface-divider" aria-hidden />
+                </div>
+              )}
 
               <section aria-label="Search by route and departure time" className="space-y-4">
                 <AirportAutocomplete
@@ -436,7 +458,8 @@ function AddFlightScreen() {
                   leftIcon={<Plane className="w-5 h-5 rotate-45" />}
                 />
                 <Input
-                  label="Departure time"
+                  label={afterFlightId && !manual ? 'Departure time (optional)' : 'Departure time'}
+                  hint="Local time at the departure airport"
                   type="time"
                   value={departureTime}
                   onChange={(e) => { setDepartureTime(e.target.value); resetResults(); }}
@@ -456,7 +479,7 @@ function AddFlightScreen() {
               <Button
                 fullWidth
                 className="mt-6"
-                onClick={handleFind}
+                onClick={() => handleFind()}
                 disabled={isFinding}
                 icon={isFinding ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Search className="w-4 h-4" />}
               >
@@ -464,7 +487,17 @@ function AddFlightScreen() {
               </Button>
 
               {lookupMiss && (
-                <Alert className="mt-4" status="info" showIcon={false} lineOne={lookupMiss} />
+                <Alert
+                  className="mt-4"
+                  status="info"
+                  showIcon={false}
+                  lineOne={lookupMiss}
+                  lineTwo={
+                    <span className="mt-1 flex flex-wrap gap-x-2">
+                      <Button size="sm" variant="text" onClick={goManual}>Enter details manually</Button>
+                    </span>
+                  }
+                />
               )}
 
               {notFound && (
@@ -472,9 +505,14 @@ function AddFlightScreen() {
                   className="mt-4"
                   status="info"
                   showIcon={false}
-                  lineOne={`We couldn't find ${(typedParsed ? `${typedParsed.airlineCode}${typedParsed.number}` : flightNumber.trim()).toUpperCase()} on ${formatDate(`${date}T12:00:00`)}. We cover US domestic flights, and we don't have every schedule yet. Try the route and departure time instead.`}
+                  lineOne={`We couldn't find ${(typedParsed ? `${typedParsed.airlineCode}${typedParsed.number}` : flightNumber.trim()).toUpperCase()} on ${formatDate(`${date}T12:00:00`)}. We cover US domestic flights, and we don't have every schedule yet.${routeReady ? '' : ' You can also search by route.'}`}
                   lineTwo={
                     <span className="mt-1 flex flex-wrap gap-x-2">
+                      {routeReady && (
+                        <Button size="sm" variant="text" onClick={() => { setFlightNumber(''); handleFind({ flightNumber: '' }); }}>
+                          Search by route instead
+                        </Button>
+                      )}
                       <Button size="sm" variant="text" onClick={goManual}>Enter details manually</Button>
                     </span>
                   }
@@ -495,6 +533,7 @@ function AddFlightScreen() {
 
               {routeResult && (
                 <div className="mt-6">
+                  {routeNote && <p className="mb-3 text-body-md text-ink-sub">{routeNote}</p>}
                   <RouteResults
                     flights={routeResult.flights}
                     asOf={routeResult.schedule_as_of}

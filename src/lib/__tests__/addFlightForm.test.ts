@@ -53,6 +53,21 @@ describe('planAddFlight (either-or)', () => {
   });
 });
 
+describe('planAddFlight extras', () => {
+  it('requires a 2-character code for "Other airline"', () => {
+    expect(plan({ flightNumber: '648', airlineCode: 'Q', otherAirline: true })).toEqual({
+      kind: 'error', message: 'Enter the 2-character airline code, e.g. HA.',
+    });
+    expect(plan({ flightNumber: '648', airlineCode: 'QX', otherAirline: true })).toEqual({ kind: 'number', airline: 'QX', number: '648' });
+  });
+
+  it('lets a connecting flight search by route without a time', () => {
+    expect(plan({ origin: 'EWR', dest: 'SFO', timeOptional: true })).toEqual({ kind: 'route', origin: 'EWR', dest: 'SFO', departureTime: '' });
+    expect(plan({ origin: 'EWR', timeOptional: true })).toMatchObject({ kind: 'error', message: expect.stringContaining('Add To') });
+    expect(plan({ origin: 'EWR', dest: 'SFO' }).kind).toBe('error');
+  });
+});
+
 describe('shiftClock', () => {
   it('shifts and clamps within the day', () => {
     expect(shiftClock('12:30', -60)).toBe('11:30');

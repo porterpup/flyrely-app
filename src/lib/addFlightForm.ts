@@ -10,6 +10,10 @@ export interface AddFlightFields {
   dest: string;
   /** Local departure time, "HH:MM". */
   departureTime: string;
+  /** "Other airline" was chosen, so the airline code was typed by hand and must be 2 characters. */
+  otherAirline?: boolean;
+  /** Connecting flights: the route alone is enough; the time only narrows the results. */
+  timeOptional?: boolean;
 }
 
 export type AddFlightPlan =
@@ -28,13 +32,16 @@ export function planAddFlight(f: AddFlightFields): AddFlightPlan {
   const typed = f.flightNumber.trim();
   const origin = f.origin.trim().toUpperCase();
   const dest = f.dest.trim().toUpperCase();
-  const route = origin.length === 3 && dest.length === 3 && !!f.departureTime;
+  const route = origin.length === 3 && dest.length === 3 && (!!f.departureTime || !!f.timeOptional);
   const routeStarted = !!origin || !!dest || !!f.departureTime;
 
   let plan: AddFlightPlan;
   if (typed) {
     const parsed = parseFlightNumber(typed) ?? (/^\d{1,4}[A-Za-z]?$/.test(typed) && f.airlineCode
       ? { airlineCode: f.airlineCode, number: typed.replace(/[A-Za-z]$/, '') } : null);
+    if (parsed && /^\d/.test(typed) && f.otherAirline && !/^[A-Z0-9]{2}$/.test(f.airlineCode)) {
+      return { kind: 'error', message: 'Enter the 2-character airline code, e.g. HA.' };
+    }
     if (parsed) {
       plan = { kind: 'number', airline: parsed.airlineCode, number: parsed.number };
     } else if (/^\d{1,4}[A-Za-z]?$/.test(typed)) {
@@ -48,7 +55,7 @@ export function planAddFlight(f: AddFlightFields): AddFlightPlan {
     const missing = [
       origin.length === 3 ? '' : 'From',
       dest.length === 3 ? '' : 'To',
-      f.departureTime ? '' : 'a departure time',
+      f.departureTime || f.timeOptional ? '' : 'a departure time',
     ].filter(Boolean);
     const list = missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing[missing.length - 1]}` : missing[0];
     return { kind: 'error', message: `Add ${list} to search by route, or enter a flight number instead.` };

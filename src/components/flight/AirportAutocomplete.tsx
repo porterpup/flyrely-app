@@ -16,6 +16,20 @@ function labelFor(code: string): string | null {
   return getAirport(code) || getAirportRef(code) ? (city ? `${code} – ${city}` : code) : null;
 }
 
+/**
+ * Typed text counts as a chosen code only when it is exactly 3 letters, is a known code, and is not the start of
+ * another airport's city ("San" is San Diego's code but also San Francisco, San Antonio...: pick from the list).
+ */
+function autoCode(text: string): string {
+  const t = text.trim();
+  if (!/^[A-Za-z]{3}$/.test(t)) return '';
+  const code = t.toUpperCase();
+  if (!labelFor(code)) return '';
+  const lower = t.toLowerCase();
+  const other = searchAirports(t, 100).some((a) => a.code !== code && a.city.toLowerCase().startsWith(lower));
+  return other ? '' : code;
+}
+
 export function AirportAutocomplete({
   label: fieldLabel,
   placeholder,
@@ -78,8 +92,7 @@ export function AirportAutocomplete({
       setSuggestions([]);
       setOpen(false);
     }
-    // Up to 3 characters is a code. Longer free text (a city being typed) is not a code yet.
-    report(q.trim().length <= 3 ? q.trim().toUpperCase() : '');
+    report(autoCode(q));
   };
 
   const select = (airport: AirportInfo) => {
@@ -120,7 +133,7 @@ export function AirportAutocomplete({
           title={confirmed ? query : undefined}
           className={cn(fieldControlClass, 'truncate', leftIcon && 'pl-2')}
         />
-        {confirmed && <Check className="mr-1 h-5 w-5 shrink-0 self-center text-surface-accent" aria-label="Selected" />}
+        {confirmed && <Check role="img" className="mr-1 h-5 w-5 shrink-0 self-center text-surface-accent" aria-label="Selected" />}
         {query && (
           <IconButton aria-label="Clear" kind="text" onClick={clear} className="self-center">
             <X className="h-4 w-4" aria-hidden />

@@ -92,4 +92,19 @@ describe('AirportAutocomplete', () => {
     render(<AirportAutocomplete label="To" placeholder="x" value="SFO" onChange={() => {}} />);
     expect(screen.getByLabelText('To').className).toContain('truncate');
   });
+
+  it('does not turn a city prefix like "San" into a code', () => {
+    const onChange = vi.fn();
+    render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: 'San' } });
+    expect(onChange).toHaveBeenLastCalledWith('');
+    expect(screen.queryByLabelText('Selected')).toBeNull();
+  });
+
+  it('still takes a code that is only its own city, like BOS', () => {
+    const onChange = vi.fn();
+    render(<AirportAutocomplete label="From" placeholder="x" value="" onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: 'bos' } });
+    expect(onChange).toHaveBeenLastCalledWith('BOS');
+  });
 });
