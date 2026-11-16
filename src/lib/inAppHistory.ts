@@ -3,39 +3,29 @@ import type { RouterHistory } from '@tanstack/react-router';
 /**
  * Knows whether the previous history entry belongs to this app. The browser's history.length
  * cannot tell (it also counts pages visited before the app), and this router version has no
- * canGoBack. We follow the router's per-entry keys: a new key is a push (history length grew)
- * or a replace (it did not); a known key is a Back/Forward move.
+ * canGoBack. Each entry we create carries an in-app index in its state: a push stores
+ * (current + 1), a replace keeps the current one, and an entry we did not create counts as 0.
+ * Back/forward and reloads just read the index stored on the entry, so they stay correct.
  */
-const trackers = new WeakMap<RouterHistory, () => boolean>();
+const KEY = '__flyrelyIdx';
+
+const indexOf = (history: RouterHistory): number => {
+  const n = (history.location.state as Record<string, unknown> | undefined)?.[KEY];
+  return typeof n === 'number' ? n : 0;
+};
+
+const tracked = new WeakSet<RouterHistory>();
 
 /** True when Back would stay inside this app. False for untracked histories. */
 export function canGoBackInApp(history: RouterHistory): boolean {
-  return trackers.get(history)?.() ?? false;
+  return tracked.has(history) && indexOf(history) > 0;
 }
 
 export function trackInAppHistory(history: RouterHistory) {
-  let keys: string[] = [];
-  let pos = -1;
-  let length = history.length;
-  const keyOf = () => history.location.state?.key ?? history.location.href;
-
-  const seen = (k: string) => {
-    const i = keys.indexOf(k);
-    if (i >= 0) {
-      pos = i;
-    } else if (pos < 0) {
-      keys = [k];
-      pos = 0;
-    } else if (history.length > length) {
-      keys = [...keys.slice(0, pos + 1), k];
-      pos += 1;
-    } else {
-      keys[pos] = k;
-    }
-    length = history.length;
-  };
-
-  seen(keyOf());
-  history.subscribe(() => seen(keyOf()));
-  trackers.set(history, () => pos > 0);
+  if (tracked.has(history)) return;
+  tracked.add(history);
+  const push = history.push.bind(history);
+  const replace = history.replace.bind(history);
+  history.push = (path, state, opts) => push(path, { ...state, [KEY]: indexOf(history) + 1 }, opts);
+  history.replace = (path, state, opts) => replace(path, { ...state, [KEY]: indexOf(history) }, opts);
 }
