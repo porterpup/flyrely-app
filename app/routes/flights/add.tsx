@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { Search, Calendar, Plane, Clock, Loader2 } from 'lucide-react';
 import { Header, Button, Input, Select, SegmentedTabs, Alert } from '~/components/ui';
 import { AirportAutocomplete } from '~/components/flight/AirportAutocomplete';
 import { LookupResults } from '~/components/flight/LookupResults';
-import { RouteSearch } from '~/components/flight/RouteSearch';
-import { lookupFlight, LookupError, scheduleWarning } from '~/lib/flightLookup';
-import type { LookupLeg, LookupResponse } from '~/lib/flightLookup';
+import { RouteResults, filterAfterArrival } from '~/components/flight/RouteResults';
+import { lookupFlight, searchFlights, LookupError, scheduleWarning } from '~/lib/flightLookup';
+import type { LookupLeg, LookupResponse, SearchFlight, SearchResponse } from '~/lib/flightLookup';
+import { planAddFlight, shiftClock } from '~/lib/addFlightForm';
 import { localToday, formatDate, formatTime, parseFlightNumber } from '~/lib/utils';
 import { getFlightById } from '~/lib/flightStore';
 import { legDepartureISO, legArrivalISO } from '~/lib/flightLookup';
@@ -54,7 +55,6 @@ function dayOffset(offset: number): string {
 
 function AddFlightScreen() {
   const track = useTrackFlight();
-  const navigate = useNavigate();
   const goBack = useGoBack('/');
   // "Add connecting flight": ?after=<flightId> pre-fills the route search from that flight's destination and arrival date.
   const { after: afterFlightId } = Route.useSearch();
@@ -73,8 +73,6 @@ function AddFlightScreen() {
   const [destCode, setDestCode] = useState('');
   const [, setDestInfo] = useState<AirportInfo | undefined>();
   const [tab, setTab] = useState<'number' | 'recent'>('number');
-  // Route search lives on the Compare tab; inside Add it is only offered when connecting from another flight.
-  const [showRoute, setShowRoute] = useState(false);
   const recent = useMemo(() => dedupeRecent(storedFlights), [storedFlights]);
   const [date, setDate] = useState('');
   const [departureTime, setDepartureTime] = useState('');
@@ -86,6 +84,9 @@ function AddFlightScreen() {
   const [lookupMiss, setLookupMiss] = useState('');
   const [notFound, setNotFound] = useState(false);
   const [manualLookup, setManualLookup] = useState<LookupResponse | null>(null);
+  // Route path: B (From, To, departure time) -> the flights near that time, each with a delay chance.
+  const [routeResult, setRouteResult] = useState<SearchResponse | null>(null);
+  const [routeNote, setRouteNote] = useState('');
 
   const [error, setError] = useState('');
   const [airportErrors, setAirportErrors] = useState<{ origin?: string; dest?: string }>({});
@@ -101,12 +102,21 @@ function AddFlightScreen() {
     setDate((prev.scheduledArrivalLocal ?? prev.scheduledDeparture).slice(0, 10));
   }, [afterFlightId, storedFlights]);
 
-  /** Manual path: validate the typed details, then track directly. */
+  /** Manual path (after a lookup miss): needs the flight number AND the route and time, then tracks directly. */
   const handleTrackManual = async () => {
     setError('');
     setAirportErrors({});
-    if (!flightNumber.trim() || !date || !departureTime || !originCode || !destCode) {
-      setError('Please fill in all fields');
+    const plan = planAddFlight({ ...formFields(), timeOptional: false });
+    if (plan.kind === 'error') {
+      setError(plan.message);
+      return;
+    }
+    if (plan.kind !== 'number') {
+      setError('Enter the flight number to track it by hand.');
+      return;
+    }
+    if (originCode.length !== 3 || destCode.length !== 3 || !departureTime) {
+      setError('To track it by hand, choose From, To and a departure time as well as the flight number.');
       return;
     }
     const airportProblems = validateAirports(originCode, destCode);
@@ -117,51 +127,36 @@ function AddFlightScreen() {
       setError(dateError);
       return;
     }
-    if (otherAirline && !/^[A-Z0-9]{2}$/.test(airlineCode)) {
-      setError('Enter the 2-character airline code, e.g. HA');
-      return;
-    }
-    const parsed = parseFlightNumber(flightNumber);
-    const bareNumber = flightNumber.trim().match(/^\d{1,4}[A-Za-z]?$/);
-    let code: string;
-    let number: string;
-    if (parsed) {
-      code = parsed.airlineCode;
-      number = parsed.number;
-    } else if (bareNumber && airlineCode) {
-      code = airlineCode;
-      number = flightNumber.trim().replace(/[A-Za-z]$/, '');
-    } else if (bareNumber) {
-      setError('Choose the airline');
-      return;
-    } else {
-      setError('Enter a valid flight number, e.g. DL1234 or B6123');
-      return;
-    }
     setIsFinding(true);
-    const message = await track({ airline: code, number, depISO: `${date}T${departureTime}:00`, origin: originCode, dest: destCode, after: afterFlightId });
+    const message = await track({ airline: plan.airline, number: plan.number, depISO: `${date}T${departureTime}:00`, origin: originCode, dest: destCode, after: afterFlightId });
     setIsFinding(false);
     if (message) setError(message);
   };
 
   const validateDate = (): string | null => {
-    if (!date) return 'Pick the flight date';
+    if (!date) return 'Pick the flight date.';
     const [y, m, d] = date.split('-').map(Number);
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
     return new Date(y, m - 1, d) < startOfToday ? 'Cannot track flights in the past' : null;
   };
 
-  /** Step 1: airline + flight number + date -> the leg(s) that flight flies. */
-  const handleFind = async () => {
+  const formFields = (over: { flightNumber?: string } = {}) => ({
+    flightNumber: over.flightNumber ?? flightNumber, airlineCode, date, origin: originCode, dest: destCode, departureTime,
+    otherAirline, timeOptional: !!afterFlightId,
+  });
+  const routeReady = originCode.length === 3 && destCode.length === 3 && (!!departureTime || !!afterFlightId);
+
+  const resetResults = () => { setError(''); setLookup(null); setLookupMiss(''); setNotFound(false); setRouteResult(null); setRouteNote(''); };
+
+  /** Either-or search: a flight number (lookup), or From + To + departure time (route search). Flight number wins when both are filled. */
+  const handleFind = async (over?: { flightNumber?: string }) => {
     setError('');
-    setLookupMiss('');
-    setLookup(null);
-    setNotFound(false);
-    const parsed = parseFlightNumber(flightNumber) ?? (/^\d{1,4}$/.test(flightNumber.trim()) && airlineCode
-      ? { airlineCode, number: flightNumber.trim() } : null);
-    if (!parsed) {
-      setError(airlineCode ? 'Enter a valid flight number, e.g. 648' : 'Choose the airline and enter the flight number');
+    resetResults();
+    setAirportErrors({});
+    const plan = planAddFlight(formFields(over));
+    if (plan.kind === 'error') {
+      setError(plan.message);
       return;
     }
     const dateError = validateDate();
@@ -169,10 +164,41 @@ function AddFlightScreen() {
       setError(dateError);
       return;
     }
+    if (plan.kind === 'route') {
+      const problems = validateAirports(plan.origin, plan.dest);
+      setAirportErrors(problems);
+      if (problems.origin || problems.dest) return;
+      setIsFinding(true);
+      const day = { after: '', before: '' };
+      if (plan.departureTime) {
+        // Flights leaving within an hour either side of the time entered.
+        day.after = shiftClock(plan.departureTime, -60);
+        day.before = shiftClock(plan.departureTime, 60);
+      }
+      try {
+        let res: SearchResponse | null = null;
+        try {
+          res = await searchFlights(plan.origin, plan.dest, date, day);
+        } catch (e) {
+          if (!(day.after && e instanceof LookupError && e.reason === 'not_found')) throw e;
+        }
+        // Nothing near that time (or, when connecting, nothing near it that leaves after the arrival): show the whole day.
+        const arrival = prevFlight?.scheduledArrivalLocal;
+        if (day.after && (!res || (arrival && filterAfterArrival(res.flights, date, arrival).length === 0))) {
+          res = await searchFlights(plan.origin, plan.dest, date);
+          setRouteNote('Nothing leaves near that time, so here is the whole day.');
+        }
+        setRouteResult(res);
+      } catch (e) {
+        setLookupMiss(e instanceof LookupError ? e.message : "We couldn't search flights right now.");
+      }
+      setIsFinding(false);
+      return;
+    }
     setIsFinding(true);
     let found: LookupResponse | null = null;
     try {
-      found = await lookupFlight(parsed.airlineCode, parsed.number, date);
+      found = await lookupFlight(plan.airline, plan.number, date);
     } catch (e) {
       if (e instanceof LookupError && (e.status === 404 || e.reason === 'not_found')) setNotFound(true);
       else setLookupMiss(e instanceof LookupError ? e.message : "We couldn't look that flight up right now.");
@@ -189,6 +215,18 @@ function AddFlightScreen() {
     setIsFinding(false);
   };
 
+  /** A route-search flight was picked: track it. */
+  const handlePickRoute = async (f: SearchFlight) => {
+    setError('');
+    setIsFinding(true);
+    const message = await track({
+      airline: f.airline, number: f.flight_number, depISO: legDepartureISO(date, f), arrISO: legArrivalISO(date, f),
+      origin: f.origin, dest: f.dest, after: afterFlightId,
+    });
+    setIsFinding(false);
+    if (message) setError(message);
+  };
+
   const goManual = () => {
     setAirportErrors({});
     setManual(true);
@@ -197,7 +235,6 @@ function AddFlightScreen() {
     setLookup(null);
     setLookupMiss('');
     setNotFound(false);
-    setShowRoute(false);
   };
 
   /** A leg was picked from several: track it. */
@@ -253,7 +290,7 @@ function AddFlightScreen() {
             value={tab}
             onChange={setTab}
             options={[
-              { value: 'number', label: 'Flight number' },
+              { value: 'number', label: 'Search' },
               { value: 'recent', label: 'Recent' },
             ]}
           />
@@ -278,7 +315,7 @@ function AddFlightScreen() {
                       setDestInfo(getAirport(f.destination.code));
                       setDepartureTime(f.scheduledDeparture.split('T')[1]?.slice(0, 5) ?? '');
                       setDate('');
-                      setManual(true);
+                      setManual(false);
                       setTab('number');
                     }}
                     className="w-full text-left rounded-tile border border-surface-stroke p-4 hover:border-surface-divider"
@@ -302,93 +339,117 @@ function AddFlightScreen() {
             </p>
           )}
 
-          {tab === 'number' && showRoute && afterFlightId && (
-            <>
-              <RouteSearch
-                initialOrigin={prevFlight?.destination.code ?? profileHome}
-                initialDate={date}
-                preferredAirline={preferredAirline}
-                afterArrivalLocal={prevFlight?.scheduledArrivalLocal}
-                onPick={(f, day) =>
-                  track({
-                    airline: f.airline, number: f.flight_number, depISO: legDepartureISO(day, f), arrISO: legArrivalISO(day, f),
-                    origin: f.origin, dest: f.dest, after: afterFlightId,
-                  })
-                }
-              />
-              <button type="button" className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline" onClick={() => setShowRoute(false)}>
-                Search by flight number instead
-              </button>
-            </>
-          )}
-
-          {tab === 'number' && !showRoute && (
+          {tab === 'number' && (
             <div className="space-y-4">
+              {manual ? (
+                <p className="px-1 text-body-md text-ink-sub">Fill in everything to track this flight by hand.</p>
+              ) : (
+                <p id="either-or-hint" className="px-1 text-body-md text-ink-sub">
+                  Enter a flight number, or the route and time.
+                </p>
+              )}
+
               <div>
                 <Input
-                  id="flight-number"
-                  label="Flight number"
-                  type="text"
-                  value={flightNumber}
-                  onChange={(e) => { setFlightNumber(e.target.value.toUpperCase()); setLookup(null); setLookupMiss(''); setNotFound(false); }}
-                  placeholder="e.g. AA100 or B6 123"
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck={false}
+                  label="Date"
+                  type="date"
+                  min={today}
+                  value={date}
+                  onChange={(e) => { setDate(e.target.value); resetResults(); }}
+                  leftIcon={<Calendar />}
                 />
-                {typedParsed && (
-                  <p className="px-1 pt-1.5 text-body-sm text-ink-caption" data-testid="airline-caption">
-                    {findAirline(typedParsed.airlineCode)?.name ?? `Airline code ${typedParsed.airlineCode}`}
-                  </p>
-                )}
+                <div className="flex gap-2 pt-2" role="group" aria-label="Quick dates">
+                  {([['Today', today], ['Tomorrow', tomorrow]] as const).map(([label, value]) => (
+                    <Button
+                      key={label}
+                      size="sm"
+                      variant="secondary"
+                      aria-pressed={date === value}
+                      className={date === value ? 'border-surface-accent bg-surface-panel' : undefined}
+                      onClick={() => { setDate(value); resetResults(); }}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              {bareDigits && (
-                <>
-                  <Select
-                    label="Airline"
-                    id="airline"
-                    value={otherAirline ? OTHER_AIRLINE : airlineCode}
-                    placeholderSelected={!airlineCode && !otherAirline}
-                    onChange={(e) => {
-                      if (e.target.value === OTHER_AIRLINE) {
-                        setOtherAirline(true);
-                        setAirlineCodeState('');
-                        return;
-                      }
-                      setOtherAirline(false);
-                      setAirlineCodeState(AIRLINES.find((x) => x.code === e.target.value)?.code ?? '');
-                    }}
-                  >
-                    <option value="">Select airline</option>
-                    {AIRLINES.map((al) => (
-                      <option key={al.code} value={al.code}>
-                        {al.name}
-                      </option>
-                    ))}
-                    <option value={OTHER_AIRLINE}>Other airline…</option>
-                  </Select>
-                  {otherAirline && (
-                    <Input
-                      id="airline-code"
-                      label="Airline code"
-                      type="text"
-                      value={airlineCode}
-                      maxLength={2}
-                      autoCapitalize="characters"
-                      placeholder="2-character IATA code, e.g. QX"
-                      onChange={(e) => setAirlineCodeState(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2))}
-                    />
+
+              <section aria-label="Search by flight number" className="space-y-4">
+                <div>
+                  <Input
+                    id="flight-number"
+                    label="Flight number"
+                    type="text"
+                    value={flightNumber}
+                    onChange={(e) => { setFlightNumber(e.target.value.toUpperCase()); resetResults(); }}
+                    placeholder="e.g. AA100 or B6 123"
+                    autoCapitalize="characters"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                  />
+                  {typedParsed && (
+                    <p className="px-1 pt-1.5 text-body-sm text-ink-caption" data-testid="airline-caption">
+                      {findAirline(typedParsed.airlineCode)?.name ?? `Airline code ${typedParsed.airlineCode}`}
+                    </p>
                   )}
-                </>
+                </div>
+                {bareDigits && (
+                  <>
+                    <Select
+                      label="Airline"
+                      id="airline"
+                      value={otherAirline ? OTHER_AIRLINE : airlineCode}
+                      placeholderSelected={!airlineCode && !otherAirline}
+                      onChange={(e) => {
+                        if (e.target.value === OTHER_AIRLINE) {
+                          setOtherAirline(true);
+                          setAirlineCodeState('');
+                          return;
+                        }
+                        setOtherAirline(false);
+                        setAirlineCodeState(AIRLINES.find((x) => x.code === e.target.value)?.code ?? '');
+                      }}
+                    >
+                      <option value="">Select airline</option>
+                      {AIRLINES.map((al) => (
+                        <option key={al.code} value={al.code}>
+                          {al.name}
+                        </option>
+                      ))}
+                      <option value={OTHER_AIRLINE}>Other airline…</option>
+                    </Select>
+                    {otherAirline && (
+                      <Input
+                        id="airline-code"
+                        label="Airline code"
+                        type="text"
+                        value={airlineCode}
+                        maxLength={2}
+                        autoCapitalize="characters"
+                        placeholder="2-character IATA code, e.g. QX"
+                        onChange={(e) => setAirlineCodeState(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 2))}
+                      />
+                    )}
+                  </>
+                )}
+              </section>
+
+              {!manual && (
+                <div role="separator" aria-label="or" className="flex items-center gap-3 text-body-md font-semibold text-ink-sub">
+                  <span className="h-px flex-1 bg-surface-divider" aria-hidden />
+                  or
+                  <span className="h-px flex-1 bg-surface-divider" aria-hidden />
+                </div>
               )}
-              {manual && <div className="grid grid-cols-2 gap-3">
+
+              <section aria-label="Search by route and departure time" className="space-y-4">
                 <AirportAutocomplete
                   key="mfrom"
                   label="From"
                   placeholder="e.g., SFO"
                   value={originCode}
-                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setAirportErrors((e) => ({ ...e, origin: undefined })); }}
+                  onChange={(code, info) => { setOriginCode(code); setOriginInfo(info); setAirportErrors((e) => ({ ...e, origin: undefined })); resetResults(); }}
                   error={airportErrors.origin}
                   leftIcon={<Plane className="w-5 h-5 -rotate-45" />}
                 />
@@ -397,58 +458,33 @@ function AddFlightScreen() {
                   label="To"
                   placeholder="e.g., JFK"
                   value={destCode}
-                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setAirportErrors((e) => ({ ...e, dest: undefined })); }}
+                  onChange={(code, info) => { setDestCode(code); setDestInfo(info); setAirportErrors((e) => ({ ...e, dest: undefined })); resetResults(); }}
                   error={airportErrors.dest}
                   leftIcon={<Plane className="w-5 h-5 rotate-45" />}
                 />
-              </div>}
-              <div className={manual ? 'grid grid-cols-2 gap-3' : undefined}>
-                <div>
-                  <div className="flex gap-2 pb-2" role="group" aria-label="Quick dates">
-                    {([['Today', today], ['Tomorrow', tomorrow]] as const).map(([label, value]) => (
-                      <Button
-                        key={label}
-                        size="sm"
-                        variant="secondary"
-                        aria-pressed={date === value}
-                        className={date === value ? 'bg-surface-muted' : undefined}
-                        onClick={() => { setDate(value); setLookup(null); setLookupMiss(''); setNotFound(false); }}
-                      >
-                        {label}
-                      </Button>
-                    ))}
-                  </div>
-                  <Input
-                    label="Date"
-                    type="date"
-                    min={today}
-                    value={date}
-                    onChange={(e) => { setDate(e.target.value); setLookup(null); setLookupMiss(''); setNotFound(false); }}
-                    leftIcon={<Calendar />}
-                  />
-                </div>
-                {manual && <Input
-                  label="Departure time"
+                <Input
+                  label={afterFlightId && !manual ? 'Departure time (optional)' : 'Departure time'}
+                  hint="Local time at the departure airport"
                   type="time"
                   value={departureTime}
-                  onChange={(e) => setDepartureTime(e.target.value)}
+                  onChange={(e) => { setDepartureTime(e.target.value); resetResults(); }}
                   leftIcon={<Clock />}
-                />}
-              </div>
+                />
+              </section>
               {timeWarning && <Alert status="info" showIcon={false} lineOne={timeWarning} />}
             </div>
           )}
 
-          {error && !showRoute && (
+          {error && (
             <Alert className="mt-4" status="error" showIcon={false} lineOne={error} />
           )}
 
-          {tab === 'number' && !manual && !showRoute && (
+          {tab === 'number' && !manual && (
             <>
               <Button
                 fullWidth
                 className="mt-6"
-                onClick={handleFind}
+                onClick={() => handleFind()}
                 disabled={isFinding}
                 icon={isFinding ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Search className="w-4 h-4" />}
               >
@@ -456,7 +492,17 @@ function AddFlightScreen() {
               </Button>
 
               {lookupMiss && (
-                <Alert className="mt-4" status="info" showIcon={false} lineOne={lookupMiss} />
+                <Alert
+                  className="mt-4"
+                  status="info"
+                  showIcon={false}
+                  lineOne={lookupMiss}
+                  lineTwo={
+                    <span className="mt-1 flex flex-wrap gap-x-2">
+                      <Button size="sm" variant="text" onClick={goManual}>Enter details manually</Button>
+                    </span>
+                  }
+                />
               )}
 
               {notFound && (
@@ -464,10 +510,14 @@ function AddFlightScreen() {
                   className="mt-4"
                   status="info"
                   showIcon={false}
-                  lineOne={`We couldn't find ${(typedParsed ? `${typedParsed.airlineCode}${typedParsed.number}` : flightNumber.trim()).toUpperCase()} on ${formatDate(`${date}T12:00:00`)}. We cover US domestic flights, and we don't have every schedule yet. Try searching by route instead.`}
+                  lineOne={`We couldn't find ${(typedParsed ? `${typedParsed.airlineCode}${typedParsed.number}` : flightNumber.trim()).toUpperCase()} on ${formatDate(`${date}T12:00:00`)}. We cover US domestic flights, and we don't have every schedule yet.${routeReady ? '' : ' You can also search by route.'}`}
                   lineTwo={
                     <span className="mt-1 flex flex-wrap gap-x-2">
-                      <Button size="sm" variant="text" onClick={() => { setNotFound(false); if (afterFlightId) setShowRoute(true); else navigate({ to: '/explore' }); }}>Search by route</Button>
+                      {routeReady && (
+                        <Button size="sm" variant="text" onClick={() => { setFlightNumber(''); handleFind({ flightNumber: '' }); }}>
+                          Search by route instead
+                        </Button>
+                      )}
                       <Button size="sm" variant="text" onClick={goManual}>Enter details manually</Button>
                     </span>
                   }
@@ -486,33 +536,24 @@ function AddFlightScreen() {
                 </div>
               )}
 
-              {afterFlightId ? (
-                <button
-                  type="button"
-                  className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
-                  onClick={() => setShowRoute(true)}
-                >
-                  Search by route instead
-                </button>
-              ) : (
-                <p className="mt-3 text-center text-body-md text-ink-sub">
-                  No flight number yet?{' '}
-                  <Link to="/explore" className="font-semibold text-ink underline underline-offset-2">
-                    Compare flights on a route
-                  </Link>
-                </p>
+              {routeResult && (
+                <div className="mt-6">
+                  {routeNote && <p className="mb-3 text-body-md text-ink-sub">{routeNote}</p>}
+                  <RouteResults
+                    flights={routeResult.flights}
+                    asOf={routeResult.schedule_as_of}
+                    disabled={isFinding}
+                    preferredAirline={preferredAirline}
+                    afterArrivalLocal={prevFlight?.scheduledArrivalLocal}
+                    date={date}
+                    onPick={handlePickRoute}
+                  />
+                </div>
               )}
-              <button
-                type="button"
-                className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
-                onClick={goManual}
-              >
-                Enter details manually
-              </button>
             </>
           )}
 
-          {tab === 'number' && manual && !showRoute && (
+          {tab === 'number' && manual && (
             <>
               <Button
                 fullWidth
@@ -528,7 +569,7 @@ function AddFlightScreen() {
                 className="mt-2 min-h-11 w-full text-center text-body-md text-ink-sub underline"
                 onClick={() => { setManual(false); setError(''); }}
               >
-                Look up by flight number instead
+                Back to searching
               </button>
             </>
           )}

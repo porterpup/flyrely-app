@@ -21,7 +21,7 @@ describe('RouteSearch', () => {
   it('renders the form with the origin pre-filled', () => {
     render(<RouteSearch initialOrigin="EWR" onPick={() => {}} />);
     expect(screen.getByRole('button', { name: /Find flights/ })).toBeTruthy();
-    expect((screen.getByLabelText('From') as HTMLInputElement).value).toBe('EWR');
+    expect((screen.getByLabelText('From') as HTMLInputElement).value).toBe('EWR – Newark');
   });
 
   it('asks for airports before searching', () => {

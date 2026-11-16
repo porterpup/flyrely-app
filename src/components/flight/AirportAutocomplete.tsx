@@ -4,12 +4,48 @@ import { fieldControlClass } from '~/components/ui/Field';
 import { FieldBox, FieldLabel } from '~/components/ui';
 import { IconButton } from '~/components/ui/IconButton';
 import { InputError } from '~/components/ui/InputError';
-import { searchAirports } from '~/lib/airports';
+import { AIRPORTS, getAirport, searchAirports } from '~/lib/airports';
+import { AIRPORT_REF, getAirportRef } from '~/lib/airportRef';
 import type { AirportInfo } from '~/lib/airports';
 import { cn } from '~/lib/utils';
 
+/** "EWR – Newark" for a known code, else null. */
+function labelFor(code: string): string | null {
+  if (code.length !== 3) return null;
+  const city = getAirport(code)?.city ?? getAirportRef(code)?.city;
+  return getAirport(code) || getAirportRef(code) ? (city ? `${code} – ${city}` : code) : null;
+}
+
+let cityList: { code: string; city: string }[] | null = null;
+/** Real city names only (never the airport-name fallback), lowercased. */
+function cities() {
+  if (!cityList) {
+    const byCode = new Map<string, string>();
+    for (const [code, r] of Object.entries(AIRPORT_REF)) if (r.city) byCode.set(code, r.city.toLowerCase());
+    for (const a of AIRPORTS) if (a.city) byCode.set(a.code, a.city.toLowerCase());
+    cityList = [...byCode].map(([code, city]) => ({ code, city }));
+  }
+  return cityList;
+}
+
+/**
+ * What to report upward for typed text. Three letters that are a known code select it ("SEA", "atl", "bos"),
+ * except lower/mixed-case text that is also the start of another airport's city ("San" -> pick from the list;
+ * "SAN" in capitals is the code). Three letters that are not a known code are passed on as typed so the form can
+ * say "We don't recognise XYZ". Anything else is not a code yet.
+ */
+export function autoCode(text: string): string {
+  const t = text.trim();
+  if (!/^[A-Za-z]{3}$/.test(t)) return '';
+  const code = t.toUpperCase();
+  if (!labelFor(code)) return code;
+  if (t === code) return code;
+  const lower = t.toLowerCase();
+  return cities().some((c) => c.code !== code && c.city.startsWith(lower)) ? '' : code;
+}
+
 export function AirportAutocomplete({
-  label,
+  label: fieldLabel,
   placeholder,
   value,
   onChange,
@@ -23,24 +59,31 @@ export function AirportAutocomplete({
   leftIcon?: React.ReactNode;
   error?: string;
 }) {
-  const [query, setQuery] = useState(value);
+  const [query, setQuery] = useState(labelFor(value) ?? value);
   const [suggestions, setSuggestions] = useState<AirportInfo[]>([]);
   const [open, setOpen] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // The last value this field reported to its parent, so the sync effect can tell its own echo from an outside change.
+  const emitted = useRef(value);
 
-  // Sync external value changes (clear, profile prefill) without remounting the input.
-  // Skip when the value is just what typing or picking a suggestion already produced.
+  // Selected = the parent holds a known airport code and the text shows that code (typed or picked).
+  // Typing "EWR" and picking "EWR" from the list look the same.
+  const label = labelFor(value);
+  const confirmed = !!label && (query.toUpperCase() === value || query === label);
+
+  // Sync outside changes (clear, profile prefill, Recent) without remounting the input.
   useEffect(() => {
-    if (!value) {
-      setQuery('');
-      setConfirmed(false);
-    } else if (query.toUpperCase().slice(0, 3) !== value) {
-      setQuery(value);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (value === emitted.current) return;
+    emitted.current = value;
+    setQuery(labelFor(value) ?? value);
   }, [value]);
+
+  const report = (code: string, info?: AirportInfo) => {
+    emitted.current = code;
+    if (info) onChange(code, info);
+    else onChange(code);
+  };
 
   // Close on outside click
   useEffect(() => {
@@ -56,7 +99,6 @@ export function AirportAutocomplete({
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const q = e.target.value;
     setQuery(q);
-    setConfirmed(false);
     if (q.length >= 1) {
       setSuggestions(searchAirports(q));
       setOpen(true);
@@ -64,30 +106,28 @@ export function AirportAutocomplete({
       setSuggestions([]);
       setOpen(false);
     }
-    onChange(q.toUpperCase().slice(0, 3));
+    report(autoCode(q));
   };
 
   const select = (airport: AirportInfo) => {
     setQuery(`${airport.code} – ${airport.city}`);
-    setConfirmed(true);
     setOpen(false);
     setSuggestions([]);
-    onChange(airport.code, airport);
+    report(airport.code, airport);
   };
 
   const clear = () => {
     setQuery('');
-    setConfirmed(false);
     setSuggestions([]);
     setOpen(false);
-    onChange('');
+    report('');
     inputRef.current?.focus();
   };
 
   return (
     <div ref={containerRef} className="relative flex flex-col gap-1.5">
-      <FieldLabel>{label}</FieldLabel>
-      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-surface-accent ring-2 ring-surface-accent')}>
+      <FieldLabel>{fieldLabel}</FieldLabel>
+      <FieldBox leading={leftIcon} className={cn(confirmed && 'border-surface-accent')}>
         <input
           type="text"
           value={query}
@@ -95,14 +135,19 @@ export function AirportAutocomplete({
           ref={inputRef}
           onFocus={(e) => {
             // A prefilled or picked value: select it all so typing replaces it instead of appending.
-            if (e.target.value && (confirmed || e.target.value === value)) e.target.select();
+            if (e.target.value && confirmed) e.target.select();
             else if (query.length >= 1 && suggestions.length > 0) setOpen(true);
           }}
+          onBlur={() => {
+            // A typed code like "EWR" expands to "EWR – Newark" once focus leaves, so both fields read the same.
+            if (label && query.toUpperCase() === value) setQuery(label);
+          }}
           placeholder={placeholder}
-          aria-label={label}
-          className={cn(fieldControlClass, leftIcon && 'pl-2')}
+          aria-label={fieldLabel}
+          title={confirmed ? query : undefined}
+          className={cn(fieldControlClass, 'truncate', leftIcon && 'pl-2')}
         />
-        {confirmed && <Check className="mr-1 h-5 w-5 shrink-0 self-center text-surface-accent" aria-label="Selected" />}
+        {confirmed && <Check role="img" className="mr-1 h-5 w-5 shrink-0 self-center text-surface-accent" aria-label="Selected" />}
         {query && (
           <IconButton aria-label="Clear" kind="text" onClick={clear} className="self-center">
             <X className="h-4 w-4" aria-hidden />
