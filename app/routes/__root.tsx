@@ -54,6 +54,11 @@ function RootComponent() {
       <body>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            {/* Navy scrim under the iOS status bar (black-translucent). Zero height where there is no inset. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none fixed inset-x-0 top-0 z-50 h-[env(safe-area-inset-top)] bg-surface"
+            />
             <div className="min-h-dvh bg-surface">
               <AuthGate>
                 <Outlet />

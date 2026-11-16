@@ -28,6 +28,7 @@ describe('CopilotHead', () => {
     expect(pwaMeta().map((m) => m.name)).toContain('theme-color');
     expect(pwaMeta()).toContainEqual({ name: 'theme-color', content: '#0B2350' });
     expect(pwaMeta()).toContainEqual({ name: 'color-scheme', content: 'dark' });
+    expect(pwaMeta()).toContainEqual({ name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' });
     render(<CopilotBootstrap />);
     expect(register).not.toHaveBeenCalled();
   });
