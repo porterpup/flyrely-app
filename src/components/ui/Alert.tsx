@@ -13,6 +13,8 @@ export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
   showIcon?: boolean;
   /** Trailing chevron, for alerts that link somewhere. */
   showRightIcon?: boolean;
+  /** Use inside a panel or card: a darker fill and an accent edge so it stays visible. Still neutral. */
+  onPanel?: boolean;
   /** Trailing control, e.g. an Undo button. */
   action?: React.ReactNode;
 }
@@ -37,6 +39,7 @@ export function Alert({
   lineTwo,
   showIcon = true,
   showRightIcon = false,
+  onPanel = false,
   action,
   className,
   ...props
@@ -45,7 +48,12 @@ export function Alert({
   return (
     <div
       role={status === 'error' ? 'alert' : undefined}
-      className={cn('flex items-center gap-3 rounded-alert p-inset', statusClasses[status], className)}
+      className={cn(
+        'flex items-center gap-3 rounded-alert p-inset',
+        statusClasses[status],
+        onPanel && status !== 'error' && 'border-surface-accent/50 bg-surface-field',
+        className
+      )}
       {...props}
     >
       {showIcon && <Icon className={cn('h-6 w-6 shrink-0', status !== 'error' && 'text-surface-accent')} aria-hidden />}

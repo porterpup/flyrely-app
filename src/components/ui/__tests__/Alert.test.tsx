@@ -13,6 +13,12 @@ describe('non-risk notices are neutral navy', () => {
       expect(html).toContain('bg-surface-panel');
     }
   });
+  it('onPanel stays neutral but gets an accent edge and darker fill', () => {
+    const html = renderToStaticMarkup(<Alert status="info" onPanel lineOne="x" />);
+    expect(html).not.toMatch(RISK_COLOURS);
+    expect(html).toContain('border-surface-accent/50');
+    expect(html).toContain('bg-surface-field');
+  });
   it('error alerts stay red and announce themselves', () => {
     const html = renderToStaticMarkup(<Alert status="error" lineOne="x" />);
     expect(html).toContain('bg-status-error-bg');

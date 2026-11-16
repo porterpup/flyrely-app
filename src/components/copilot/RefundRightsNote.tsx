@@ -71,6 +71,7 @@ export function RefundRightsNote({
       {lead}
       {!rebooked && (
         <Alert
+          onPanel
           status="info"
           lineOne={
             <>

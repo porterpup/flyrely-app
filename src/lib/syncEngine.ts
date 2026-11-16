@@ -213,7 +213,8 @@ export function pendingCount(): number {
   return outbox.length;
 }
 
-export type NoticeKind = 'info' | 'success' | 'warning';
+/** `error` is a real failure (red toast); `warning` is a non-risk heads-up shown as neutral info. */
+export type NoticeKind = 'info' | 'success' | 'warning' | 'error';
 
 export function onNotice(cb: (message: string, kind: NoticeKind) => void): () => void {
   noticeListeners.add(cb);
@@ -225,8 +226,8 @@ export function emitNotice(message: string, kind: NoticeKind = 'info'): void {
   notice(message, kind);
 }
 
-/** Notices from the sync engine itself (dropped changes) stay warnings. */
-function notice(message: string, kind: NoticeKind = 'warning'): void {
+/** Notices from the sync engine itself. A dropped change is an error (user data not saved). */
+function notice(message: string, kind: NoticeKind = 'error'): void {
   for (const cb of noticeListeners) cb(message, kind);
 }
 
@@ -324,7 +325,8 @@ async function runFlush(): Promise<void> {
       }
       // Permanent failure: drop the change so the queue can never get stuck. Log the type only (no flight data).
       console.warn('sync: dropped a change', change.type, kind, e instanceof CloudError ? e.code ?? '' : '');
-      notice(kind === 'unique' ? 'You already track this flight.' : "Couldn't save one change.");
+      if (kind === 'unique') notice('You already track this flight.', 'info');
+      else notice("Couldn't save one change.", 'error');
     }
     if (userId !== uid) return;
     outbox = outbox.filter((c) => c.seq !== change.seq);
