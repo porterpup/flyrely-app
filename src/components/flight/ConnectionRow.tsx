@@ -26,7 +26,7 @@ export function ConnectionRow({ prev, next }: ConnectionRowProps) {
   return (
     <div
       className={`flex flex-col items-center gap-1 rounded-tile px-4 py-2 text-center text-body-md ${
-        tight ? 'bg-warn-bg text-warn-text' : 'bg-surface-muted text-ink-caption'
+        tight ? 'bg-status-warning-bg text-status-warning-text' : 'bg-surface-muted text-ink-caption'
       }`}
     >
       {minutes === null ? (

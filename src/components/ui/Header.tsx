@@ -25,7 +25,7 @@ export function Header({
     <header
       className={cn(
         'sticky top-0 z-10 flex min-h-[68px] items-center gap-3 px-6 pb-4 pt-[max(1rem,env(safe-area-inset-top))]',
-        transparent ? 'bg-transparent' : 'bg-white'
+        transparent ? 'bg-transparent' : 'bg-surface'
       )}
     >
       {showBack && (

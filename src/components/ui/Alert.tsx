@@ -26,15 +26,15 @@ const icons = {
 } as const;
 
 const softClasses: Record<AlertStatus, string> = {
-  success: 'bg-status-success-bg text-status-success-text',
-  warning: 'bg-status-warning-bg text-status-warning-text',
-  error: 'bg-status-error-bg text-status-error-text',
-  info: 'bg-status-info-bg text-status-info-text',
+  success: 'border border-status-success-text/40 bg-status-success-bg text-status-success-text',
+  warning: 'border border-status-warning-text/40 bg-status-warning-bg text-status-warning-text',
+  error: 'border border-status-error-text/40 bg-status-error-bg text-status-error-text',
+  info: 'border border-status-info-text/40 bg-status-info-bg text-status-info-text',
 };
 
 export const alertSolidClasses: Record<AlertStatus, string> = {
   success: 'bg-status-success-solid text-white',
-  warning: 'bg-status-warning-solid text-ink',
+  warning: 'bg-status-warning-solid text-ink-inverse',
   error: 'bg-status-error-solid text-white',
   info: 'bg-status-info-solid text-white',
 };

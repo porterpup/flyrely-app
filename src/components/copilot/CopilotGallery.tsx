@@ -113,7 +113,7 @@ function Frame({ label, children, light = false }: { label: string; children: Re
   return (
     <div data-sample={label} className="space-y-1">
       <p className="text-body-sm text-ink-caption">SAMPLE: {label}</p>
-      <div className={light ? 'rounded-btn bg-white p-3 text-ink ring-1 ring-surface-stroke' : 'rounded-ticket bg-surface-card p-3 text-white'}>
+      <div className={light ? 'rounded-btn bg-surface-muted p-3 text-ink ring-1 ring-surface-stroke' : 'rounded-ticket bg-surface-card p-3 text-white'}>
         {children}
       </div>
     </div>
@@ -156,7 +156,7 @@ export default function CopilotGallery() {
             state="cancelled"
             actions={
               <>
-                <Button size="sm" className="!bg-white !text-ink hover:!bg-white/90">I&apos;ve been rebooked</Button>
+                <Button size="sm" className="!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed">I&apos;ve been rebooked</Button>
                 <Button size="sm" variant="text" className="!text-white hover:!bg-white/10">Not cancelled after all</Button>
               </>
             }

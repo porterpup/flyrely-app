@@ -110,7 +110,7 @@ export function AirportAutocomplete({
       </FieldBox>
       {error && <InputError message={error} className="mt-0" />}
       {open && suggestions.length > 0 && (
-        <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-field border border-surface-divider bg-white shadow-lg">
+        <ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-field border border-surface-field-border bg-surface-card shadow-lg">
           {suggestions.map((ap) => (
             <li key={ap.code}>
               <button

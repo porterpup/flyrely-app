@@ -28,7 +28,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               fieldControlClass,
               'appearance-none',
               // stretch the native control over the chevron cell so the whole box opens the menu
-              placeholderSelected && 'text-ink-caption/60',
+              placeholderSelected && 'text-ink-placeholder',
               className
             )}
             {...props}

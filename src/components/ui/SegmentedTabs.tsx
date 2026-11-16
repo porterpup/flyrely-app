@@ -20,7 +20,7 @@ export function SegmentedTabs<T extends string>({
     <div
       role="tablist"
       aria-label={rest['aria-label']}
-      className={cn('flex rounded-pill bg-surface-stroke p-1', className)}
+      className={cn('flex rounded-pill bg-surface-muted p-1', className)}
     >
       {options.map((o) => (
         <button
@@ -32,7 +32,7 @@ export function SegmentedTabs<T extends string>({
           className={cn(
             'min-h-11 flex-1 rounded-pill py-2 text-body-md transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-accent',
-            value === o.value ? 'bg-white text-ink shadow-sm' : 'text-ink-caption'
+            value === o.value ? 'bg-surface-panel text-ink shadow-sm' : 'text-ink-caption'
           )}
         >
           {o.label}

@@ -40,14 +40,14 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm motion-safe:animate-fade-in"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm motion-safe:animate-fade-in"
         onClick={onClose}
       />
 
       {/* Modal */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-t-3xl sm:rounded-tile p-6',
+          'relative w-full bg-surface-card border-t border-surface-stroke rounded-t-3xl sm:rounded-tile p-6',
           'pb-[max(1.5rem,env(safe-area-inset-bottom))] motion-safe:animate-sheet-up sm:motion-safe:animate-pop-in',
           sizeClasses[size]
         )}
@@ -60,7 +60,7 @@ export function Modal({
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 text-ink-caption opacity-70 hover:text-ink-caption rounded-lg hover:bg-surface-muted"
+                className="p-2 -mr-2 text-ink-caption hover:text-ink rounded-lg hover:bg-surface-muted"
               >
                 <X className="h-5 w-5" />
               </button>

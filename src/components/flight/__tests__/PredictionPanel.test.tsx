@@ -6,9 +6,9 @@ const html = (risk: 'low' | 'medium' | 'high', pct: number) =>
   renderToStaticMarkup(<PredictionPanel risk={risk} chancePercent={pct} reason="r" />);
 
 describe('PredictionPanel', () => {
-  it('low is calm: white, with reassurance line', () => {
+  it('low is calm: navy panel, with reassurance line', () => {
     const h = html('low', 6);
-    expect(h).toContain('bg-white');
+    expect(h).toContain('bg-surface-panel');
     expect(h).toContain('Looks good. 94% of flights like this leave within 15 minutes of schedule.');
   });
   it('medium has the warning band and label', () => {

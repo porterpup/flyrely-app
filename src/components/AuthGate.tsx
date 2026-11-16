@@ -27,7 +27,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-surface-card text-white"
+      className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-surface text-white"
       role="status"
       aria-label="Loading"
     >

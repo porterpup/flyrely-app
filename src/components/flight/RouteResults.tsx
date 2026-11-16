@@ -185,7 +185,7 @@ export function RouteResults({
               onClick={() => onPick(f)}
               aria-label={`${f.flight} ${f.origin} to ${f.dest}, ${formatClock(f.dep_time)} to ${formatClock(f.arr_time)}, ${pct(f)}% chance of a 15+ min delay`}
               className={cn(
-                'flex w-full items-center justify-between gap-3 rounded-tile border bg-white p-3 text-left hover:border-surface-divider',
+                'flex w-full items-center justify-between gap-3 rounded-tile border bg-surface-card p-3 text-left hover:border-surface-divider',
                 isPreferred(f) ? 'border-surface-accent' : 'border-surface-stroke',
                 disabled && 'opacity-60'
               )}

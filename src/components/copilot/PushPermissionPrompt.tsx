@@ -40,7 +40,7 @@ export function PushPermissionPrompt({ status, onEnable, onDisable, onDark = tru
           <Button
             size="sm"
             onClick={onEnable}
-            className={onDark ? '!bg-white !text-ink hover:!bg-white/90' : undefined}
+            className={onDark ? '!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed' : undefined}
           >
             Alert me
           </Button>

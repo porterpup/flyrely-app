@@ -37,7 +37,7 @@ export function LookupResults({
           aria-label={legLabel(flight, leg)}
           onClick={() => onPick(leg)}
           className={cn(
-            'w-full rounded-tile border border-surface-stroke bg-white p-4 text-left hover:border-surface-divider',
+            'w-full rounded-tile border border-surface-stroke bg-surface-card p-4 text-left hover:border-surface-divider',
             disabled && 'opacity-60'
           )}
         >

@@ -86,7 +86,7 @@ export function FeedbackModal({ isOpen, onClose, pathname }: { isOpen: boolean; 
               maxLength={FEEDBACK_MAX_LENGTH}
               rows={5}
               placeholder="What happened, or what would help?"
-              className="w-full rounded-btn border border-surface-stroke p-3 text-ink focus:outline-none focus:ring-2 focus:ring-surface-accent"
+              className="w-full rounded-btn border border-surface-field-border bg-surface-field p-3 text-ink placeholder:text-ink-placeholder focus:outline-none focus:ring-2 focus:ring-surface-accent"
             />
             <p className="text-body-sm text-ink-caption">We attach the screen you're on and any flight shown.</p>
           </div>

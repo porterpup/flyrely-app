@@ -23,8 +23,8 @@ export function FieldBox({
   return (
     <div
       className={cn(
-        'flex items-stretch overflow-hidden rounded-field border-[0.5px] bg-white text-ink-caption transition-colors',
-        invalid ? 'border-status-error-text' : 'border-surface-divider',
+        'flex items-stretch overflow-hidden rounded-field border bg-surface-field text-ink-caption transition-colors',
+        invalid ? 'border-status-error-text' : 'border-surface-field-border',
         interactive && 'focus-within:border-surface-accent focus-within:ring-2 focus-within:ring-surface-accent',
         className
       )}
@@ -70,4 +70,4 @@ export function FieldMessage({ error, hint }: { error?: string; hint?: string })
 
 /** Shared class for the bare <input>/<select> that sits inside a FieldBox. */
 export const fieldControlClass =
-  'min-w-0 flex-1 bg-transparent px-4 py-3.5 text-body-lg text-ink outline-none placeholder:text-ink-caption/60';
+  'min-w-0 flex-1 bg-transparent px-4 py-3.5 text-body-lg text-ink outline-none placeholder:text-ink-placeholder disabled:bg-surface-muted disabled:text-ink-subtle';

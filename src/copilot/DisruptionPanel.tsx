@@ -27,7 +27,7 @@ export interface DisruptionPanelProps {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const onDarkSecondary = '!border-white/40 !text-white hover:!bg-white/10';
-const onDarkSolid = '!bg-white !text-ink hover:!bg-white/90';
+const onDarkSolid = '!bg-surface-accent-fill !text-white hover:!bg-surface-accent-fill-pressed';
 const onDarkText = '!text-white hover:!bg-white/10';
 
 /** Which card to show, from the user's own report first, then the flight's risk. null = hide the card. */
@@ -204,7 +204,7 @@ export function DisruptionPanel({ flight }: DisruptionPanelProps) {
         {userState === 'rebooked_today' && (
           <a
             href="/flights/add"
-            className="inline-flex items-center justify-center rounded-btn-sm bg-white px-3.5 py-3 text-action-md text-ink hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="inline-flex items-center justify-center rounded-btn-sm bg-surface-accent-fill px-3.5 py-3 text-action-md text-white hover:bg-surface-accent-fill-pressed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             Add your new flight
           </a>

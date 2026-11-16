@@ -37,8 +37,8 @@ const toastConfig: Record<
   },
   info: {
     icon: <Info className="w-5 h-5" />,
-    bgColor: 'bg-blue-50 border-blue-200',
-    iconColor: 'text-blue-600',
+    bgColor: 'bg-status-info-bg border-status-info-text/20',
+    iconColor: 'text-status-info-text',
   },
 };
 
@@ -73,7 +73,7 @@ export function Toast({
     >
       <div
         className={cn(
-          'flex items-start gap-3 p-4 rounded-tile border shadow-lg',
+          'flex items-start gap-3 p-4 rounded-tile border bg-surface-panel shadow-lg',
           config.bgColor
         )}
       >
@@ -89,7 +89,7 @@ export function Toast({
           {action && (
             <button
               onClick={action.onClick}
-              className="text-body-md font-medium text-primary-600 hover:text-primary-700 mt-2"
+              className="text-body-md font-medium text-surface-accent hover:text-ink mt-2"
             >
               {action.label}
             </button>
@@ -101,7 +101,7 @@ export function Toast({
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          className="flex-shrink-0 p-1 text-ink-caption opacity-70 hover:text-ink-caption rounded"
+          className="flex-shrink-0 p-1 text-ink-caption hover:text-ink rounded"
         >
           <X className="w-4 h-4" />
         </button>

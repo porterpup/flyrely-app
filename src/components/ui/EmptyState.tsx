@@ -18,7 +18,7 @@ export function EmptyState({ icon, title, description, action, onDark = false, c
       <div
         className={cn(
           'mb-5 flex h-16 w-16 items-center justify-center rounded-full [&_svg]:h-7 [&_svg]:w-7',
-          onDark ? 'bg-white/10 text-white' : 'bg-surface-muted text-surface-card'
+          onDark ? 'bg-white/10 text-white' : 'bg-surface-muted text-surface-accent'
         )}
       >
         {icon}
