@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { ChevronRight, PlaneTakeoff, PlaneLanding, SearchX } from 'lucide-react';
 import { Header, Button, Card, Duration, SectionHeader, EmptyState, Skeleton } from '~/components/ui';
 import { AddedStrip } from '~/components/flight/AddedStrip';
-import { RemoveFlightModal, NoPredictionBanner, PredictionPanel } from '~/components/flight';
+import { RemoveFlightModal, NoPredictionBanner, PredictionPanel, ConnectionRow } from '~/components/flight';
 import { formatLongDate, formatTime, formatDelayChance, formatDate } from '~/lib/utils';
 import { getCityLabel, getAirportName } from '~/lib/airportRef';
 import { useFlights } from '~/hooks/useFlights';
@@ -177,6 +177,10 @@ function FlightDetailsScreen() {
   const tripLegs = trip ? legsOf(trip, storedFlights) : [];
   // A connection is always added after the trip's last leg, whichever leg's page you are on.
   const lastLeg = tripLegs.length > 0 ? tripLegs[tripLegs.length - 1] : flight;
+  // The connection notes on either side of this leg (none when it is the only leg, or not part of a trip).
+  const legIdx = tripLegs.findIndex((l) => l.id === flight.id);
+  const prevLeg = legIdx > 0 ? tripLegs[legIdx - 1] : null;
+  const nextLeg = legIdx >= 0 && legIdx < tripLegs.length - 1 ? tripLegs[legIdx + 1] : null;
   const canAddConnection =
     !isDeparted(lastLeg, Date.now()) && (!trip || tripLegs.length < MAX_LEGS);
 
@@ -264,6 +268,8 @@ function FlightDetailsScreen() {
               </Card>
             )}
 
+            {prevLeg && <ConnectionRow prev={prevLeg} next={flight} />}
+
             {trip && tripLegs.length > 0 && (
               <Link
                 to="/trips/$tripId"
@@ -276,6 +282,8 @@ function FlightDetailsScreen() {
                 <ChevronRight className="w-5 h-5 text-ink-caption" />
               </Link>
             )}
+
+            {nextLeg && <ConnectionRow prev={flight} next={nextLeg} />}
 
             {canAddConnection && (
               <Button
